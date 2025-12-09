@@ -20,14 +20,31 @@ const (
 	ViewHelp
 )
 
+// TransitionStyle represents the animation style for view transitions
+type TransitionStyle int
+
+const (
+	TransitionZoom       TransitionStyle = iota // Center expand/contract
+	TransitionSlideH                            // Horizontal slide
+	TransitionSlideV                            // Vertical slide (push up/down)
+	TransitionFade                              // Crossfade via dimming
+)
+
+// TransitionStyleNames for display
+var TransitionStyleNames = []string{"Zoom", "Slide H", "Slide V", "Fade"}
+
 // Scroll buffer - cursor stays this many items from edge before scrolling
 const scrollBuffer = 2
 
 // Animation constants
 const (
-	animationFPS      = 60
-	springFrequency   = 7.0  // Higher = faster
-	springDamping     = 0.8  // < 1 = bouncy, 1 = smooth, > 1 = slow
+	animationFPS    = 60
+	springFrequency = 20.0 // Higher = faster (snappy)
+	springDamping   = 0.9  // < 1 = bouncy, 1 = smooth, > 1 = slow
+
+	// Slower spring for fade transition
+	fadeSpringFrequency = 5.0
+	fadeSpringDamping   = 0.95
 )
 
 // Model is the main application model
@@ -51,13 +68,15 @@ type Model struct {
 	cursorYVelocity float64
 	targetCursorY   float64
 	spring          harmonica.Spring
+	fadeSpring      harmonica.Spring // Slower spring for fade transitions
 
 	// View transition state
-	transitionProgress    float64   // 0.0 = old view, 1.0 = new view
+	transitionProgress    float64         // 0.0 = old view, 1.0 = new view
 	transitionVelocity    float64
 	targetTransition      float64
-	previousView          ViewState // View we're transitioning FROM
-	transitionDirection   int       // 1 = forward (right to left), -1 = back (left to right)
+	previousView          ViewState       // View we're transitioning FROM
+	transitionDirection   int             // 1 = forward (right to left), -1 = back (left to right)
+	transitionStyle       TransitionStyle // Current animation style
 
 	// Error state
 	err error
@@ -79,21 +98,34 @@ func NewModel() Model {
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(Peach)
 
-	// Initialize spring for animations
+	// Initialize springs for animations
 	spring := harmonica.NewSpring(harmonica.FPS(animationFPS), springFrequency, springDamping)
+	fadeSpring := harmonica.NewSpring(harmonica.FPS(animationFPS), fadeSpringFrequency, fadeSpringDamping)
 
 	return Model{
 		textInput:          ti,
 		spinner:            s,
 		spring:             spring,
+		fadeSpring:         fadeSpring,
 		loading:            true,
 		viewState:          ViewList,
 		previousView:       ViewList,
 		transitionProgress: 1.0, // Start fully transitioned (no animation on init)
 		targetTransition:   1.0,
+		transitionStyle:    TransitionZoom, // Default style
 		windowWidth:        80,
 		windowHeight:       24,
 	}
+}
+
+// CycleTransitionStyle cycles to the next transition style
+func (m *Model) CycleTransitionStyle() {
+	m.transitionStyle = (m.transitionStyle + 1) % 4
+}
+
+// TransitionStyleName returns the current transition style name
+func (m Model) TransitionStyleName() string {
+	return TransitionStyleNames[m.transitionStyle]
 }
 
 // Init initializes the model
@@ -246,9 +278,16 @@ func (m *Model) StartViewTransition(newView ViewState, direction int) {
 
 // UpdateViewTransition advances the view transition animation
 func (m *Model) UpdateViewTransition() {
-	m.transitionProgress, m.transitionVelocity = m.spring.Update(
-		m.transitionProgress, m.transitionVelocity, m.targetTransition,
-	)
+	// Use slower spring for fade, faster spring for others
+	if m.transitionStyle == TransitionFade {
+		m.transitionProgress, m.transitionVelocity = m.fadeSpring.Update(
+			m.transitionProgress, m.transitionVelocity, m.targetTransition,
+		)
+	} else {
+		m.transitionProgress, m.transitionVelocity = m.spring.Update(
+			m.transitionProgress, m.transitionVelocity, m.targetTransition,
+		)
+	}
 }
 
 // IsViewTransitioning returns true if a view transition is in progress

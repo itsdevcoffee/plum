@@ -25,20 +25,76 @@ func (m Model) View() string {
 		content = m.listView()
 	}
 
-	// Apply horizontal slide transition if animating
+	// Apply transition effect if animating
 	if m.IsViewTransitioning() {
-		offset := m.TransitionOffset()
-		content = m.applyHorizontalOffset(content, offset)
+		switch m.transitionStyle {
+		case TransitionZoom:
+			content = m.applyZoomTransition(content)
+		case TransitionSlideH:
+			content = m.applySlideHTransition(content)
+		case TransitionSlideV:
+			content = m.applySlideVTransition(content)
+		case TransitionFade:
+			content = m.applyFadeTransition(content)
+		}
 	}
 
 	return content
 }
 
-// applyHorizontalOffset shifts content horizontally for slide transitions
-func (m Model) applyHorizontalOffset(content string, offset int) string {
-	if offset == 0 {
+// applyZoomTransition creates a center-expand/contract effect
+func (m Model) applyZoomTransition(content string) string {
+	progress := m.transitionProgress
+	if progress >= 1.0 {
 		return content
 	}
+	if progress < 0 {
+		progress = 0
+	}
+
+	lines := strings.Split(content, "\n")
+	totalLines := len(lines)
+	if totalLines == 0 {
+		return content
+	}
+
+	// Calculate how many lines to show based on progress
+	visibleLines := int(float64(totalLines) * progress)
+	if visibleLines < 1 {
+		visibleLines = 1
+	}
+	if visibleLines > totalLines {
+		visibleLines = totalLines
+	}
+
+	// Calculate start/end to center the visible portion
+	hiddenLines := totalLines - visibleLines
+	startLine := hiddenLines / 2
+	endLine := startLine + visibleLines
+
+	// Build result with blank lines for hidden portions
+	var result strings.Builder
+	for i := 0; i < totalLines; i++ {
+		if i > 0 {
+			result.WriteString("\n")
+		}
+		if i >= startLine && i < endLine {
+			result.WriteString(lines[i])
+		}
+	}
+
+	return result.String()
+}
+
+// applySlideHTransition creates a horizontal slide effect
+func (m Model) applySlideHTransition(content string) string {
+	progress := m.transitionProgress
+	if progress >= 1.0 {
+		return content
+	}
+
+	remaining := 1.0 - progress
+	offset := int(remaining * float64(m.windowWidth) * float64(m.transitionDirection))
 
 	lines := strings.Split(content, "\n")
 	var result strings.Builder
@@ -49,22 +105,107 @@ func (m Model) applyHorizontalOffset(content string, offset int) string {
 		}
 
 		if offset > 0 {
-			// Sliding right: add padding on left, truncate right
+			// Sliding in from right: pad left
 			padding := strings.Repeat(" ", offset)
-			maxLen := m.windowWidth - offset
-			if maxLen < 0 {
-				maxLen = 0
-			}
-			// Truncate line to fit
-			truncated := truncateLine(line, maxLen)
 			result.WriteString(padding)
-			result.WriteString(truncated)
+			result.WriteString(truncateLine(line, m.windowWidth-offset))
+		} else if offset < 0 {
+			// Sliding in from left: skip chars
+			result.WriteString(skipChars(line, -offset))
 		} else {
-			// Sliding left: truncate left side, pad right
-			absOffset := -offset
-			// Skip characters from the left
-			truncated := skipChars(line, absOffset)
-			result.WriteString(truncated)
+			result.WriteString(line)
+		}
+	}
+
+	return result.String()
+}
+
+// applySlideVTransition creates a vertical slide (push) effect
+func (m Model) applySlideVTransition(content string) string {
+	progress := m.transitionProgress
+	if progress >= 1.0 {
+		return content
+	}
+	if progress < 0 {
+		progress = 0
+	}
+
+	lines := strings.Split(content, "\n")
+	totalLines := len(lines)
+	if totalLines == 0 {
+		return content
+	}
+
+	// Calculate vertical offset based on progress and direction
+	remaining := 1.0 - progress
+	offsetLines := int(remaining * float64(totalLines))
+
+	var result strings.Builder
+
+	if m.transitionDirection > 0 {
+		// Forward: slide up from bottom
+		// Show blank lines at top, content slides up from bottom
+		for i := 0; i < offsetLines; i++ {
+			if i > 0 {
+				result.WriteString("\n")
+			}
+			result.WriteString("")
+		}
+		for i := 0; i < totalLines-offsetLines; i++ {
+			if i > 0 || offsetLines > 0 {
+				result.WriteString("\n")
+			}
+			result.WriteString(lines[i])
+		}
+	} else {
+		// Back: slide down from top
+		// Content visible at top, blank lines fill from bottom
+		for i := 0; i < totalLines-offsetLines; i++ {
+			if i > 0 {
+				result.WriteString("\n")
+			}
+			result.WriteString(lines[i+offsetLines])
+		}
+		for i := 0; i < offsetLines; i++ {
+			result.WriteString("\n")
+		}
+	}
+
+	return result.String()
+}
+
+// applyFadeTransition creates a crossfade effect via dimming
+func (m Model) applyFadeTransition(content string) string {
+	progress := m.transitionProgress
+	if progress >= 1.0 {
+		return content
+	}
+	if progress < 0.1 {
+		progress = 0.1
+	}
+
+	// Create a dim style based on progress
+	// At progress=0: very dim, at progress=1: full brightness
+	dimLevel := int((1.0 - progress) * 180) // 0-180 range for gray
+	dimColor := lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", 80+dimLevel/2, 80+dimLevel/2, 80+dimLevel/2))
+
+	// Apply dim overlay to content by reducing contrast
+	// This is a simple approach - we dim the entire content
+	dimStyle := lipgloss.NewStyle().Foreground(dimColor)
+
+	lines := strings.Split(content, "\n")
+	var result strings.Builder
+
+	for i, line := range lines {
+		if i > 0 {
+			result.WriteString("\n")
+		}
+		// Only dim non-empty lines, preserve structure
+		if len(strings.TrimSpace(line)) > 0 && progress < 0.7 {
+			// Partial dim during early transition
+			result.WriteString(dimStyle.Render(stripAnsi(line)))
+		} else {
+			result.WriteString(line)
 		}
 	}
 
@@ -90,6 +231,26 @@ func skipChars(line string, n int) string {
 		return ""
 	}
 	return string(runes[n:])
+}
+
+// stripAnsi removes ANSI escape codes from a string (for re-styling)
+func stripAnsi(s string) string {
+	var result strings.Builder
+	inEscape := false
+	for _, r := range s {
+		if r == '\x1b' {
+			inEscape = true
+			continue
+		}
+		if inEscape {
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+				inEscape = false
+			}
+			continue
+		}
+		result.WriteRune(r)
+	}
+	return result.String()
 }
 
 // listView renders the main list view
@@ -202,12 +363,15 @@ func (m Model) statusBar() string {
 			query = query[:17] + "..."
 		}
 		parts = append(parts, fmt.Sprintf("\"%s\" %d/%d", query, m.cursor+1, len(m.results)))
-		parts = append(parts, "esc clear  ↑↓ Ctrl+j/k navigate  enter select")
+		parts = append(parts, "esc clear  ↑↓ navigate  enter select")
 	} else {
 		// Not searching: show total and installed
 		parts = append(parts, fmt.Sprintf("%d/%d (%d installed)", m.cursor+1, m.TotalPlugins(), m.InstalledCount()))
-		parts = append(parts, "↑↓ Ctrl+j/k navigate  enter select  ? help")
+		parts = append(parts, "↑↓ navigate  enter select  ? help")
 	}
+
+	// Show transition style (tab to cycle)
+	parts = append(parts, fmt.Sprintf("tab: %s", m.TransitionStyleName()))
 
 	return StatusBarStyle.Render(strings.Join(parts, "  │  "))
 }

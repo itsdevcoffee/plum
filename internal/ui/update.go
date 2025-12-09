@@ -159,6 +159,10 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.StartViewTransition(ViewHelp, 1) // Forward transition
 		return m, animationTick()
 
+	case "tab":
+		m.CycleTransitionStyle()
+		return m, nil
+
 	// Clear search or quit
 	case "esc", "ctrl+g":
 		if m.textInput.Value() != "" {
