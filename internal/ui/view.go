@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -50,22 +49,10 @@ func (m Model) listView() string {
 		visible := m.VisibleResults()
 		offset := m.ScrollOffset()
 
-		// Calculate animated cursor visual position
-		animatedVisualPos := m.cursorY
-
 		for i, rp := range visible {
 			actualIdx := offset + i
 			isSelected := actualIdx == m.cursor
-
-			// Calculate how "selected" this item appears based on animation
-			// This creates a smooth sliding highlight effect
-			distFromAnimatedCursor := math.Abs(animatedVisualPos - float64(i))
-			var highlightAmount float64
-			if distFromAnimatedCursor < 1.0 {
-				highlightAmount = 1.0 - distFromAnimatedCursor
-			}
-
-			b.WriteString(m.renderPluginItemWithHighlight(rp.Plugin, isSelected, highlightAmount))
+			b.WriteString(m.renderPluginItem(rp.Plugin, isSelected))
 			b.WriteString("\n")
 		}
 	}
@@ -77,13 +64,8 @@ func (m Model) listView() string {
 	return AppStyle.Render(b.String())
 }
 
-// renderPluginItem renders a single plugin item using the plugin package type
+// renderPluginItem renders a single plugin item
 func (m Model) renderPluginItem(p plugin.Plugin, selected bool) string {
-	return m.renderPluginItemWithHighlight(p, selected, 0)
-}
-
-// renderPluginItemWithHighlight renders a plugin with animated highlight
-func (m Model) renderPluginItemWithHighlight(p plugin.Plugin, selected bool, highlightAmount float64) string {
 	var b strings.Builder
 
 	// Indicator
@@ -94,26 +76,18 @@ func (m Model) renderPluginItemWithHighlight(p plugin.Plugin, selected bool, hig
 		indicator = AvailableIndicator.String()
 	}
 
-	// Create sliding highlight bar based on animation
-	// highlightAmount: 0 = no highlight, 1 = full highlight
+	// Selection prefix
 	var prefix string
-	if highlightAmount > 0.8 {
+	if selected {
 		prefix = HighlightBarFull.String()
-	} else if highlightAmount > 0.5 {
-		prefix = HighlightBarMedium.String()
-	} else if highlightAmount > 0.2 {
-		prefix = HighlightBarLight.String()
 	} else {
-		prefix = "  " // Empty space for alignment
+		prefix = "  "
 	}
 
-	// First line: prefix + indicator + name@marketplace + version
+	// Name style
 	var nameStyle lipgloss.Style
 	if selected {
 		nameStyle = PluginNameSelectedStyle
-	} else if highlightAmount > 0.3 {
-		// Partial highlight during animation
-		nameStyle = PluginNameStyle.Foreground(LightPurple)
 	} else {
 		nameStyle = PluginNameStyle
 	}
@@ -134,15 +108,11 @@ func (m Model) renderPluginItemWithHighlight(p plugin.Plugin, selected bool, hig
 	}
 	line2 := "    " + DescriptionStyle.Render(truncDesc)
 
-	// Apply background based on highlight amount
-	if selected || highlightAmount > 0.5 {
-		// Calculate background brightness based on highlight
-		brightness := int(highlightAmount * 25)
-		bgColor := fmt.Sprintf("#%02x%02x%02x", 35+brightness, 35+brightness, 45+brightness)
-		itemStyle := lipgloss.NewStyle().Background(lipgloss.Color(bgColor)).Padding(0, 1)
-		b.WriteString(itemStyle.Render(line1))
+	// Apply style
+	if selected {
+		b.WriteString(SelectedItemStyle.Render(line1))
 		b.WriteString("\n")
-		b.WriteString(itemStyle.Render(line2))
+		b.WriteString(SelectedItemStyle.Render(line2))
 	} else {
 		b.WriteString(NormalItemStyle.Render(line1))
 		b.WriteString("\n")
@@ -259,12 +229,12 @@ func (m Model) helpView() string {
 	b.WriteString(HelpSectionStyle.Render("  ◆ Navigation"))
 	b.WriteString("\n")
 	navKeys := []struct{ key, desc string }{
-		{"↑ k", "Move up"},
-		{"↓ j", "Move down"},
-		{"g Home", "Jump to top"},
-		{"G End", "Jump to bottom"},
+		{"↑ Ctrl+k/p", "Move up"},
+		{"↓ Ctrl+j/n", "Move down"},
 		{"Ctrl+u PgUp", "Page up"},
 		{"Ctrl+d PgDn", "Page down"},
+		{"Home", "Jump to top"},
+		{"End", "Jump to bottom"},
 	}
 	for _, h := range navKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(12).Render(h.key), HelpTextStyle.Render(h.desc)))
@@ -278,7 +248,7 @@ func (m Model) helpView() string {
 	actionKeys := []struct{ key, desc string }{
 		{"Enter", "View plugin details"},
 		{"c", "Copy install command"},
-		{"Esc", "Clear search / Go back"},
+		{"Esc Ctrl+g", "Clear search / Quit"},
 	}
 	for _, h := range actionKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(12).Render(h.key), HelpTextStyle.Render(h.desc)))
@@ -291,7 +261,7 @@ func (m Model) helpView() string {
 	b.WriteString("\n")
 	generalKeys := []struct{ key, desc string }{
 		{"?", "Toggle this help"},
-		{"q Ctrl+c", "Quit plum"},
+		{"Ctrl+c", "Quit plum"},
 	}
 	for _, h := range generalKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(12).Render(h.key), HelpTextStyle.Render(h.desc)))
@@ -303,7 +273,7 @@ func (m Model) helpView() string {
 	b.WriteString(HelpSectionStyle.Render("  ◆ Tips"))
 	b.WriteString("\n")
 	b.WriteString(HelpTextStyle.Render("    • Just start typing to search\n"))
-	b.WriteString(HelpTextStyle.Render("    • Vim-style navigation (hjkl)\n"))
+	b.WriteString(HelpTextStyle.Render("    • Ctrl+key for navigation (fzf-style)\n"))
 	b.WriteString(HelpTextStyle.Render("    • Green ● = installed plugin\n"))
 
 	b.WriteString("\n")

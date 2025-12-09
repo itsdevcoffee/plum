@@ -54,8 +54,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case animationTickMsg:
+		// Always update first, then check if we should continue
+		m.UpdateCursorAnimation()
 		if m.IsAnimating() {
-			m.UpdateCursorAnimation()
 			return m, animationTick()
 		}
 		return m, nil
@@ -86,64 +87,34 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // handleListKeys handles keys in the list view
+// Uses telescope/fzf pattern: Ctrl+key for navigation, typing goes to search
 func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "q":
-		return m, tea.Quit
-
-	case "up", "k":
+	// Navigation: Ctrl + j/k/n/p or arrow keys
+	case "up", "ctrl+k", "ctrl+p":
 		if m.cursor > 0 {
 			m.cursor--
 		}
 		m.UpdateScroll()
+		m.SetCursorTarget()
 		return m, animationTick()
 
-	case "down", "j":
+	case "down", "ctrl+j", "ctrl+n":
 		if m.cursor < len(m.results)-1 {
 			m.cursor++
 		}
 		m.UpdateScroll()
+		m.SetCursorTarget()
 		return m, animationTick()
 
-	case "enter":
-		if len(m.results) > 0 {
-			m.viewState = ViewDetail
-		}
-		return m, nil
-
-	case "?":
-		m.viewState = ViewHelp
-		return m, nil
-
-	case "esc":
-		if m.textInput.Value() != "" {
-			m.textInput.SetValue("")
-			m.results = search.Search("", m.allPlugins)
-			m.cursor = 0
-			m.scrollOffset = 0
-			m.cursorY = 0
-			m.targetCursorY = 0
-		}
-		return m, nil
-
-	case "home", "g":
-		m.cursor = 0
-		m.scrollOffset = 0
-		return m, animationTick()
-
-	case "end", "G":
-		if len(m.results) > 0 {
-			m.cursor = len(m.results) - 1
-		}
-		m.UpdateScroll()
-		return m, animationTick()
-
+	// Page navigation
 	case "pgup", "ctrl+u":
 		m.cursor -= m.maxVisibleItems()
 		if m.cursor < 0 {
 			m.cursor = 0
 		}
 		m.UpdateScroll()
+		m.SetCursorTarget()
 		return m, animationTick()
 
 	case "pgdown", "ctrl+d":
@@ -155,24 +126,70 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.cursor = 0
 		}
 		m.UpdateScroll()
+		m.SetCursorTarget()
 		return m, animationTick()
+
+	// Jump to start/end
+	case "home":
+		m.cursor = 0
+		m.scrollOffset = 0
+		m.SetCursorTarget()
+		return m, animationTick()
+
+	case "end":
+		if len(m.results) > 0 {
+			m.cursor = len(m.results) - 1
+		}
+		m.UpdateScroll()
+		m.SetCursorTarget()
+		return m, animationTick()
+
+	// Actions
+	case "enter":
+		if len(m.results) > 0 {
+			m.viewState = ViewDetail
+		}
+		return m, nil
+
+	case "?":
+		m.viewState = ViewHelp
+		return m, nil
+
+	// Clear search or quit
+	case "esc", "ctrl+g":
+		if m.textInput.Value() != "" {
+			m.textInput.SetValue("")
+			m.results = search.Search("", m.allPlugins)
+			m.cursor = 0
+			m.scrollOffset = 0
+			m.SnapCursorToTarget()
+		} else {
+			return m, tea.Quit
+		}
+		return m, nil
 	}
 
-	// Pass other keys to text input
+	// All other keys go to text input (typing)
 	var cmd tea.Cmd
 	m.textInput, cmd = m.textInput.Update(msg)
 
-	// Re-run search
+	// Re-run search on input change
+	oldLen := len(m.results)
 	m.results = search.Search(m.textInput.Value(), m.allPlugins)
+
+	// Adjust cursor if results changed
 	if m.cursor >= len(m.results) {
 		m.cursor = len(m.results) - 1
 		if m.cursor < 0 {
 			m.cursor = 0
 		}
 	}
-	m.scrollOffset = 0 // Reset scroll on search change
-	m.cursorY = 0
-	m.targetCursorY = 0
+
+	// Only reset scroll if results actually changed
+	if len(m.results) != oldLen {
+		m.scrollOffset = 0
+		m.SnapCursorToTarget()
+	}
 
 	return m, cmd
 }

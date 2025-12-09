@@ -185,10 +185,21 @@ func (m Model) InstalledCount() int {
 	return count
 }
 
-// UpdateCursorAnimation updates the spring animation for cursor movement
-func (m *Model) UpdateCursorAnimation() {
+// SetCursorTarget updates the animation target immediately (call on cursor change)
+func (m *Model) SetCursorTarget() {
 	m.targetCursorY = float64(m.cursor - m.scrollOffset)
+}
+
+// UpdateCursorAnimation advances the spring animation one frame
+func (m *Model) UpdateCursorAnimation() {
 	m.cursorY, m.cursorYVelocity = m.spring.Update(m.cursorY, m.cursorYVelocity, m.targetCursorY)
+}
+
+// SnapCursorToTarget instantly moves cursor to target (no animation)
+func (m *Model) SnapCursorToTarget() {
+	m.targetCursorY = float64(m.cursor - m.scrollOffset)
+	m.cursorY = m.targetCursorY
+	m.cursorYVelocity = 0
 }
 
 // AnimatedCursorOffset returns how far the animated cursor is from target (for glow effect)

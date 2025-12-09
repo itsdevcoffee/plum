@@ -8,7 +8,7 @@ A fuzzy-search TUI plugin browser for Claude Code.
 - View plugin details (version, author, description, keywords)
 - Copy install commands to clipboard
 - Visual distinction between installed/available plugins
-- Vim-style keyboard navigation
+- fzf-style keyboard navigation
 
 ## Installation
 
@@ -43,26 +43,26 @@ Start typing to fuzzy search plugins. Results update in real-time.
 
 | Key | Action |
 |-----|--------|
-| `j` / `↓` | Move down |
-| `k` / `↑` | Move up |
-| `g` / `Home` | Jump to top |
-| `G` / `End` | Jump to bottom |
+| `↑` / `Ctrl+k` / `Ctrl+p` | Move up |
+| `↓` / `Ctrl+j` / `Ctrl+n` | Move down |
 | `Ctrl+u` / `PgUp` | Page up |
 | `Ctrl+d` / `PgDn` | Page down |
+| `Home` | Jump to top |
+| `End` | Jump to bottom |
 
 ### Actions
 
 | Key | Action |
 |-----|--------|
 | `Enter` | View plugin details |
-| `c` | Copy install command |
-| `Esc` | Clear search / Go back |
+| `c` | Copy install command (in detail view) |
+| `Esc` / `Ctrl+g` | Clear search or quit |
 | `?` | Show help |
-| `q` | Quit |
+| `Ctrl+c` | Quit |
 
 ### Search
 
-Just start typing — no need to focus the input. Press `Esc` to clear.
+Just start typing — all keys go to search input. Use `Ctrl+key` for navigation.
 
 ## Views
 
