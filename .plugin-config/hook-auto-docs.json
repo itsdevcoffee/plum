@@ -1,0 +1,23 @@
+{
+  "showLogs": false,
+  "outputDirectory": "",
+  "outputFile": ".project-structure.md",
+  "includeDirs": [],
+  "excludeDirs": [
+    "node_modules",
+    ".git",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    "out",
+    ".nuxt",
+    "vendor",
+    ".vscode",
+    ".idea"
+  ],
+  "includeExtensions": [],
+  "excludeExtensions": [],
+  "includeEmptyDirs": true,
+  "_pluginVersion": "1.4.1"
+}

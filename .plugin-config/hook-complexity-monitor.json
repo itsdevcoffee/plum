@@ -1,0 +1,57 @@
+{
+  "showLogs": false,
+  "outputDirectory": "",
+  "logFile": ".complexity-log.md",
+  "thresholds": {
+    "cyclomaticComplexity": 10,
+    "functionLength": 50,
+    "fileLength": 500,
+    "nesting": 4
+  },
+  "severityLevels": {
+    "complexity": "warning",
+    "nesting": "warning",
+    "fileLength": "warning",
+    "functionLength": "info"
+  },
+  "includeDirs": [],
+  "excludeDirs": [
+    "node_modules",
+    ".git",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    ".nuxt",
+    "out",
+    "vendor",
+    ".snapshots",
+    ".claude-plugin"
+  ],
+  "includeExtensions": [
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".py",
+    ".java",
+    ".go",
+    ".rb",
+    ".php",
+    ".c",
+    ".cpp",
+    ".h",
+    ".hpp",
+    ".cs",
+    ".kt",
+    ".kts",
+    ".swift",
+    ".rs",
+    ".scala",
+    ".dart",
+    ".m",
+    ".mm"
+  ],
+  "excludeExtensions": [],
+  "_pluginVersion": "1.1.1"
+}
