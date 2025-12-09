@@ -52,6 +52,13 @@ type Model struct {
 	targetCursorY   float64
 	spring          harmonica.Spring
 
+	// View transition state
+	transitionProgress    float64   // 0.0 = old view, 1.0 = new view
+	transitionVelocity    float64
+	targetTransition      float64
+	previousView          ViewState // View we're transitioning FROM
+	transitionDirection   int       // 1 = forward (right to left), -1 = back (left to right)
+
 	// Error state
 	err error
 }
@@ -76,13 +83,16 @@ func NewModel() Model {
 	spring := harmonica.NewSpring(harmonica.FPS(animationFPS), springFrequency, springDamping)
 
 	return Model{
-		textInput:    ti,
-		spinner:      s,
-		spring:       spring,
-		loading:      true,
-		viewState:    ViewList,
-		windowWidth:  80,
-		windowHeight: 24,
+		textInput:          ti,
+		spinner:            s,
+		spring:             spring,
+		loading:            true,
+		viewState:          ViewList,
+		previousView:       ViewList,
+		transitionProgress: 1.0, // Start fully transitioned (no animation on init)
+		targetTransition:   1.0,
+		windowWidth:        80,
+		windowHeight:       24,
 	}
 }
 
@@ -219,4 +229,44 @@ func (m Model) IsAnimating() bool {
 		velocityMagnitude = -velocityMagnitude
 	}
 	return diff > 0.01 || velocityMagnitude > 0.01
+}
+
+// StartViewTransition begins a transition to a new view
+func (m *Model) StartViewTransition(newView ViewState, direction int) {
+	if m.viewState == newView {
+		return
+	}
+	m.previousView = m.viewState
+	m.viewState = newView
+	m.transitionProgress = 0.0
+	m.transitionVelocity = 0.0
+	m.targetTransition = 1.0
+	m.transitionDirection = direction
+}
+
+// UpdateViewTransition advances the view transition animation
+func (m *Model) UpdateViewTransition() {
+	m.transitionProgress, m.transitionVelocity = m.spring.Update(
+		m.transitionProgress, m.transitionVelocity, m.targetTransition,
+	)
+}
+
+// IsViewTransitioning returns true if a view transition is in progress
+func (m Model) IsViewTransitioning() bool {
+	diff := m.targetTransition - m.transitionProgress
+	if diff < 0 {
+		diff = -diff
+	}
+	velMag := m.transitionVelocity
+	if velMag < 0 {
+		velMag = -velMag
+	}
+	return diff > 0.01 || velMag > 0.01
+}
+
+// TransitionOffset returns the horizontal offset for rendering during transition
+// Returns a value from 0 to windowWidth based on progress and direction
+func (m Model) TransitionOffset() int {
+	remaining := 1.0 - m.transitionProgress
+	return int(remaining * float64(m.windowWidth) * float64(m.transitionDirection))
 }

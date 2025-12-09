@@ -54,9 +54,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case animationTickMsg:
-		// Always update first, then check if we should continue
+		// Update all animations
 		m.UpdateCursorAnimation()
-		if m.IsAnimating() {
+		m.UpdateViewTransition()
+
+		// Continue ticking if any animation is active
+		if m.IsAnimating() || m.IsViewTransitioning() {
 			return m, animationTick()
 		}
 		return m, nil
@@ -147,13 +150,14 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Actions
 	case "enter":
 		if len(m.results) > 0 {
-			m.viewState = ViewDetail
+			m.StartViewTransition(ViewDetail, 1) // Forward transition
+			return m, animationTick()
 		}
 		return m, nil
 
 	case "?":
-		m.viewState = ViewHelp
-		return m, nil
+		m.StartViewTransition(ViewHelp, 1) // Forward transition
+		return m, animationTick()
 
 	// Clear search or quit
 	case "esc", "ctrl+g":
@@ -201,8 +205,8 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case "esc", "backspace":
-		m.viewState = ViewList
-		return m, nil
+		m.StartViewTransition(ViewList, -1) // Back transition
+		return m, animationTick()
 
 	case "c":
 		// Copy install command to clipboard
@@ -212,8 +216,8 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "?":
-		m.viewState = ViewHelp
-		return m, nil
+		m.StartViewTransition(ViewHelp, 1) // Forward transition
+		return m, animationTick()
 	}
 
 	return m, nil
@@ -226,8 +230,8 @@ func (m Model) handleHelpKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case "esc", "?", "backspace", "enter":
-		m.viewState = ViewList
-		return m, nil
+		m.StartViewTransition(ViewList, -1) // Back transition
+		return m, animationTick()
 	}
 
 	return m, nil

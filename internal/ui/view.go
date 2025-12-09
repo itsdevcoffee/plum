@@ -14,14 +14,82 @@ func (m Model) View() string {
 		return AppStyle.Render(fmt.Sprintf("Error loading plugins: %v\n\nPress q to quit.", m.err))
 	}
 
+	// Get the current view content
+	var content string
 	switch m.viewState {
 	case ViewDetail:
-		return m.detailView()
+		content = m.detailView()
 	case ViewHelp:
-		return m.helpView()
+		content = m.helpView()
 	default:
-		return m.listView()
+		content = m.listView()
 	}
+
+	// Apply horizontal slide transition if animating
+	if m.IsViewTransitioning() {
+		offset := m.TransitionOffset()
+		content = m.applyHorizontalOffset(content, offset)
+	}
+
+	return content
+}
+
+// applyHorizontalOffset shifts content horizontally for slide transitions
+func (m Model) applyHorizontalOffset(content string, offset int) string {
+	if offset == 0 {
+		return content
+	}
+
+	lines := strings.Split(content, "\n")
+	var result strings.Builder
+
+	for i, line := range lines {
+		if i > 0 {
+			result.WriteString("\n")
+		}
+
+		if offset > 0 {
+			// Sliding right: add padding on left, truncate right
+			padding := strings.Repeat(" ", offset)
+			maxLen := m.windowWidth - offset
+			if maxLen < 0 {
+				maxLen = 0
+			}
+			// Truncate line to fit
+			truncated := truncateLine(line, maxLen)
+			result.WriteString(padding)
+			result.WriteString(truncated)
+		} else {
+			// Sliding left: truncate left side, pad right
+			absOffset := -offset
+			// Skip characters from the left
+			truncated := skipChars(line, absOffset)
+			result.WriteString(truncated)
+		}
+	}
+
+	return result.String()
+}
+
+// truncateLine truncates a line to maxLen visible characters
+func truncateLine(line string, maxLen int) string {
+	if maxLen <= 0 {
+		return ""
+	}
+	runes := []rune(line)
+	if len(runes) <= maxLen {
+		return line
+	}
+	return string(runes[:maxLen])
+}
+
+// skipChars skips n characters from the start of a line
+func skipChars(line string, n int) string {
+	runes := []rune(line)
+	if n >= len(runes) {
+		return ""
+	}
+	return string(runes[n:])
 }
 
 // listView renders the main list view
