@@ -171,24 +171,24 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	// All other keys go to text input (typing)
 	var cmd tea.Cmd
+	oldValue := m.textInput.Value()
 	m.textInput, cmd = m.textInput.Update(msg)
+	newValue := m.textInput.Value()
 
 	// Re-run search on input change
-	oldLen := len(m.results)
-	m.results = search.Search(m.textInput.Value(), m.allPlugins)
+	m.results = search.Search(newValue, m.allPlugins)
 
-	// Adjust cursor if results changed
-	if m.cursor >= len(m.results) {
+	// Reset cursor to top on any search input change
+	if newValue != oldValue {
+		m.cursor = 0
+		m.scrollOffset = 0
+		m.SnapCursorToTarget()
+	} else if m.cursor >= len(m.results) {
+		// Clamp cursor if somehow out of bounds
 		m.cursor = len(m.results) - 1
 		if m.cursor < 0 {
 			m.cursor = 0
 		}
-	}
-
-	// Only reset scroll if results actually changed
-	if len(m.results) != oldLen {
-		m.scrollOffset = 0
-		m.SnapCursorToTarget()
 	}
 
 	return m, cmd

@@ -126,18 +126,20 @@ func (m Model) renderPluginItem(p plugin.Plugin, selected bool) string {
 func (m Model) statusBar() string {
 	var parts []string
 
-	// Legend
-	parts = append(parts, InstalledIndicator.String()+" = installed")
-
-	// Result count
+	// Position and context
 	if m.textInput.Value() != "" {
-		parts = append(parts, fmt.Sprintf("%d results", len(m.results)))
+		// Searching: show query and position
+		query := m.textInput.Value()
+		if len(query) > 20 {
+			query = query[:17] + "..."
+		}
+		parts = append(parts, fmt.Sprintf("\"%s\" %d/%d", query, m.cursor+1, len(m.results)))
+		parts = append(parts, "esc clear  ↑↓ Ctrl+j/k navigate  enter select")
 	} else {
-		parts = append(parts, fmt.Sprintf("%d plugins (%d installed)", m.TotalPlugins(), m.InstalledCount()))
+		// Not searching: show total and installed
+		parts = append(parts, fmt.Sprintf("%d/%d (%d installed)", m.cursor+1, m.TotalPlugins(), m.InstalledCount()))
+		parts = append(parts, "↑↓ Ctrl+j/k navigate  enter select  ? help")
 	}
-
-	// Navigation hint
-	parts = append(parts, "↑↓ navigate  enter details  ? help  q quit")
 
 	return StatusBarStyle.Render(strings.Join(parts, "  │  "))
 }
