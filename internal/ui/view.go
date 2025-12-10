@@ -293,16 +293,30 @@ func (m Model) listView() string {
 	return AppStyle.Render(b.String())
 }
 
-// renderPluginItem renders a single plugin item
+// renderPluginItem renders a single plugin item based on display mode
 func (m Model) renderPluginItem(p plugin.Plugin, selected bool) string {
-	var b strings.Builder
+	if m.displayMode == DisplaySimple {
+		return m.renderPluginItemSimple(p, selected)
+	}
+	return m.renderPluginItemCard(p, selected)
+}
 
+// renderPluginItemSimple renders a compact one-line plugin item
+func (m Model) renderPluginItemSimple(p plugin.Plugin, selected bool) string {
 	// Indicator
 	var indicator string
 	if p.Installed {
 		indicator = InstalledIndicator.String()
 	} else {
 		indicator = AvailableIndicator.String()
+	}
+
+	// Name style based on selection
+	var nameStyle lipgloss.Style
+	if selected {
+		nameStyle = PluginNameSelectedStyle
+	} else {
+		nameStyle = PluginNameStyle
 	}
 
 	// Selection prefix
@@ -313,7 +327,31 @@ func (m Model) renderPluginItem(p plugin.Plugin, selected bool) string {
 		prefix = "  "
 	}
 
-	// Name style
+	// Format: [prefix][indicator] name v[version]
+	name := nameStyle.Render(p.Name)
+	version := VersionStyle.Render("v" + p.Version)
+
+	return fmt.Sprintf("%s%s %s %s", prefix, indicator, name, version)
+}
+
+// renderPluginItemCard renders a plugin item as a card with border
+func (m Model) renderPluginItemCard(p plugin.Plugin, selected bool) string {
+	// Card width (account for app padding and card border)
+	cardWidth := m.windowWidth - 6
+	if cardWidth < 40 {
+		cardWidth = 40
+	}
+	innerWidth := cardWidth - 4 // Account for card padding and border
+
+	// Indicator
+	var indicator string
+	if p.Installed {
+		indicator = InstalledIndicator.String()
+	} else {
+		indicator = AvailableIndicator.String()
+	}
+
+	// Name style based on selection
 	var nameStyle lipgloss.Style
 	if selected {
 		nameStyle = PluginNameSelectedStyle
@@ -321,13 +359,24 @@ func (m Model) renderPluginItem(p plugin.Plugin, selected bool) string {
 		nameStyle = PluginNameStyle
 	}
 
-	fullName := nameStyle.Render(p.Name) + MarketplaceStyle.Render("@"+p.Marketplace)
-	versionTag := VersionStyle.Render("[" + p.Version + "]")
+	// Row 1: [indicator] Name v[version]                    @marketplace
+	name := nameStyle.Render(p.Name)
+	version := VersionStyle.Render("v" + p.Version)
+	marketplace := MarketplaceStyle.Render("@" + p.Marketplace)
 
-	line1 := fmt.Sprintf("%s%s %s %s", prefix, indicator, fullName, versionTag)
+	leftPart := fmt.Sprintf("%s %s %s", indicator, name, version)
+	leftLen := lipgloss.Width(leftPart)
+	rightLen := lipgloss.Width(marketplace)
 
-	// Second line: description (truncated)
-	maxDescLen := m.windowWidth - 12
+	// Calculate spacing for right-aligned marketplace
+	spacerLen := innerWidth - leftLen - rightLen
+	if spacerLen < 1 {
+		spacerLen = 1
+	}
+	row1 := leftPart + strings.Repeat(" ", spacerLen) + marketplace
+
+	// Row 2: Description (truncated to fit)
+	maxDescLen := innerWidth - 2
 	if maxDescLen < 20 {
 		maxDescLen = 20
 	}
@@ -335,20 +384,20 @@ func (m Model) renderPluginItem(p plugin.Plugin, selected bool) string {
 	if len(truncDesc) > maxDescLen {
 		truncDesc = truncDesc[:maxDescLen-3] + "..."
 	}
-	line2 := "    " + DescriptionStyle.Render(truncDesc)
+	row2 := "  " + DescriptionStyle.Render(truncDesc)
 
-	// Apply style
+	// Combine rows (2 rows now)
+	content := row1 + "\n" + row2
+
+	// Apply card style
+	var cardStyle lipgloss.Style
 	if selected {
-		b.WriteString(SelectedItemStyle.Render(line1))
-		b.WriteString("\n")
-		b.WriteString(SelectedItemStyle.Render(line2))
+		cardStyle = PluginCardSelectedStyle.Width(cardWidth)
 	} else {
-		b.WriteString(NormalItemStyle.Render(line1))
-		b.WriteString("\n")
-		b.WriteString(NormalItemStyle.Render(line2))
+		cardStyle = PluginCardStyle.Width(cardWidth)
 	}
 
-	return b.String()
+	return cardStyle.Render(content)
 }
 
 // statusBar renders the status bar
@@ -370,8 +419,8 @@ func (m Model) statusBar() string {
 		parts = append(parts, "↑↓ navigate  enter select  ? help")
 	}
 
-	// Show transition style (tab to cycle)
-	parts = append(parts, fmt.Sprintf("tab: %s", m.TransitionStyleName()))
+	// Show display mode (shift+tab to toggle)
+	parts = append(parts, fmt.Sprintf("⇧tab: %s", m.DisplayModeName()))
 
 	return StatusBarStyle.Render(strings.Join(parts, "  │  "))
 }

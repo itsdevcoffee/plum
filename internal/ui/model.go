@@ -30,6 +30,14 @@ const (
 	TransitionFade                              // Crossfade via dimming
 )
 
+// ListDisplayMode represents how plugin items are displayed
+type ListDisplayMode int
+
+const (
+	DisplayCard   ListDisplayMode = iota // Card view with borders and description
+	DisplaySimple                        // Simple one-line view
+)
+
 // TransitionStyleNames for display
 var TransitionStyleNames = []string{"Zoom", "Slide H", "Slide V", "Fade"}
 
@@ -60,6 +68,7 @@ type Model struct {
 	cursor       int
 	scrollOffset int
 	viewState    ViewState
+	displayMode  ListDisplayMode
 	windowWidth  int
 	windowHeight int
 
@@ -207,8 +216,31 @@ func (m *Model) UpdateScroll() {
 func (m Model) maxVisibleItems() int {
 	// Account for title, search input, status bar, padding
 	available := m.windowHeight - 8
-	// Each item takes 2 lines (name + description)
-	return available / 2
+	if m.displayMode == DisplaySimple {
+		// Simple view: 1 line per item
+		return available
+	}
+	// Card view: 4 lines per item (2 content rows + 2 border rows)
+	return available / 4
+}
+
+// ToggleDisplayMode switches between card and simple view
+func (m *Model) ToggleDisplayMode() {
+	if m.displayMode == DisplayCard {
+		m.displayMode = DisplaySimple
+	} else {
+		m.displayMode = DisplayCard
+	}
+	// Reset scroll to keep cursor visible with new item heights
+	m.UpdateScroll()
+}
+
+// DisplayModeName returns the current display mode name
+func (m Model) DisplayModeName() string {
+	if m.displayMode == DisplaySimple {
+		return "simple"
+	}
+	return "card"
 }
 
 // TotalPlugins returns total plugin count

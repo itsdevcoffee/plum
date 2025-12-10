@@ -66,14 +66,17 @@ var (
 	DescriptionStyle = lipgloss.NewStyle().
 				Foreground(LightGray)
 
-	// Selected item background
-	SelectedItemStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("#2D2D2D")).
-				Padding(0, 1)
-
-	// Normal item
-	NormalItemStyle = lipgloss.NewStyle().
+	// Plugin card - normal state
+	PluginCardStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(DarkGray).
 			Padding(0, 1)
+
+	// Plugin card - selected state
+	PluginCardSelectedStyle = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(Purple).
+				Padding(0, 1)
 
 	// Status bar
 	StatusBarStyle = lipgloss.NewStyle().

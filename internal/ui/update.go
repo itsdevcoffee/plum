@@ -163,6 +163,10 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.CycleTransitionStyle()
 		return m, nil
 
+	case "shift+tab":
+		m.ToggleDisplayMode()
+		return m, nil
+
 	// Clear search or quit
 	case "esc", "ctrl+g":
 		if m.textInput.Value() != "" {
