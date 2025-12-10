@@ -531,7 +531,7 @@ func (m Model) helpView() string {
 
 	b.WriteString(DetailTitleStyle.Render("🍑 plum Help"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 44))
+	b.WriteString(strings.Repeat("─", 50))
 	b.WriteString("\n\n")
 
 	// Navigation section
@@ -551,28 +551,32 @@ func (m Model) helpView() string {
 
 	b.WriteString("\n")
 
-	// Actions section
-	b.WriteString(HelpSectionStyle.Render("  ◆ Actions"))
+	// Filtering & Display section
+	b.WriteString(HelpSectionStyle.Render("  ◆ Filtering & Display"))
 	b.WriteString("\n")
-	actionKeys := []struct{ key, desc string }{
-		{"Enter", "View plugin details"},
-		{"c", "Copy install command"},
-		{"Esc Ctrl+g", "Clear search / Quit"},
+	filterKeys := []struct{ key, desc string }{
+		{"Tab", "Next filter (All/Available/Installed)"},
+		{"Shift+Tab", "Previous filter"},
+		{"Ctrl+v", "Toggle view (verbose/slim)"},
+		{"Ctrl+t", "Cycle transition style"},
 	}
-	for _, h := range actionKeys {
+	for _, h := range filterKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(12).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
 
 	b.WriteString("\n")
 
-	// General section
-	b.WriteString(HelpSectionStyle.Render("  ◆ General"))
+	// Actions section
+	b.WriteString(HelpSectionStyle.Render("  ◆ Actions"))
 	b.WriteString("\n")
-	generalKeys := []struct{ key, desc string }{
+	actionKeys := []struct{ key, desc string }{
+		{"Enter", "View plugin details"},
+		{"c", "Copy install command (in detail view)"},
+		{"Esc Ctrl+g", "Clear search / Quit"},
 		{"?", "Toggle this help"},
 		{"Ctrl+c", "Quit plum"},
 	}
-	for _, h := range generalKeys {
+	for _, h := range actionKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(12).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
 
@@ -581,12 +585,17 @@ func (m Model) helpView() string {
 	// Tips section
 	b.WriteString(HelpSectionStyle.Render("  ◆ Tips"))
 	b.WriteString("\n")
-	b.WriteString(HelpTextStyle.Render("    • Just start typing to search\n"))
-	b.WriteString(HelpTextStyle.Render("    • Ctrl+key for navigation (fzf-style)\n"))
-	b.WriteString(HelpTextStyle.Render("    • Green ● = installed plugin\n"))
+	tips := []string{
+		"Just start typing to search",
+		"Ctrl+key for navigation (fzf-style)",
+		"Green ● = installed, Gray ○ = available",
+	}
+	for _, tip := range tips {
+		b.WriteString(fmt.Sprintf("    • %s\n", HelpTextStyle.Render(tip)))
+	}
 
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 44))
+	b.WriteString(strings.Repeat("─", 50))
 	b.WriteString("\n")
 	b.WriteString(HelpTextStyle.Render("  Press any key to return"))
 
