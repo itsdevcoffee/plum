@@ -1,19 +1,10 @@
 # 🍑 Plum
 
-A fuzzy-search TUI plugin browser for Claude Code.
+**A better way to discover Claude Code marketplace plugins.**
+
+Plum is a fast, fuzzy-search TUI that helps you browse, search, and install plugins from all your configured Claude Code marketplaces in one place.
 
 ![List View](assets/list-view-card.png)
-
-## ✨ Features
-
-- Fuzzy search across all plugins from known marketplaces
-- Filter by All / Available / Installed
-- Card and simple list view modes
-- View plugin details (version, author, description, keywords)
-- Copy install commands to clipboard
-- Visual distinction between installed (●) and available (○) plugins
-- fzf-style keyboard navigation
-- Responsive UI adapts to terminal width
 
 ## Installation
 
@@ -21,65 +12,36 @@ A fuzzy-search TUI plugin browser for Claude Code.
 go install github.com/itsdevcoffee/plum/cmd/plum@latest
 ```
 
-Or build from source:
+Then run:
 
 ```bash
-git clone https://github.com/itsdevcoffee/plum.git
-cd plum
-go build -o plum ./cmd/plum
+plum
 ```
 
-## Requirements
+**Requirements:** [Claude Code](https://claude.ai/claude-code) must be installed and configured with at least one marketplace.
 
-- [Claude Code](https://claude.ai/claude-code) installed and configured
-- At least one marketplace configured (run `/plugin` in Claude Code to set up)
-- `~/.claude/settings.json` must exist (created automatically when you first run Claude Code)
+## Key Features
 
-## Usage
-
-```bash
-./plum
-```
-
-Start typing to fuzzy search plugins. Results update in real-time.
+- **Instant fuzzy search** across all your marketplaces
+- **Filter by status**: All, Available, or Installed plugins
+- **Multiple view modes**: Card (detailed) or Slim (compact)
+- **One-click install commands** - press `c` to copy
+- **Responsive design** that adapts to your terminal size
 
 ## Keyboard Shortcuts
 
-### Navigation
-
 | Key | Action |
 |-----|--------|
-| `↑` / `Ctrl+k` / `Ctrl+p` | Move up |
-| `↓` / `Ctrl+j` / `Ctrl+n` | Move down |
-| `Ctrl+u` / `PgUp` | Page up |
-| `Ctrl+d` / `PgDn` | Page down |
-| `Home` | Jump to top |
-| `End` | Jump to bottom |
-
-### Filtering & Display
-
-| Key | Action |
-|-----|--------|
-| `Tab` | Next filter (All → Available → Installed) |
-| `Shift+Tab` | Previous filter |
-| `Ctrl+v` | Toggle view mode (card / simple) |
-| `Ctrl+t` | Cycle transition style (instant / zoom / slide) |
-
-### Actions
-
-| Key | Action |
-|-----|--------|
-| `Enter` | View plugin details |
+| Type anything | Search plugins |
+| `↑↓` or `Ctrl+j/k` | Navigate |
+| `Enter` | View details |
+| `Tab` | Cycle filters (All/Available/Installed) |
+| `Ctrl+v` | Toggle card/slim view |
 | `c` | Copy install command (in detail view) |
-| `Esc` / `Ctrl+g` | Clear search or quit |
 | `?` | Show help |
-| `Ctrl+c` | Quit |
+| `Esc` or `q` | Quit |
 
-### Search
-
-Just start typing — all keys go to search input. Use `Ctrl+key` for navigation.
-
-## 📸 Screenshots
+## Screenshots
 
 ### Fuzzy Search
 Type to instantly filter plugins across all marketplaces:
@@ -87,7 +49,7 @@ Type to instantly filter plugins across all marketplaces:
 ![Search](assets/search-fuzzy.png)
 
 ### Plugin Details
-View comprehensive plugin information with one-click install commands:
+View comprehensive information with one-click install commands:
 
 ![Detail View](assets/detail-view.png)
 
@@ -116,37 +78,56 @@ Press `?` to see all keyboard shortcuts:
 
 ![Help Menu](assets/help-menu.png)
 
-## Tech Stack
+## Popular Marketplaces
 
-- Go 1.24
-- [Bubble Tea](https://github.com/charmbracelet/bubbletea) - TUI framework
-- [Lip Gloss](https://github.com/charmbracelet/lipgloss) - Styling
-- [Bubbles](https://github.com/charmbracelet/bubbles) - TUI components
-- [Harmonica](https://github.com/charmbracelet/harmonica) - Spring animations
+Plum works with any Claude Code marketplace. Here are some popular ones to get started:
+
+| Marketplace | Description | Add It |
+|------------|-------------|---------|
+| [claude-code-marketplace](https://github.com/ananddtyagi/claude-code-marketplace) | Community plugins for Claude Code | Run `/plugin` in Claude Code |
+| [claude-code-plugins](https://github.com/anthropics/claude-code) | Official Anthropic plugins | Included by default |
+| [mag-claude-plugins](https://github.com/MadAppGang/claude-code) | MadAppGang's plugin collection | Run `/plugin` in Claude Code |
+| [dev-gom-plugins](https://github.com/Dev-GOM/claude-code-marketplace) | Dev GOM's curated plugins | Run `/plugin` in Claude Code |
+| [claude-code-plugins-plus](https://github.com/jeremylongshore/claude-code-plugins) | Extended plugin collection | Run `/plugin` in Claude Code |
+
+**Have a marketplace?** Submit a PR to add it to this list! We welcome all Claude Code plugin marketplaces.
+
+## Building from Source
+
+```bash
+git clone https://github.com/itsdevcoffee/plum.git
+cd plum
+go build -o plum ./cmd/plum
+./plum
+```
 
 ## Troubleshooting
 
-### "Claude Code settings not found"
+**"Claude Code settings not found"**
+- Run `claude-code` at least once to initialize your configuration
 
-If you see this error, it means Claude Code hasn't been initialized yet:
+**"No plugins found"**
+- Make sure you have marketplaces configured
+- Run `/plugin` in Claude Code to browse and add marketplaces
+- Run `/plugin marketplace update` to sync
 
-1. Install Claude Code from https://claude.ai/claude-code
-2. Run `claude-code` at least once to create the configuration
-3. Try running `plum` again
+**Custom config directory**
+- Set `CLAUDE_CONFIG_DIR` environment variable if you use a non-standard location
 
-### "No plugins found"
+## Contributing
 
-If plum shows no plugins:
+Contributions are welcome! Whether it's:
+- Adding your marketplace to the Popular Marketplaces list
+- Reporting bugs or suggesting features
+- Improving documentation
+- Submitting code improvements
 
-1. Check that you have marketplaces configured: `~/.claude/settings.json` should have `extraKnownMarketplaces`
-2. Run `/plugin marketplace list` in Claude Code to see your configured marketplaces
-3. Run `/plugin marketplace update` to sync marketplace data
-4. If marketplaces are missing, run `/plugin` in Claude Code to browse and add marketplaces
-
-### Custom Configuration Directory
-
-If you use a custom Claude Code configuration directory (via `CLAUDE_CONFIG_DIR` environment variable), plum will automatically respect it.
+Feel free to open an issue or pull request.
 
 ## License
 
-MIT
+MIT - see [LICENSE](LICENSE) for details.
+
+---
+
+Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea) • Styled with [Lip Gloss](https://github.com/charmbracelet/lipgloss)
