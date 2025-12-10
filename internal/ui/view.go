@@ -25,17 +25,13 @@ func (m Model) View() string {
 		content = m.listView()
 	}
 
-	// Apply transition effect if animating
-	if m.IsViewTransitioning() {
+	// Apply transition effect if animating (skip for instant)
+	if m.IsViewTransitioning() && m.transitionStyle != TransitionInstant {
 		switch m.transitionStyle {
 		case TransitionZoom:
 			content = m.applyZoomTransition(content)
-		case TransitionSlideH:
-			content = m.applySlideHTransition(content)
 		case TransitionSlideV:
 			content = m.applySlideVTransition(content)
-		case TransitionFade:
-			content = m.applyFadeTransition(content)
 		}
 	}
 
@@ -80,40 +76,6 @@ func (m Model) applyZoomTransition(content string) string {
 		}
 		if i >= startLine && i < endLine {
 			result.WriteString(lines[i])
-		}
-	}
-
-	return result.String()
-}
-
-// applySlideHTransition creates a horizontal slide effect
-func (m Model) applySlideHTransition(content string) string {
-	progress := m.transitionProgress
-	if progress >= 1.0 {
-		return content
-	}
-
-	remaining := 1.0 - progress
-	offset := int(remaining * float64(m.windowWidth) * float64(m.transitionDirection))
-
-	lines := strings.Split(content, "\n")
-	var result strings.Builder
-
-	for i, line := range lines {
-		if i > 0 {
-			result.WriteString("\n")
-		}
-
-		if offset > 0 {
-			// Sliding in from right: pad left
-			padding := strings.Repeat(" ", offset)
-			result.WriteString(padding)
-			result.WriteString(truncateLine(line, m.windowWidth-offset))
-		} else if offset < 0 {
-			// Sliding in from left: skip chars
-			result.WriteString(skipChars(line, -offset))
-		} else {
-			result.WriteString(line)
 		}
 	}
 
@@ -174,83 +136,44 @@ func (m Model) applySlideVTransition(content string) string {
 	return result.String()
 }
 
-// applyFadeTransition creates a crossfade effect via dimming
-func (m Model) applyFadeTransition(content string) string {
-	progress := m.transitionProgress
-	if progress >= 1.0 {
-		return content
+// renderFilterTabs renders the filter tab bar
+func (m Model) renderFilterTabs() string {
+	// Tab styles
+	activeTab := lipgloss.NewStyle().
+		Foreground(Purple).
+		Bold(true).
+		Padding(0, 1)
+
+	inactiveTab := lipgloss.NewStyle().
+		Foreground(Gray).
+		Padding(0, 1)
+
+	// Build tabs with counts
+	allCount := len(m.allPlugins)
+	availCount := m.AvailableCount()
+	installCount := m.InstalledCount()
+
+	tabs := []struct {
+		name   string
+		count  int
+		active bool
+	}{
+		{"All", allCount, m.filterMode == FilterAll},
+		{"Available", availCount, m.filterMode == FilterAvailable},
+		{"Installed", installCount, m.filterMode == FilterInstalled},
 	}
-	if progress < 0.1 {
-		progress = 0.1
-	}
 
-	// Create a dim style based on progress
-	// At progress=0: very dim, at progress=1: full brightness
-	dimLevel := int((1.0 - progress) * 180) // 0-180 range for gray
-	dimColor := lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", 80+dimLevel/2, 80+dimLevel/2, 80+dimLevel/2))
-
-	// Apply dim overlay to content by reducing contrast
-	// This is a simple approach - we dim the entire content
-	dimStyle := lipgloss.NewStyle().Foreground(dimColor)
-
-	lines := strings.Split(content, "\n")
-	var result strings.Builder
-
-	for i, line := range lines {
-		if i > 0 {
-			result.WriteString("\n")
-		}
-		// Only dim non-empty lines, preserve structure
-		if len(strings.TrimSpace(line)) > 0 && progress < 0.7 {
-			// Partial dim during early transition
-			result.WriteString(dimStyle.Render(stripAnsi(line)))
+	var parts []string
+	for _, tab := range tabs {
+		label := fmt.Sprintf("%s (%d)", tab.name, tab.count)
+		if tab.active {
+			parts = append(parts, activeTab.Render(label))
 		} else {
-			result.WriteString(line)
+			parts = append(parts, inactiveTab.Render(label))
 		}
 	}
 
-	return result.String()
-}
-
-// truncateLine truncates a line to maxLen visible characters
-func truncateLine(line string, maxLen int) string {
-	if maxLen <= 0 {
-		return ""
-	}
-	runes := []rune(line)
-	if len(runes) <= maxLen {
-		return line
-	}
-	return string(runes[:maxLen])
-}
-
-// skipChars skips n characters from the start of a line
-func skipChars(line string, n int) string {
-	runes := []rune(line)
-	if n >= len(runes) {
-		return ""
-	}
-	return string(runes[n:])
-}
-
-// stripAnsi removes ANSI escape codes from a string (for re-styling)
-func stripAnsi(s string) string {
-	var result strings.Builder
-	inEscape := false
-	for _, r := range s {
-		if r == '\x1b' {
-			inEscape = true
-			continue
-		}
-		if inEscape {
-			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
-				inEscape = false
-			}
-			continue
-		}
-		result.WriteRune(r)
-	}
-	return result.String()
+	return strings.Join(parts, DimSeparator.Render("│"))
 }
 
 // listView renders the main list view
@@ -263,6 +186,10 @@ func (m Model) listView() string {
 
 	// Search input
 	b.WriteString(m.textInput.View())
+	b.WriteString("\n")
+
+	// Filter tabs
+	b.WriteString(m.renderFilterTabs())
 	b.WriteString("\n\n")
 
 	// Results
@@ -295,14 +222,14 @@ func (m Model) listView() string {
 
 // renderPluginItem renders a single plugin item based on display mode
 func (m Model) renderPluginItem(p plugin.Plugin, selected bool) string {
-	if m.displayMode == DisplaySimple {
-		return m.renderPluginItemSimple(p, selected)
+	if m.displayMode == DisplaySlim {
+		return m.renderPluginItemSlim(p, selected)
 	}
 	return m.renderPluginItemCard(p, selected)
 }
 
-// renderPluginItemSimple renders a compact one-line plugin item
-func (m Model) renderPluginItemSimple(p plugin.Plugin, selected bool) string {
+// renderPluginItemSlim renders a compact one-line plugin item
+func (m Model) renderPluginItemSlim(p plugin.Plugin, selected bool) string {
 	// Indicator
 	var indicator string
 	if p.Installed {
@@ -337,7 +264,7 @@ func (m Model) renderPluginItemSimple(p plugin.Plugin, selected bool) string {
 // renderPluginItemCard renders a plugin item as a card with border
 func (m Model) renderPluginItemCard(p plugin.Plugin, selected bool) string {
 	// Card width (account for app padding and card border)
-	cardWidth := m.windowWidth - 6
+	cardWidth := m.ContentWidth() - 6
 	if cardWidth < 40 {
 		cardWidth = 40
 	}
@@ -400,27 +327,61 @@ func (m Model) renderPluginItemCard(p plugin.Plugin, selected bool) string {
 	return cardStyle.Render(content)
 }
 
-// statusBar renders the status bar
+// statusBar renders the status bar (responsive to terminal width)
 func (m Model) statusBar() string {
 	var parts []string
 
-	// Position and context
-	if m.textInput.Value() != "" {
-		// Searching: show query and position
-		query := m.textInput.Value()
-		if len(query) > 20 {
-			query = query[:17] + "..."
-		}
-		parts = append(parts, fmt.Sprintf("\"%s\" %d/%d", query, m.cursor+1, len(m.results)))
-		parts = append(parts, "esc clear  ↑↓ navigate  enter select")
+	// Position in current filtered results
+	var position string
+	if len(m.results) > 0 {
+		position = fmt.Sprintf("%d/%d", m.cursor+1, len(m.results))
 	} else {
-		// Not searching: show total and installed
-		parts = append(parts, fmt.Sprintf("%d/%d (%d installed)", m.cursor+1, m.TotalPlugins(), m.InstalledCount()))
-		parts = append(parts, "↑↓ navigate  enter select  ? help")
+		position = "0/0"
 	}
 
-	// Show display mode (shift+tab to toggle)
-	parts = append(parts, fmt.Sprintf("⇧tab: %s", m.DisplayModeName()))
+	// Opposite view mode name for the toggle hint
+	var oppositeView string
+	if m.displayMode == DisplaySlim {
+		oppositeView = "verbose"
+	} else {
+		oppositeView = "slim"
+	}
+
+	width := m.ContentWidth()
+
+	// In slim mode, skip the verbose breakpoint (use standard instead)
+	useVerbose := width >= 100 && m.displayMode == DisplayCard
+
+	switch {
+	case useVerbose:
+		// Verbose: full descriptions (only in card/verbose mode)
+		parts = append(parts, position+" "+m.FilterModeName())
+		parts = append(parts, "↑↓/ctrl+jk navigate")
+		parts = append(parts, "tab filter")
+		parts = append(parts, "ctrl+v "+oppositeView)
+		parts = append(parts, "enter details")
+		parts = append(parts, "?")
+
+	case width >= 70:
+		// Standard: concise but complete
+		parts = append(parts, position)
+		parts = append(parts, "↑↓ nav")
+		parts = append(parts, "tab filter")
+		parts = append(parts, "ctrl+v "+oppositeView)
+		parts = append(parts, "? help")
+
+	case width >= 50:
+		// Compact: essentials only
+		parts = append(parts, position)
+		parts = append(parts, "↑↓ nav")
+		parts = append(parts, "tab filter")
+		parts = append(parts, "? help")
+
+	default:
+		// Minimal: bare minimum
+		parts = append(parts, position)
+		parts = append(parts, "?=help")
+	}
 
 	return StatusBarStyle.Render(strings.Join(parts, "  │  "))
 }
@@ -433,7 +394,7 @@ func (m Model) detailView() string {
 	}
 
 	// Calculate content width (account for borders and padding)
-	contentWidth := m.windowWidth - 10
+	contentWidth := m.ContentWidth() - 10
 	if contentWidth < 40 {
 		contentWidth = 40
 	}

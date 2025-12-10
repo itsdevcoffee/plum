@@ -6,7 +6,6 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/maskkiller/plum/internal/search"
 )
 
 // animationTickMsg is sent to update animations
@@ -48,7 +47,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.allPlugins = msg.plugins
-		m.results = search.Search(m.textInput.Value(), m.allPlugins)
+		m.results = m.filteredSearch(m.textInput.Value())
 		m.loading = false
 		// Initialize cursor animation to current position
 		m.cursorY = 0
@@ -174,18 +173,26 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, animationTick()
 
 	case "tab":
-		m.CycleTransitionStyle()
+		m.NextFilter()
 		return m, nil
 
 	case "shift+tab":
+		m.PrevFilter()
+		return m, nil
+
+	case "ctrl+v":
 		m.ToggleDisplayMode()
+		return m, nil
+
+	case "ctrl+t":
+		m.CycleTransitionStyle()
 		return m, nil
 
 	// Clear search or quit
 	case "esc", "ctrl+g":
 		if m.textInput.Value() != "" {
 			m.textInput.SetValue("")
-			m.results = search.Search("", m.allPlugins)
+			m.results = m.filteredSearch("")
 			m.cursor = 0
 			m.scrollOffset = 0
 			m.SnapCursorToTarget()
@@ -201,8 +208,8 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	m.textInput, cmd = m.textInput.Update(msg)
 	newValue := m.textInput.Value()
 
-	// Re-run search on input change
-	m.results = search.Search(newValue, m.allPlugins)
+	// Re-run search on input change (with filter)
+	m.results = m.filteredSearch(newValue)
 
 	// Reset cursor to top on any search input change
 	if newValue != oldValue {

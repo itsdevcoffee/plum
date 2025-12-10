@@ -5,10 +5,13 @@ A fuzzy-search TUI plugin browser for Claude Code.
 ## Features
 
 - Fuzzy search across all plugins from known marketplaces
+- Filter by All / Available / Installed
+- Card and simple list view modes
 - View plugin details (version, author, description, keywords)
 - Copy install commands to clipboard
-- Visual distinction between installed/available plugins
+- Visual distinction between installed (●) and available (○) plugins
 - fzf-style keyboard navigation
+- Responsive UI adapts to terminal width
 
 ## Installation
 
@@ -50,6 +53,15 @@ Start typing to fuzzy search plugins. Results update in real-time.
 | `Home` | Jump to top |
 | `End` | Jump to bottom |
 
+### Filtering & Display
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Next filter (All → Available → Installed) |
+| `Shift+Tab` | Previous filter |
+| `Ctrl+v` | Toggle view mode (card / simple) |
+| `Ctrl+t` | Cycle transition style (instant / zoom / slide) |
+
 ### Actions
 
 | Key | Action |
@@ -67,10 +79,12 @@ Just start typing — all keys go to search input. Use `Ctrl+key` for navigation
 ## Views
 
 ### List View
-Main view showing all plugins. Installed plugins marked with `✓`.
+Main view showing all plugins with filter tabs. Plugins displayed as cards (default) or simple one-line list.
+- `●` = Installed
+- `○` = Available
 
 ### Detail View
-Full plugin info: version, author, description, keywords, install command.
+Full plugin info: version, author, marketplace, category, description, keywords, and install command. Press `c` to copy the install command.
 
 ### Help View
 Quick reference for keyboard shortcuts.
@@ -81,6 +95,7 @@ Quick reference for keyboard shortcuts.
 - [Bubble Tea](https://github.com/charmbracelet/bubbletea) - TUI framework
 - [Lip Gloss](https://github.com/charmbracelet/lipgloss) - Styling
 - [Bubbles](https://github.com/charmbracelet/bubbles) - TUI components
+- [Harmonica](https://github.com/charmbracelet/harmonica) - Spring animations
 
 ## License
 

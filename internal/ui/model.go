@@ -24,35 +24,45 @@ const (
 type TransitionStyle int
 
 const (
-	TransitionZoom       TransitionStyle = iota // Center expand/contract
-	TransitionSlideH                            // Horizontal slide
-	TransitionSlideV                            // Vertical slide (push up/down)
-	TransitionFade                              // Crossfade via dimming
+	TransitionInstant TransitionStyle = iota // No animation
+	TransitionZoom                           // Center expand/contract
+	TransitionSlideV                         // Vertical slide (push up/down)
 )
 
 // ListDisplayMode represents how plugin items are displayed
 type ListDisplayMode int
 
 const (
-	DisplayCard   ListDisplayMode = iota // Card view with borders and description
-	DisplaySimple                        // Simple one-line view
+	DisplayCard ListDisplayMode = iota // Card view with borders and description
+	DisplaySlim                        // Slim one-line view
 )
 
+// FilterMode represents which plugins to show
+type FilterMode int
+
+const (
+	FilterAll       FilterMode = iota // Show all plugins
+	FilterAvailable                   // Show only available (not installed)
+	FilterInstalled                   // Show only installed
+)
+
+// FilterModeNames for display
+var FilterModeNames = []string{"All", "Available", "Installed"}
+
 // TransitionStyleNames for display
-var TransitionStyleNames = []string{"Zoom", "Slide H", "Slide V", "Fade"}
+var TransitionStyleNames = []string{"Instant", "Zoom", "Slide V"}
 
 // Scroll buffer - cursor stays this many items from edge before scrolling
 const scrollBuffer = 2
+
+// Layout constraints
+const maxContentWidth = 120
 
 // Animation constants
 const (
 	animationFPS    = 60
 	springFrequency = 20.0 // Higher = faster (snappy)
 	springDamping   = 0.9  // < 1 = bouncy, 1 = smooth, > 1 = slow
-
-	// Slower spring for fade transition
-	fadeSpringFrequency = 5.0
-	fadeSpringDamping   = 0.95
 )
 
 // Model is the main application model
@@ -69,6 +79,7 @@ type Model struct {
 	scrollOffset int
 	viewState    ViewState
 	displayMode  ListDisplayMode
+	filterMode   FilterMode
 	windowWidth  int
 	windowHeight int
 	copiedFlash  bool // Brief "Copied!" indicator
@@ -78,7 +89,6 @@ type Model struct {
 	cursorYVelocity float64
 	targetCursorY   float64
 	spring          harmonica.Spring
-	fadeSpring      harmonica.Spring // Slower spring for fade transitions
 
 	// View transition state
 	transitionProgress    float64         // 0.0 = old view, 1.0 = new view
@@ -108,21 +118,19 @@ func NewModel() Model {
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(Peach)
 
-	// Initialize springs for animations
+	// Initialize spring for animations
 	spring := harmonica.NewSpring(harmonica.FPS(animationFPS), springFrequency, springDamping)
-	fadeSpring := harmonica.NewSpring(harmonica.FPS(animationFPS), fadeSpringFrequency, fadeSpringDamping)
 
 	return Model{
 		textInput:          ti,
 		spinner:            s,
 		spring:             spring,
-		fadeSpring:         fadeSpring,
 		loading:            true,
 		viewState:          ViewList,
 		previousView:       ViewList,
 		transitionProgress: 1.0, // Start fully transitioned (no animation on init)
 		targetTransition:   1.0,
-		transitionStyle:    TransitionZoom, // Default style
+		transitionStyle:    TransitionInstant, // Default to instant (no animation)
 		windowWidth:        80,
 		windowHeight:       24,
 	}
@@ -130,7 +138,7 @@ func NewModel() Model {
 
 // CycleTransitionStyle cycles to the next transition style
 func (m *Model) CycleTransitionStyle() {
-	m.transitionStyle = (m.transitionStyle + 1) % 4
+	m.transitionStyle = (m.transitionStyle + 1) % 3
 }
 
 // TransitionStyleName returns the current transition style name
@@ -215,20 +223,20 @@ func (m *Model) UpdateScroll() {
 
 // maxVisibleItems returns the maximum number of items that can be displayed
 func (m Model) maxVisibleItems() int {
-	// Account for title, search input, status bar, padding
-	available := m.windowHeight - 8
-	if m.displayMode == DisplaySimple {
-		// Simple view: 1 line per item
+	// Account for title, filter tabs, search input, status bar, padding
+	available := m.windowHeight - 9
+	if m.displayMode == DisplaySlim {
+		// Slim view: 1 line per item
 		return available
 	}
 	// Card view: 4 lines per item (2 content rows + 2 border rows)
 	return available / 4
 }
 
-// ToggleDisplayMode switches between card and simple view
+// ToggleDisplayMode switches between card and slim view
 func (m *Model) ToggleDisplayMode() {
 	if m.displayMode == DisplayCard {
-		m.displayMode = DisplaySimple
+		m.displayMode = DisplaySlim
 	} else {
 		m.displayMode = DisplayCard
 	}
@@ -238,10 +246,82 @@ func (m *Model) ToggleDisplayMode() {
 
 // DisplayModeName returns the current display mode name
 func (m Model) DisplayModeName() string {
-	if m.displayMode == DisplaySimple {
-		return "simple"
+	if m.displayMode == DisplaySlim {
+		return "slim"
 	}
-	return "card"
+	return "verbose"
+}
+
+// ContentWidth returns the effective content width (capped at max)
+func (m Model) ContentWidth() int {
+	if m.windowWidth > maxContentWidth {
+		return maxContentWidth
+	}
+	return m.windowWidth
+}
+
+// NextFilter cycles to the next filter mode
+func (m *Model) NextFilter() {
+	m.filterMode = (m.filterMode + 1) % 3
+	m.applyFilter()
+}
+
+// PrevFilter cycles to the previous filter mode
+func (m *Model) PrevFilter() {
+	m.filterMode = (m.filterMode + 2) % 3 // +2 is same as -1 mod 3
+	m.applyFilter()
+}
+
+// applyFilter re-runs search with current filter and resets cursor
+func (m *Model) applyFilter() {
+	m.results = m.filteredSearch(m.textInput.Value())
+	m.cursor = 0
+	m.scrollOffset = 0
+	m.SnapCursorToTarget()
+}
+
+// filteredSearch runs search and applies the current filter
+func (m Model) filteredSearch(query string) []search.RankedPlugin {
+	// First get all search results
+	allResults := search.Search(query, m.allPlugins)
+
+	// Apply filter
+	switch m.filterMode {
+	case FilterAvailable:
+		filtered := make([]search.RankedPlugin, 0)
+		for _, rp := range allResults {
+			if !rp.Plugin.Installed {
+				filtered = append(filtered, rp)
+			}
+		}
+		return filtered
+	case FilterInstalled:
+		filtered := make([]search.RankedPlugin, 0)
+		for _, rp := range allResults {
+			if rp.Plugin.Installed {
+				filtered = append(filtered, rp)
+			}
+		}
+		return filtered
+	default:
+		return allResults
+	}
+}
+
+// FilterModeName returns the current filter mode name
+func (m Model) FilterModeName() string {
+	return FilterModeNames[m.filterMode]
+}
+
+// AvailableCount returns count of non-installed plugins
+func (m Model) AvailableCount() int {
+	count := 0
+	for _, p := range m.allPlugins {
+		if !p.Installed {
+			count++
+		}
+	}
+	return count
 }
 
 // TotalPlugins returns total plugin count
@@ -311,16 +391,9 @@ func (m *Model) StartViewTransition(newView ViewState, direction int) {
 
 // UpdateViewTransition advances the view transition animation
 func (m *Model) UpdateViewTransition() {
-	// Use slower spring for fade, faster spring for others
-	if m.transitionStyle == TransitionFade {
-		m.transitionProgress, m.transitionVelocity = m.fadeSpring.Update(
-			m.transitionProgress, m.transitionVelocity, m.targetTransition,
-		)
-	} else {
-		m.transitionProgress, m.transitionVelocity = m.spring.Update(
-			m.transitionProgress, m.transitionVelocity, m.targetTransition,
-		)
-	}
+	m.transitionProgress, m.transitionVelocity = m.spring.Update(
+		m.transitionProgress, m.transitionVelocity, m.targetTransition,
+	)
 }
 
 // IsViewTransitioning returns true if a view transition is in progress

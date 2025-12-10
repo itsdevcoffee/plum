@@ -83,6 +83,10 @@ var (
 			Foreground(Gray).
 			MarginTop(1)
 
+	// Dim separator for tabs/status bar
+	DimSeparator = lipgloss.NewStyle().
+			Foreground(DarkGray)
+
 	// Help text
 	HelpStyle = lipgloss.NewStyle().
 			Foreground(DarkGray)
