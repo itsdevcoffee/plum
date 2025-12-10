@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/maskkiller/plum/internal/plugin"
+	"github.com/itsdevcoffee/plum/internal/plugin"
 )
 
 // View renders the current view

@@ -16,21 +16,22 @@ A fuzzy-search TUI plugin browser for Claude Code.
 ## Installation
 
 ```bash
-go install github.com/maskkiller/plum/cmd/plum@latest
+go install github.com/itsdevcoffee/plum/cmd/plum@latest
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/maskkiller/plum.git
+git clone https://github.com/itsdevcoffee/plum.git
 cd plum
 go build -o plum ./cmd/plum
 ```
 
 ## Requirements
 
-- Claude Code installed with `~/.claude/plugins/` directory
-- At least one marketplace configured
+- [Claude Code](https://claude.ai/claude-code) installed and configured
+- At least one marketplace configured (run `/plugin` in Claude Code to set up)
+- `~/.claude/settings.json` must exist (created automatically when you first run Claude Code)
 
 ## Usage
 
@@ -96,6 +97,29 @@ Quick reference for keyboard shortcuts.
 - [Lip Gloss](https://github.com/charmbracelet/lipgloss) - Styling
 - [Bubbles](https://github.com/charmbracelet/bubbles) - TUI components
 - [Harmonica](https://github.com/charmbracelet/harmonica) - Spring animations
+
+## Troubleshooting
+
+### "Claude Code settings not found"
+
+If you see this error, it means Claude Code hasn't been initialized yet:
+
+1. Install Claude Code from https://claude.ai/claude-code
+2. Run `claude-code` at least once to create the configuration
+3. Try running `plum` again
+
+### "No plugins found"
+
+If plum shows no plugins:
+
+1. Check that you have marketplaces configured: `~/.claude/settings.json` should have `extraKnownMarketplaces`
+2. Run `/plugin marketplace list` in Claude Code to see your configured marketplaces
+3. Run `/plugin marketplace update` to sync marketplace data
+4. If marketplaces are missing, run `/plugin` in Claude Code to browse and add marketplaces
+
+### Custom Configuration Directory
+
+If you use a custom Claude Code configuration directory (via `CLAUDE_CONFIG_DIR` environment variable), plum will automatically respect it.
 
 ## License
 

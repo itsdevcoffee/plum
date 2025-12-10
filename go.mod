@@ -1,4 +1,4 @@
-module github.com/maskkiller/plum
+module github.com/itsdevcoffee/plum
 
 go 1.24.0
 

@@ -6,9 +6,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/harmonica"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/maskkiller/plum/internal/config"
-	"github.com/maskkiller/plum/internal/plugin"
-	"github.com/maskkiller/plum/internal/search"
+	"github.com/itsdevcoffee/plum/internal/config"
+	"github.com/itsdevcoffee/plum/internal/plugin"
+	"github.com/itsdevcoffee/plum/internal/search"
 )
 
 // ViewState represents the current view

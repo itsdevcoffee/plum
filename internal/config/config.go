@@ -2,17 +2,12 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/maskkiller/plum/internal/plugin"
+	"github.com/itsdevcoffee/plum/internal/plugin"
 )
-
-// ClaudePluginsDir returns the path to the Claude plugins directory
-func ClaudePluginsDir() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".claude", "plugins")
-}
 
 // KnownMarketplaces represents the known_marketplaces.json structure
 type KnownMarketplaces map[string]MarketplaceEntry
@@ -79,7 +74,10 @@ type MarketplacePlugin struct {
 	Author      Author   `json:"author"`
 	Category    string   `json:"category"`
 	Homepage    string   `json:"homepage"`
+	Repository  string   `json:"repository"`
+	License     string   `json:"license"`
 	Keywords    []string `json:"keywords"`
+	Tags        []string `json:"tags"`
 	Strict      bool     `json:"strict"`
 }
 
@@ -93,9 +91,16 @@ type Author struct {
 
 // LoadKnownMarketplaces loads the known_marketplaces.json file
 func LoadKnownMarketplaces() (KnownMarketplaces, error) {
-	path := filepath.Join(ClaudePluginsDir(), "known_marketplaces.json")
+	path, err := KnownMarketplacesPath()
+	if err != nil {
+		return nil, err
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("Claude Code marketplaces not found at %s.\n\nPlease run Claude Code and configure at least one marketplace using the /plugin command.", path)
+		}
 		return nil, err
 	}
 
@@ -109,7 +114,11 @@ func LoadKnownMarketplaces() (KnownMarketplaces, error) {
 
 // LoadInstalledPlugins loads the installed_plugins_v2.json file
 func LoadInstalledPlugins() (*InstalledPluginsV2, error) {
-	path := filepath.Join(ClaudePluginsDir(), "installed_plugins_v2.json")
+	path, err := InstalledPluginsPath()
+	if err != nil {
+		return nil, err
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		// Return empty if file doesn't exist
@@ -192,6 +201,9 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 				Installed:   isInstalled,
 				Source:      mp.Source,
 				Homepage:    mp.Homepage,
+				Repository:  mp.Repository,
+				License:     mp.License,
+				Tags:        mp.Tags,
 			}
 
 			if isInstalled {

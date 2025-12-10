@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/maskkiller/plum/internal/plugin"
+	"github.com/itsdevcoffee/plum/internal/plugin"
 	"github.com/sahilm/fuzzy"
 )
 

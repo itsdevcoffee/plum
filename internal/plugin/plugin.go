@@ -8,11 +8,14 @@ type Plugin struct {
 	Keywords    []string `json:"keywords"`
 	Category    string   `json:"category"`
 	Author      Author   `json:"author"`
-	Marketplace string   `json:"-"` // The marketplace this plugin belongs to
-	Installed   bool     `json:"-"` // Whether this plugin is currently installed
-	InstallPath string   `json:"-"` // Path if installed
-	Source      string   `json:"source"`
+	Marketplace string   `json:"-"`      // The marketplace this plugin belongs to
+	Installed   bool     `json:"-"`      // Whether this plugin is currently installed
+	InstallPath string   `json:"-"`      // Path if installed
+	Source      string   `json:"source"` // Source path within marketplace
 	Homepage    string   `json:"homepage"`
+	Repository  string   `json:"repository"` // Source repository URL
+	License     string   `json:"license"`    // License identifier (e.g., "MIT")
+	Tags        []string `json:"tags"`       // Categorization tags
 }
 
 // Author represents plugin author information
