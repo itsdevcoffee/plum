@@ -10,13 +10,32 @@ Plum is a fast, fuzzy-search TUI that helps you browse, search, and install plug
 
 Plum works with any Claude Code marketplace. Here are some popular ones to get started:
 
-| Marketplace | Description |
-|------------|-------------|
-| [claude-code-plugins-plus](https://github.com/jeremylongshore/claude-code-plugins) | The largest collection with **254 plugins** and 185 Agent Skills, focusing on production-ready automation tools across DevOps, security, testing, and AI/ML workflows. |
-| [claude-code-marketplace](https://github.com/ananddtyagi/claude-code-marketplace) | Community-driven marketplace featuring curated commands and agents with granular installation and auto-sync from a live database. Browse by category and install only what you need. |
-| [claude-code-plugins](https://github.com/anthropics/claude-code) | Official Anthropic plugins that extend Claude Code's core functionality. These plugins are maintained by the Claude Code team and ship with the tool. |
-| [mag-claude-plugins](https://github.com/MadAppGang/claude-code) | Battle-tested workflows from top developers with **4 specialized plugins** for frontend development, code analysis, Bun backend, and orchestration patterns. |
-| [dev-gom-plugins](https://github.com/Dev-GOM/claude-code-marketplace) | Automation-focused collection with **15 plugins** specializing in Unity game development, Blender 3D workflows, browser automation, and code quality monitoring. |
+<table>
+<tr>
+<th width="280">Marketplace</th>
+<th>Description</th>
+</tr>
+<tr>
+<td><a href="https://github.com/jeremylongshore/claude-code-plugins">claude-code-plugins-plus</a></td>
+<td>The largest collection with <strong>254 plugins</strong> and 185 Agent Skills, focusing on production-ready automation tools across DevOps, security, testing, and AI/ML workflows.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/ananddtyagi/claude-code-marketplace">claude-code-marketplace</a></td>
+<td>Community-driven marketplace featuring curated commands and agents with granular installation and auto-sync from a live database. Browse by category and install only what you need.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/anthropics/claude-code">claude-code-plugins</a></td>
+<td>Official Anthropic plugins that extend Claude Code's core functionality. These plugins are maintained by the Claude Code team and ship with the tool.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/MadAppGang/claude-code">mag-claude-plugins</a></td>
+<td>Battle-tested workflows from top developers with <strong>4 specialized plugins</strong> for frontend development, code analysis, Bun backend, and orchestration patterns.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/Dev-GOM/claude-code-marketplace">dev-gom-plugins</a></td>
+<td>Automation-focused collection with <strong>15 plugins</strong> specializing in Unity game development, Blender 3D workflows, browser automation, and code quality monitoring.</td>
+</tr>
+</table>
 
 **Have a marketplace?** Submit a PR to add it to this list! We welcome all Claude Code plugin marketplaces.
 
