@@ -71,6 +71,7 @@ type Model struct {
 	displayMode  ListDisplayMode
 	windowWidth  int
 	windowHeight int
+	copiedFlash  bool // Brief "Copied!" indicator
 
 	// Animation state
 	cursorY         float64 // Animated cursor position

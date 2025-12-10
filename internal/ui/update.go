@@ -12,6 +12,16 @@ import (
 // animationTickMsg is sent to update animations
 type animationTickMsg time.Time
 
+// clearCopiedFlashMsg clears the "Copied!" indicator
+type clearCopiedFlashMsg struct{}
+
+// clearCopiedFlash returns a command that clears the flash after a delay
+func clearCopiedFlash() tea.Cmd {
+	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
+		return clearCopiedFlashMsg{}
+	})
+}
+
 // animationTick returns a command that ticks the animation
 func animationTick() tea.Cmd {
 	return tea.Tick(time.Second/animationFPS, func(t time.Time) tea.Msg {
@@ -62,6 +72,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.IsAnimating() || m.IsViewTransitioning() {
 			return m, animationTick()
 		}
+		return m, nil
+
+	case clearCopiedFlashMsg:
+		m.copiedFlash = false
 		return m, nil
 	}
 
@@ -219,7 +233,10 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "c":
 		// Copy install command to clipboard
 		if p := m.SelectedPlugin(); p != nil && !p.Installed {
-			_ = clipboard.WriteAll(p.InstallCommand())
+			if err := clipboard.WriteAll(p.InstallCommand()); err == nil {
+				m.copiedFlash = true
+				return m, clearCopiedFlash()
+			}
 		}
 		return m, nil
 

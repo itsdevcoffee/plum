@@ -499,7 +499,13 @@ func (m Model) detailView() string {
 	var footerParts []string
 	footerParts = append(footerParts, KeyStyle.Render("esc")+" back")
 	if !p.Installed {
-		footerParts = append(footerParts, KeyStyle.Render("c")+" copy install command")
+		if m.copiedFlash {
+			// Show "Copied!" feedback
+			copiedStyle := lipgloss.NewStyle().Foreground(Green).Bold(true)
+			footerParts = append(footerParts, copiedStyle.Render("✓ Copied!"))
+		} else {
+			footerParts = append(footerParts, KeyStyle.Render("c")+" copy install command")
+		}
 	}
 	footerParts = append(footerParts, KeyStyle.Render("q")+" quit")
 	b.WriteString(HelpStyle.Render(strings.Join(footerParts, "  │  ")))
