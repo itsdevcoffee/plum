@@ -383,6 +383,12 @@ func (m Model) detailView() string {
 		return AppStyle.Render("No plugin selected")
 	}
 
+	// Calculate content width (account for borders and padding)
+	contentWidth := m.windowWidth - 10
+	if contentWidth < 40 {
+		contentWidth = 40
+	}
+
 	var b strings.Builder
 
 	// Header with name and status badge
@@ -395,7 +401,7 @@ func (m Model) detailView() string {
 	header := DetailTitleStyle.Render(p.Name) + "  " + badge
 	b.WriteString(header)
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", min(m.windowWidth-6, 50)))
+	b.WriteString(strings.Repeat("─", contentWidth))
 	b.WriteString("\n\n")
 
 	// Details
@@ -416,22 +422,24 @@ func (m Model) detailView() string {
 		}
 	}
 
-	// Description
+	// Description (word-wrapped)
 	b.WriteString("\n")
-	b.WriteString(DetailDescStyle.Render(p.Description))
+	b.WriteString(wrapText(p.Description, contentWidth))
 	b.WriteString("\n")
 
-	// Keywords
+	// Keywords (word-wrapped)
 	if len(p.Keywords) > 0 {
 		b.WriteString("\n")
-		b.WriteString(DetailLabelStyle.Render("Keywords:") + " " + DetailValueStyle.Render(strings.Join(p.Keywords, ", ")))
+		keywordsText := strings.Join(p.Keywords, ", ")
+		b.WriteString(DetailLabelStyle.Render("Keywords:") + " ")
+		b.WriteString(wrapText(keywordsText, contentWidth-12))
 		b.WriteString("\n")
 	}
 
 	// Install command (only for non-installed plugins)
 	if !p.Installed {
 		b.WriteString("\n")
-		b.WriteString(strings.Repeat("─", min(m.windowWidth-6, 50)))
+		b.WriteString(strings.Repeat("─", contentWidth))
 		b.WriteString("\n")
 		b.WriteString(DetailLabelStyle.Render("Install:") + " " + InstallCommandStyle.Render(p.InstallCommand()))
 		b.WriteString("\n")
@@ -447,7 +455,58 @@ func (m Model) detailView() string {
 	footerParts = append(footerParts, KeyStyle.Render("q")+" quit")
 	b.WriteString(HelpStyle.Render(strings.Join(footerParts, "  │  ")))
 
-	return AppStyle.Render(DetailBoxStyle.Render(b.String()))
+	// Apply box style with full width
+	boxStyle := DetailBoxStyle.Width(contentWidth + 4)
+	return AppStyle.Render(boxStyle.Render(b.String()))
+}
+
+// wrapText wraps text to fit within maxWidth characters
+func wrapText(text string, maxWidth int) string {
+	if maxWidth <= 0 {
+		return text
+	}
+
+	var result strings.Builder
+	words := strings.Fields(text)
+	lineLen := 0
+
+	for i, word := range words {
+		wordLen := len(word)
+
+		if lineLen+wordLen+1 > maxWidth && lineLen > 0 {
+			result.WriteString("\n")
+			lineLen = 0
+		}
+
+		if lineLen > 0 {
+			result.WriteString(" ")
+			lineLen++
+		}
+
+		// Handle words longer than maxWidth
+		if wordLen > maxWidth {
+			for len(word) > maxWidth {
+				if lineLen > 0 {
+					result.WriteString("\n")
+					lineLen = 0
+				}
+				result.WriteString(word[:maxWidth])
+				word = word[maxWidth:]
+				result.WriteString("\n")
+			}
+			if len(word) > 0 {
+				result.WriteString(word)
+				lineLen = len(word)
+			}
+		} else {
+			result.WriteString(word)
+			lineLen += wordLen
+		}
+
+		_ = i // suppress unused warning
+	}
+
+	return result.String()
 }
 
 // helpView renders the help view with grouped sections
