@@ -1,8 +1,10 @@
-# Plum
+# 🍑 Plum
 
 A fuzzy-search TUI plugin browser for Claude Code.
 
-## Features
+![List View](assets/list-view-card.png)
+
+## ✨ Features
 
 - Fuzzy search across all plugins from known marketplaces
 - Filter by All / Available / Installed
@@ -77,18 +79,42 @@ Start typing to fuzzy search plugins. Results update in real-time.
 
 Just start typing — all keys go to search input. Use `Ctrl+key` for navigation.
 
-## Views
+## 📸 Screenshots
 
-### List View
-Main view showing all plugins with filter tabs. Plugins displayed as cards (default) or simple one-line list.
-- `●` = Installed
-- `○` = Available
+### Fuzzy Search
+Type to instantly filter plugins across all marketplaces:
 
-### Detail View
-Full plugin info: version, author, marketplace, category, description, keywords, and install command. Press `c` to copy the install command.
+![Search](assets/search-fuzzy.png)
 
-### Help View
-Quick reference for keyboard shortcuts.
+### Plugin Details
+View comprehensive plugin information with one-click install commands:
+
+![Detail View](assets/detail-view.png)
+
+### Multiple View Modes
+Switch between card and slim views with `Ctrl+v`:
+
+<table>
+<tr>
+<td width="50%">
+
+**Card View** (Default)
+<img src="assets/list-view-card.png" alt="Card View">
+
+</td>
+<td width="50%">
+
+**Slim View** (Compact)
+<img src="assets/list-view-slim.png" alt="Slim View">
+
+</td>
+</tr>
+</table>
+
+### Built-in Help
+Press `?` to see all keyboard shortcuts:
+
+![Help Menu](assets/help-menu.png)
 
 ## Tech Stack
 
