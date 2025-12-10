@@ -6,6 +6,20 @@ Plum is a fast, fuzzy-search TUI that helps you browse, search, and install plug
 
 ![List View](assets/list-view-card.png)
 
+## Popular Marketplaces
+
+Plum works with any Claude Code marketplace. Here are some popular ones to get started:
+
+| Marketplace | Description |
+|------------|-------------|
+| [claude-code-plugins-plus](https://github.com/jeremylongshore/claude-code-plugins) | The largest collection with **254 plugins** and 185 Agent Skills, focusing on production-ready automation tools across DevOps, security, testing, and AI/ML workflows. |
+| [claude-code-marketplace](https://github.com/ananddtyagi/claude-code-marketplace) | Community-driven marketplace featuring curated commands and agents with granular installation and auto-sync from a live database. Browse by category and install only what you need. |
+| [claude-code-plugins](https://github.com/anthropics/claude-code) | Official Anthropic plugins that extend Claude Code's core functionality. These plugins are maintained by the Claude Code team and ship with the tool. |
+| [mag-claude-plugins](https://github.com/MadAppGang/claude-code) | Battle-tested workflows from top developers with **4 specialized plugins** for frontend development, code analysis, Bun backend, and orchestration patterns. |
+| [dev-gom-plugins](https://github.com/Dev-GOM/claude-code-marketplace) | Automation-focused collection with **15 plugins** specializing in Unity game development, Blender 3D workflows, browser automation, and code quality monitoring. |
+
+**Have a marketplace?** Submit a PR to add it to this list! We welcome all Claude Code plugin marketplaces.
+
 ## Installation
 
 ```bash
@@ -77,20 +91,6 @@ Switch between card and slim views with `Ctrl+v`:
 Press `?` to see all keyboard shortcuts:
 
 ![Help Menu](assets/help-menu.png)
-
-## Popular Marketplaces
-
-Plum works with any Claude Code marketplace. Here are some popular ones to get started:
-
-| Marketplace | Description | Add It |
-|------------|-------------|---------|
-| [claude-code-marketplace](https://github.com/ananddtyagi/claude-code-marketplace) | Community plugins for Claude Code | Run `/plugin` in Claude Code |
-| [claude-code-plugins](https://github.com/anthropics/claude-code) | Official Anthropic plugins | Included by default |
-| [mag-claude-plugins](https://github.com/MadAppGang/claude-code) | MadAppGang's plugin collection | Run `/plugin` in Claude Code |
-| [dev-gom-plugins](https://github.com/Dev-GOM/claude-code-marketplace) | Dev GOM's curated plugins | Run `/plugin` in Claude Code |
-| [claude-code-plugins-plus](https://github.com/jeremylongshore/claude-code-plugins) | Extended plugin collection | Run `/plugin` in Claude Code |
-
-**Have a marketplace?** Submit a PR to add it to this list! We welcome all Claude Code plugin marketplaces.
 
 ## Building from Source
 
