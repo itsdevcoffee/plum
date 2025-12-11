@@ -25,15 +25,15 @@ func ClearCache() error {
 	return nil
 }
 
-// RefreshAll clears cache and re-fetches all popular marketplaces
+// RefreshAll clears cache and re-fetches all marketplaces using latest registry
 func RefreshAll() error {
 	// Clear existing cache
 	if err := ClearCache(); err != nil {
 		return fmt.Errorf("failed to clear cache: %w", err)
 	}
 
-	// Fetch fresh data (this will repopulate cache)
-	_, err := DiscoverPopularMarketplaces()
+	// Fetch fresh data from registry (this will repopulate cache with ALL marketplaces)
+	_, err := DiscoverWithRegistry()
 	if err != nil {
 		return fmt.Errorf("failed to refresh marketplaces: %w", err)
 	}

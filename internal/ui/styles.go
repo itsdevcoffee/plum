@@ -26,6 +26,14 @@ var (
 			Bold(true).
 			MarginBottom(1)
 
+	// Update notification box with gradient border
+	UpdateNotificationStyle = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(Peach).
+				Foreground(Peach).
+				Bold(true).
+				Padding(0, 1)
+
 	// Search input
 	SearchPromptStyle = lipgloss.NewStyle().
 				Foreground(Purple).
