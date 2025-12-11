@@ -1,12 +1,33 @@
 package ui
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/itsdevcoffee/plum/internal/marketplace"
 )
+
+func init() {
+	// Set functions to avoid circular import
+	clearCacheAndReload = marketplace.ClearCache
+	checkForNewMarketplaces = func() ([]PopularMarketplace, int, error) {
+		updated, newCount, err := marketplace.FetchRegistryWithComparison(marketplace.PopularMarketplaces)
+		// Convert marketplace.PopularMarketplace to ui.PopularMarketplace
+		result := make([]PopularMarketplace, len(updated))
+		for i, m := range updated {
+			result[i] = PopularMarketplace{
+				Name:        m.Name,
+				DisplayName: m.DisplayName,
+				GitHubRepo:  m.GitHubRepo,
+				Description: m.Description,
+			}
+		}
+		return result, newCount, err
+	}
+}
 
 // animationTickMsg is sent to update animations
 type animationTickMsg time.Time
@@ -44,18 +65,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.err = msg.err
 			m.loading = false
+			m.refreshing = false
 			return m, nil
 		}
 		m.allPlugins = msg.plugins
 		m.results = m.filteredSearch(m.textInput.Value())
 		m.loading = false
+		m.refreshing = false
 		// Initialize cursor animation to current position
 		m.cursorY = 0
 		m.targetCursorY = 0
 		return m, nil
 
+	case refreshCacheMsg:
+		// Start refresh process
+		m.refreshing = true
+		m.newMarketplacesCount = 0 // Clear notification during refresh
+		return m, tea.Batch(
+			m.spinner.Tick,
+			doRefreshCache,
+		)
+
+	case registryCheckedMsg:
+		// Registry check completed - store new marketplace count
+		m.newMarketplacesCount = msg.newCount
+		return m, nil
+
 	case spinner.TickMsg:
-		if m.loading {
+		if m.loading || m.refreshing {
 			var cmd tea.Cmd
 			m.spinner, cmd = m.spinner.Update(msg)
 			return m, cmd
@@ -172,11 +209,11 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.StartViewTransition(ViewHelp, 1) // Forward transition
 		return m, animationTick()
 
-	case "tab":
+	case "tab", "right":
 		m.NextFilter()
 		return m, nil
 
-	case "shift+tab":
+	case "shift+tab", "left":
 		m.PrevFilter()
 		return m, nil
 
@@ -187,6 +224,12 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "ctrl+t":
 		m.CycleTransitionStyle()
 		return m, nil
+
+	case "shift+u", "U":
+		// Refresh cache - clear and re-fetch all marketplace data
+		return m, func() tea.Msg {
+			return refreshCacheMsg{}
+		}
 
 	// Clear search or quit
 	case "esc", "ctrl+g":
@@ -238,8 +281,27 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, animationTick()
 
 	case "c":
-		// Copy install command to clipboard
+		// Copy marketplace install command (for discoverable) or plugin install (for normal)
 		if p := m.SelectedPlugin(); p != nil && !p.Installed {
+			var copyText string
+			if p.IsDiscoverable {
+				// Copy marketplace add command for discoverable plugins
+				copyText = fmt.Sprintf("/plugin marketplace add %s", p.Marketplace)
+			} else {
+				// Copy plugin install command for normal plugins
+				copyText = p.InstallCommand()
+			}
+
+			if err := clipboard.WriteAll(copyText); err == nil {
+				m.copiedFlash = true
+				return m, clearCopiedFlash()
+			}
+		}
+		return m, nil
+
+	case "y":
+		// Copy plugin install command (only for discoverable plugins)
+		if p := m.SelectedPlugin(); p != nil && !p.Installed && p.IsDiscoverable {
 			if err := clipboard.WriteAll(p.InstallCommand()); err == nil {
 				m.copiedFlash = true
 				return m, clearCopiedFlash()

@@ -35,6 +35,14 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 <td><a href="https://github.com/Dev-GOM/claude-code-marketplace">dev-gom-plugins</a></td>
 <td>Automation-focused collection with <strong>15 plugins</strong> specializing in Unity game development, Blender 3D workflows, browser automation, and code quality monitoring.</td>
 </tr>
+<tr>
+<td><a href="https://github.com/feed-mob/claude-code-marketplace">feedmob-plugins</a></td>
+<td>Productivity and workflow tools with <strong>6 specialized plugins</strong> for data processing (CSV parsing), testing, commit automation, presentation generation, and AI news aggregation.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/anthropics/skills">anthropic-agent-skills</a></td>
+<td>Official Anthropic Agent Skills reference repository with document manipulation capabilities (PDF, DOCX, PPTX, XLSX) and production-quality skill implementation examples.</td>
+</tr>
 </table>
 
 **Have a marketplace?** Submit a PR to add it to this list! We welcome all Claude Code plugin marketplaces.

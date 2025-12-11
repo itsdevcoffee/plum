@@ -41,13 +41,14 @@ const (
 type FilterMode int
 
 const (
-	FilterAll       FilterMode = iota // Show all plugins
-	FilterAvailable                   // Show only available (not installed)
+	FilterAll       FilterMode = iota // Show all plugins (installed + ready + discoverable)
+	FilterDiscover                    // Show only discoverable (from uninstalled marketplaces)
+	FilterReady                       // Show only ready to install (marketplace installed, plugin not)
 	FilterInstalled                   // Show only installed
 )
 
 // FilterModeNames for display
-var FilterModeNames = []string{"All", "Available", "Installed"}
+var FilterModeNames = []string{"All", "Discover", "Ready", "Installed"}
 
 // TransitionStyleNames for display
 var TransitionStyleNames = []string{"Instant", "Zoom", "Slide V"}
@@ -68,9 +69,11 @@ const (
 // Model is the main application model
 type Model struct {
 	// Data
-	allPlugins []plugin.Plugin
-	results    []search.RankedPlugin
-	loading    bool
+	allPlugins          []plugin.Plugin
+	results             []search.RankedPlugin
+	loading             bool
+	refreshing          bool // True when manually refreshing cache
+	newMarketplacesCount int  // Number of new marketplaces available in registry
 
 	// UI state
 	textInput    textinput.Model
@@ -152,7 +155,31 @@ func (m Model) Init() tea.Cmd {
 		textinput.Blink,
 		m.spinner.Tick,
 		loadPlugins,
+		checkRegistryForUpdates, // Check for new marketplaces
 	)
+}
+
+// checkRegistryForUpdates checks if there are new marketplaces in the registry
+func checkRegistryForUpdates() tea.Msg {
+	// Will be set by update.go to call marketplace.FetchRegistryWithComparison
+	_, newCount, err := checkForNewMarketplaces()
+	if err != nil || newCount == 0 {
+		return registryCheckedMsg{newCount: 0}
+	}
+	return registryCheckedMsg{newCount: newCount}
+}
+
+// PopularMarketplace is re-exported to avoid import in function signature
+type PopularMarketplace struct {
+	Name        string
+	DisplayName string
+	GitHubRepo  string
+	Description string
+}
+
+// checkForNewMarketplaces wrapper to avoid circular import
+var checkForNewMarketplaces = func() ([]PopularMarketplace, int, error) {
+	return nil, 0, nil // Will be set by update.go
 }
 
 // pluginsLoadedMsg is sent when plugins are loaded
@@ -165,6 +192,47 @@ type pluginsLoadedMsg struct {
 func loadPlugins() tea.Msg {
 	plugins, err := config.LoadAllPlugins()
 	return pluginsLoadedMsg{plugins: plugins, err: err}
+}
+
+// refreshCacheMsg is sent to initiate cache refresh
+type refreshCacheMsg struct{}
+
+// cacheRefreshedMsg is sent when cache refresh completes
+type cacheRefreshedMsg struct {
+	err error
+}
+
+// registryCheckedMsg is sent when registry check completes
+type registryCheckedMsg struct {
+	newCount int
+}
+
+// refreshCache clears cache and reloads all plugins
+func refreshCache() tea.Msg {
+	// This will be imported from marketplace package
+	// to avoid circular dependency, we'll call it from update.go
+	return refreshCacheMsg{}
+}
+
+// doRefreshCache performs the actual cache refresh
+func doRefreshCache() tea.Msg {
+	// Clear cache and reload
+	if err := clearCacheAndReload(); err != nil {
+		return cacheRefreshedMsg{err: err}
+	}
+
+	// Reload plugins after cache clear
+	plugins, err := config.LoadAllPlugins()
+	if err != nil {
+		return cacheRefreshedMsg{err: err}
+	}
+
+	return pluginsLoadedMsg{plugins: plugins, err: nil}
+}
+
+// clearCacheAndReload is set by update.go to avoid circular import
+var clearCacheAndReload = func() error {
+	return nil // Will be set by update.go
 }
 
 // SelectedPlugin returns the currently selected plugin, if any
@@ -262,13 +330,13 @@ func (m Model) ContentWidth() int {
 
 // NextFilter cycles to the next filter mode
 func (m *Model) NextFilter() {
-	m.filterMode = (m.filterMode + 1) % 3
+	m.filterMode = (m.filterMode + 1) % 4
 	m.applyFilter()
 }
 
 // PrevFilter cycles to the previous filter mode
 func (m *Model) PrevFilter() {
-	m.filterMode = (m.filterMode + 2) % 3 // +2 is same as -1 mod 3
+	m.filterMode = (m.filterMode + 3) % 4 // +3 is same as -1 mod 4
 	m.applyFilter()
 }
 
@@ -287,10 +355,21 @@ func (m Model) filteredSearch(query string) []search.RankedPlugin {
 
 	// Apply filter
 	switch m.filterMode {
-	case FilterAvailable:
+	case FilterDiscover:
+		// Show only discoverable (from uninstalled marketplaces)
+		filtered := make([]search.RankedPlugin, 0)
+		for _, r := range allResults {
+			if r.Plugin.IsDiscoverable {
+				filtered = append(filtered, r)
+			}
+		}
+		return filtered
+
+	case FilterReady:
+		// Show only ready to install (not installed, marketplace IS installed)
 		filtered := make([]search.RankedPlugin, 0)
 		for _, rp := range allResults {
-			if !rp.Plugin.Installed {
+			if !rp.Plugin.Installed && !rp.Plugin.IsDiscoverable {
 				filtered = append(filtered, rp)
 			}
 		}
@@ -313,11 +392,22 @@ func (m Model) FilterModeName() string {
 	return FilterModeNames[m.filterMode]
 }
 
-// AvailableCount returns count of non-installed plugins
-func (m Model) AvailableCount() int {
+// ReadyCount returns count of ready-to-install plugins (marketplace installed, plugin not)
+func (m Model) ReadyCount() int {
 	count := 0
 	for _, p := range m.allPlugins {
-		if !p.Installed {
+		if !p.Installed && !p.IsDiscoverable {
+			count++
+		}
+	}
+	return count
+}
+
+// DiscoverableCount returns count of discoverable plugins (from uninstalled marketplaces)
+func (m Model) DiscoverableCount() int {
+	count := 0
+	for _, p := range m.allPlugins {
+		if p.IsDiscoverable {
 			count++
 		}
 	}

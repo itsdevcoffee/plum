@@ -1,0 +1,63 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-12-11",
+  "description": "Official registry of popular Claude Code plugin marketplaces",
+  "marketplaces": [
+    {
+      "name": "claude-code-plugins-plus",
+      "displayName": "Claude Code Plugins Plus",
+      "githubRepo": "jeremylongshore/claude-code-plugins",
+      "description": "The largest collection with 254 plugins and 185 Agent Skills",
+      "pluginCount": 254,
+      "tags": ["production", "devops", "security", "testing", "ai-ml"]
+    },
+    {
+      "name": "claude-code-marketplace",
+      "displayName": "Claude Code Marketplace",
+      "githubRepo": "ananddtyagi/claude-code-marketplace",
+      "description": "Community-driven marketplace with granular installation",
+      "pluginCount": 10,
+      "tags": ["community", "commands", "agents"]
+    },
+    {
+      "name": "claude-code-plugins",
+      "displayName": "Claude Code Plugins",
+      "githubRepo": "anthropics/claude-code",
+      "description": "Official Anthropic plugins maintained by the Claude Code team",
+      "pluginCount": 5,
+      "tags": ["official", "anthropic"]
+    },
+    {
+      "name": "mag-claude-plugins",
+      "displayName": "MAG Claude Plugins",
+      "githubRepo": "MadAppGang/claude-code",
+      "description": "Battle-tested workflows with 4 specialized plugins",
+      "pluginCount": 4,
+      "tags": ["frontend", "code-analysis", "backend", "orchestration"]
+    },
+    {
+      "name": "dev-gom-plugins",
+      "displayName": "Dev-GOM Plugins",
+      "githubRepo": "Dev-GOM/claude-code-marketplace",
+      "description": "Automation-focused collection with 15 plugins",
+      "pluginCount": 15,
+      "tags": ["unity", "blender", "automation", "quality"]
+    },
+    {
+      "name": "feedmob-plugins",
+      "displayName": "FeedMob Plugins",
+      "githubRepo": "feed-mob/claude-code-marketplace",
+      "description": "Productivity and workflow tools with 6 specialized plugins",
+      "pluginCount": 6,
+      "tags": ["productivity", "data-processing", "automation"]
+    },
+    {
+      "name": "anthropic-agent-skills",
+      "displayName": "Anthropic Agent Skills",
+      "githubRepo": "anthropics/skills",
+      "description": "Official Anthropic Agent Skills reference repository",
+      "pluginCount": 2,
+      "tags": ["official", "skills", "document-manipulation"]
+    }
+  ]
+}

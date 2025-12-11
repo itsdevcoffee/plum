@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/itsdevcoffee/plum/internal/plugin"
+	"github.com/itsdevcoffee/plum/internal/marketplace"
 )
 
 // KnownMarketplaces represents the known_marketplaces.json structure
@@ -41,52 +42,6 @@ type PluginInstall struct {
 	GitCommitSha string `json:"gitCommitSha"`
 	IsLocal      bool   `json:"isLocal"`
 	ProjectPath  string `json:"projectPath,omitempty"`
-}
-
-// MarketplaceManifest represents the marketplace.json structure
-type MarketplaceManifest struct {
-	Name     string               `json:"name"`
-	Owner    MarketplaceOwner     `json:"owner"`
-	Metadata MarketplaceMetadata  `json:"metadata"`
-	Plugins  []MarketplacePlugin  `json:"plugins"`
-}
-
-// MarketplaceOwner represents the owner of a marketplace
-type MarketplaceOwner struct {
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Company string `json:"company"`
-}
-
-// MarketplaceMetadata represents marketplace metadata
-type MarketplaceMetadata struct {
-	Description string `json:"description"`
-	Version     string `json:"version"`
-	PluginRoot  string `json:"pluginRoot"`
-}
-
-// MarketplacePlugin represents a plugin entry in a marketplace manifest
-type MarketplacePlugin struct {
-	Name        string   `json:"name"`
-	Source      string   `json:"source"`
-	Description string   `json:"description"`
-	Version     string   `json:"version"`
-	Author      Author   `json:"author"`
-	Category    string   `json:"category"`
-	Homepage    string   `json:"homepage"`
-	Repository  string   `json:"repository"`
-	License     string   `json:"license"`
-	Keywords    []string `json:"keywords"`
-	Tags        []string `json:"tags"`
-	Strict      bool     `json:"strict"`
-}
-
-// Author represents author information
-type Author struct {
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	URL     string `json:"url"`
-	Company string `json:"company"`
 }
 
 // LoadKnownMarketplaces loads the known_marketplaces.json file
@@ -137,14 +92,14 @@ func LoadInstalledPlugins() (*InstalledPluginsV2, error) {
 }
 
 // LoadMarketplaceManifest loads a marketplace.json file from a marketplace directory
-func LoadMarketplaceManifest(marketplacePath string) (*MarketplaceManifest, error) {
+func LoadMarketplaceManifest(marketplacePath string) (*marketplace.MarketplaceManifest, error) {
 	manifestPath := filepath.Join(marketplacePath, ".claude-plugin", "marketplace.json")
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {
 		return nil, err
 	}
 
-	var manifest MarketplaceManifest
+	var manifest marketplace.MarketplaceManifest
 	if err := json.Unmarshal(data, &manifest); err != nil {
 		return nil, err
 	}
@@ -153,6 +108,7 @@ func LoadMarketplaceManifest(marketplacePath string) (*MarketplaceManifest, erro
 }
 
 // LoadAllPlugins loads all plugins from all known marketplaces
+// Also discovers plugins from popular marketplaces not yet installed
 func LoadAllPlugins() ([]plugin.Plugin, error) {
 	marketplaces, err := LoadKnownMarketplaces()
 	if err != nil {
@@ -174,7 +130,13 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 
 	var plugins []plugin.Plugin
 
+	// Track which marketplaces we've processed to avoid duplicates
+	processedMarketplaces := make(map[string]bool)
+
+	// 1. Process installed marketplaces first
 	for marketplaceName, entry := range marketplaces {
+		processedMarketplaces[marketplaceName] = true
+
 		manifest, err := LoadMarketplaceManifest(entry.InstallLocation)
 		if err != nil {
 			// Skip marketplaces we can't load
@@ -197,13 +159,14 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 					URL:     mp.Author.URL,
 					Company: mp.Author.Company,
 				},
-				Marketplace: marketplaceName,
-				Installed:   isInstalled,
-				Source:      mp.Source,
-				Homepage:    mp.Homepage,
-				Repository:  mp.Repository,
-				License:     mp.License,
-				Tags:        mp.Tags,
+				Marketplace:    marketplaceName,
+				Installed:      isInstalled,
+				IsDiscoverable: false, // From installed marketplace
+				Source:         mp.Source,
+				Homepage:       mp.Homepage,
+				Repository:     mp.Repository,
+				License:        mp.License,
+				Tags:           mp.Tags,
 			}
 
 			if isInstalled {
@@ -211,6 +174,55 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 			}
 
 			plugins = append(plugins, p)
+		}
+	}
+
+	// 2. Discover popular marketplaces (best effort - don't fail if this fails)
+	discovered, err := marketplace.DiscoverPopularMarketplaces()
+	if err != nil {
+		// Log warning but continue with installed marketplaces only
+		fmt.Fprintf(os.Stderr, "Warning: marketplace discovery failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Continuing with installed marketplaces only.\n")
+	} else {
+		// Process discovered marketplaces
+		for marketplaceName, manifest := range discovered {
+			// Skip if we already processed this marketplace from installed
+			if processedMarketplaces[marketplaceName] {
+				continue
+			}
+
+			for _, mp := range manifest.Plugins {
+				fullName := mp.Name + "@" + marketplaceName
+				install, isInstalled := installedSet[fullName]
+
+				p := plugin.Plugin{
+					Name:        mp.Name,
+					Description: mp.Description,
+					Version:     mp.Version,
+					Keywords:    mp.Keywords,
+					Category:    mp.Category,
+					Author: plugin.Author{
+						Name:    mp.Author.Name,
+						Email:   mp.Author.Email,
+						URL:     mp.Author.URL,
+						Company: mp.Author.Company,
+					},
+					Marketplace:    marketplaceName,
+					Installed:      isInstalled,
+					IsDiscoverable: true, // From discovered marketplace
+					Source:         mp.Source,
+					Homepage:       mp.Homepage,
+					Repository:     mp.Repository,
+					License:        mp.License,
+					Tags:           mp.Tags,
+				}
+
+				if isInstalled {
+					p.InstallPath = install.InstallPath
+				}
+
+				plugins = append(plugins, p)
+			}
 		}
 	}
 

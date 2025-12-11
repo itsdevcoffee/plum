@@ -150,7 +150,8 @@ func (m Model) renderFilterTabs() string {
 
 	// Build tabs with counts
 	allCount := len(m.allPlugins)
-	availCount := m.AvailableCount()
+	discoverCount := m.DiscoverableCount()
+	readyCount := m.ReadyCount()
 	installCount := m.InstalledCount()
 
 	tabs := []struct {
@@ -159,7 +160,8 @@ func (m Model) renderFilterTabs() string {
 		active bool
 	}{
 		{"All", allCount, m.filterMode == FilterAll},
-		{"Available", availCount, m.filterMode == FilterAvailable},
+		{"Discover", discoverCount, m.filterMode == FilterDiscover},
+		{"Ready", readyCount, m.filterMode == FilterReady},
 		{"Installed", installCount, m.filterMode == FilterInstalled},
 	}
 
@@ -184,6 +186,21 @@ func (m Model) listView() string {
 	b.WriteString(TitleStyle.Render("🍑 plum - Plugin Search"))
 	b.WriteString("\n")
 
+	// Show notification if new marketplaces available
+	if m.newMarketplacesCount > 0 {
+		plural := ""
+		if m.newMarketplacesCount > 1 {
+			plural = "s"
+		}
+		updateNotice := lipgloss.NewStyle().
+			Foreground(Peach).
+			Bold(true).
+			Render(fmt.Sprintf("⚡ %d new marketplace%s available - press Shift+U to update",
+				m.newMarketplacesCount, plural))
+		b.WriteString(updateNotice)
+		b.WriteString("\n")
+	}
+
 	// Search input
 	b.WriteString(m.textInput.View())
 	b.WriteString("\n")
@@ -197,6 +214,11 @@ func (m Model) listView() string {
 		b.WriteString(m.spinner.View())
 		b.WriteString(" ")
 		b.WriteString(DescriptionStyle.Render("Loading plugins..."))
+	} else if m.refreshing {
+		b.WriteString(m.spinner.View())
+		b.WriteString(" ")
+		refreshStyle := lipgloss.NewStyle().Foreground(Peach).Bold(true)
+		b.WriteString(refreshStyle.Render("Refreshing marketplace data from GitHub..."))
 	} else if len(m.allPlugins) == 0 {
 		b.WriteString(DescriptionStyle.Render("No plugins found."))
 	} else if len(m.results) == 0 {
@@ -236,6 +258,10 @@ func (m Model) renderPluginItemSlim(p plugin.Plugin, selected bool) string {
 		indicator = InstalledIndicator.String()
 	} else {
 		indicator = AvailableIndicator.String()
+		// Add [Discover] badge for plugins from uninstalled marketplaces
+		if p.IsDiscoverable {
+			indicator += " " + DiscoverBadge.String()
+		}
 	}
 
 	// Name style based on selection
@@ -276,6 +302,10 @@ func (m Model) renderPluginItemCard(p plugin.Plugin, selected bool) string {
 		indicator = InstalledIndicator.String()
 	} else {
 		indicator = AvailableIndicator.String()
+		// Add [Discover] badge for plugins from uninstalled marketplaces
+		if p.IsDiscoverable {
+			indicator += " " + DiscoverBadge.String()
+		}
 	}
 
 	// Name style based on selection
@@ -451,8 +481,29 @@ func (m Model) detailView() string {
 		b.WriteString("\n")
 		b.WriteString(strings.Repeat("─", contentWidth))
 		b.WriteString("\n")
-		b.WriteString(DetailLabelStyle.Render("Install:") + " " + InstallCommandStyle.Render(p.InstallCommand()))
-		b.WriteString("\n")
+
+		if p.IsDiscoverable {
+			// Marketplace not installed - show 2-step instructions
+			b.WriteString(DiscoverMessageStyle.Render("⚠ This marketplace is not installed yet"))
+			b.WriteString("\n\n")
+
+			b.WriteString(DetailLabelStyle.Render("Step 1:") + " Install the marketplace")
+			b.WriteString("\n")
+			installMarketplace := fmt.Sprintf("/plugin marketplace add %s", p.Marketplace)
+			b.WriteString("  " + InstallCommandStyle.Render(installMarketplace))
+			b.WriteString("  " + HelpStyle.Render("press 'c' to copy"))
+			b.WriteString("\n\n")
+
+			b.WriteString(DetailLabelStyle.Render("Step 2:") + " Install the plugin")
+			b.WriteString("\n")
+			b.WriteString("  " + InstallCommandStyle.Render(p.InstallCommand()))
+			b.WriteString("  " + HelpStyle.Render("press 'y' to copy"))
+			b.WriteString("\n")
+		} else {
+			// Marketplace installed - show normal install command
+			b.WriteString(DetailLabelStyle.Render("Install:") + " " + InstallCommandStyle.Render(p.InstallCommand()))
+			b.WriteString("\n")
+		}
 	}
 
 	// Footer
@@ -465,7 +516,14 @@ func (m Model) detailView() string {
 			copiedStyle := lipgloss.NewStyle().Foreground(Green).Bold(true)
 			footerParts = append(footerParts, copiedStyle.Render("✓ Copied!"))
 		} else {
-			footerParts = append(footerParts, KeyStyle.Render("c")+" copy install command")
+			if p.IsDiscoverable {
+				// Discoverable plugin - show both copy options
+				footerParts = append(footerParts, KeyStyle.Render("c")+" copy marketplace")
+				footerParts = append(footerParts, KeyStyle.Render("y")+" copy plugin")
+			} else {
+				// Normal plugin - single copy option
+				footerParts = append(footerParts, KeyStyle.Render("c")+" copy install command")
+			}
 		}
 	}
 	footerParts = append(footerParts, KeyStyle.Render("q")+" quit")
@@ -555,8 +613,8 @@ func (m Model) helpView() string {
 	b.WriteString(HelpSectionStyle.Render("  ◆ Filtering & Display"))
 	b.WriteString("\n")
 	filterKeys := []struct{ key, desc string }{
-		{"Tab", "Next filter (All/Available/Installed)"},
-		{"Shift+Tab", "Previous filter"},
+		{"Tab / →", "Next filter (All/Discover/Ready/Installed)"},
+		{"Shift+Tab / ←", "Previous filter"},
 		{"Ctrl+v", "Toggle view (verbose/slim)"},
 		{"Ctrl+t", "Cycle transition style"},
 	}

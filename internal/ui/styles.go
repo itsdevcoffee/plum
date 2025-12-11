@@ -44,6 +44,12 @@ var (
 				Foreground(Gray).
 				SetString("○")
 
+	// Discover badge for plugins from uninstalled marketplaces
+	DiscoverBadge = lipgloss.NewStyle().
+			Foreground(Peach).
+			Bold(true).
+			SetString("[Discover]")
+
 	// Plugin name
 	PluginNameStyle = lipgloss.NewStyle().
 			Foreground(White).
@@ -118,6 +124,11 @@ var (
 				Foreground(Green).
 				Background(DarkGray).
 				Padding(0, 1)
+
+	// Discover message style for marketplace install instructions
+	DiscoverMessageStyle = lipgloss.NewStyle().
+				Foreground(Peach).
+				Italic(true)
 
 	KeyStyle = lipgloss.NewStyle().
 			Foreground(Purple).
