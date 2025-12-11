@@ -58,6 +58,14 @@
       "description": "Official Anthropic Agent Skills reference repository",
       "pluginCount": 2,
       "tags": ["official", "skills", "document-manipulation"]
+    },
+    {
+      "name": "wshobson-agents",
+      "displayName": "Hobson's Agent Collection",
+      "githubRepo": "wshobson/agents",
+      "description": "Comprehensive production system with 65 plugins, 91 AI agents, and multi-agent orchestration",
+      "pluginCount": 65,
+      "tags": ["agents", "orchestration", "production", "workflows", "multi-agent"]
     }
   ]
 }
