@@ -131,7 +131,8 @@ func NewModel() Model {
 		loading:            true,
 		viewState:          ViewList,
 		previousView:       ViewList,
-		transitionProgress: 1.0, // Start fully transitioned (no animation on init)
+		displayMode:        DisplaySlim, // Default to slim mode
+		transitionProgress: 1.0,         // Start fully transitioned (no animation on init)
 		targetTransition:   1.0,
 		transitionStyle:    TransitionInstant, // Default to instant (no animation)
 		windowWidth:        80,
@@ -291,8 +292,9 @@ func (m *Model) UpdateScroll() {
 
 // maxVisibleItems returns the maximum number of items that can be displayed
 func (m Model) maxVisibleItems() int {
-	// Account for title, filter tabs, search input, status bar, padding
-	available := m.windowHeight - 9
+	// Account for title (1) + blanks (2) + search (1) + blank (1) + filters (1) + blanks (2)
+	// + blank before status (1) + status (1) + AppStyle padding top/bottom (2) = 12 lines
+	available := m.windowHeight - 12
 	if m.displayMode == DisplaySlim {
 		// Slim view: 1 line per item
 		return available

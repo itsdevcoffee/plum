@@ -182,38 +182,19 @@ func (m Model) renderFilterTabs() string {
 func (m Model) listView() string {
 	var b strings.Builder
 
-	// Header with title and notification (two-column layout)
-	contentWidth := m.ContentWidth()
-
-	title := TitleStyle.Render("🍑 plum - Plugin Search")
+	// Header - Title with optional inline notification
+	title := "🍑 plum - Plugin Search"
 
 	if m.newMarketplacesCount > 0 {
-		// Two-column: Title on left, notification on right
 		plural := ""
 		if m.newMarketplacesCount > 1 {
 			plural = "s"
 		}
-
-		noticeText := fmt.Sprintf("⚡ %d new marketplace%s - Shift+U", m.newMarketplacesCount, plural)
-		notice := UpdateNotificationStyle.Render(noticeText)
-
-		// Calculate spacing
-		titleWidth := lipgloss.Width(title)
-		noticeWidth := lipgloss.Width(notice)
-		spacer := contentWidth - titleWidth - noticeWidth - 4 // 4 for app padding
-		if spacer < 1 {
-			spacer = 1
-		}
-
-		// Render two-column header
-		headerLine := title + strings.Repeat(" ", spacer) + notice
-		b.WriteString(headerLine)
-		b.WriteString("\n\n")
-	} else {
-		// Just title
-		b.WriteString(title)
-		b.WriteString("\n\n")
+		title = fmt.Sprintf("%s | ⚡ %d new marketplace%s - Shift+U", title, m.newMarketplacesCount, plural)
 	}
+
+	b.WriteString(TitleStyle.Render(title))
+	b.WriteString("\n\n")
 
 	// Search input
 	b.WriteString(m.textInput.View())
