@@ -12,7 +12,7 @@ import (
 
 func init() {
 	// Set functions to avoid circular import
-	clearCacheAndReload = marketplace.ClearCache
+	clearCacheAndReload = marketplace.RefreshAll // Use RefreshAll to fetch from registry
 	checkForNewMarketplaces = func() ([]PopularMarketplace, int, error) {
 		updated, newCount, err := marketplace.FetchRegistryWithComparison(marketplace.PopularMarketplaces)
 		// Convert marketplace.PopularMarketplace to ui.PopularMarketplace

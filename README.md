@@ -43,6 +43,10 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 <td><a href="https://github.com/anthropics/skills">anthropic-agent-skills</a></td>
 <td>Official Anthropic Agent Skills reference repository with document manipulation capabilities (PDF, DOCX, PPTX, XLSX) and production-quality skill implementation examples.</td>
 </tr>
+<tr>
+<td><a href="https://github.com/wshobson/agents">wshobson-agents</a></td>
+<td>Comprehensive production system with <strong>65 plugins</strong>, 91 specialized AI agents, 47 agent skills, and 15 multi-agent workflow orchestrators across 23 categories.</td>
+</tr>
 </table>
 
 **Have a marketplace?** Submit a PR to add it to this list! We welcome all Claude Code plugin marketplaces.
@@ -63,10 +67,13 @@ plum
 
 ## Key Features
 
-- **Instant fuzzy search** across all your marketplaces
-- **Filter by status**: All, Available, or Installed plugins
+- **Discover 350+ plugins** from 8 popular marketplaces - even ones you haven't installed yet
+- **Auto-updating registry** - notifies when new marketplaces are available
+- **Instant fuzzy search** across all plugins (installed + discoverable)
+- **Smart filtering**: All, Discover, Ready, or Installed
 - **Multiple view modes**: Card (detailed) or Slim (compact)
-- **One-click install commands** - press `c` to copy
+- **One-click install** - copy commands with `c` and `y` keys
+- **Manual refresh** with `Shift+U` to fetch latest marketplaces
 - **Responsive design** that adapts to your terminal size
 
 ## Keyboard Shortcuts
@@ -76,9 +83,12 @@ plum
 | Type anything | Search plugins |
 | `↑↓` or `Ctrl+j/k` | Navigate |
 | `Enter` | View details |
-| `Tab` | Cycle filters (All/Available/Installed) |
+| `Tab` or `→` | Next filter (All/Discover/Ready/Installed) |
+| `Shift+Tab` or `←` | Previous filter |
 | `Ctrl+v` | Toggle card/slim view |
-| `c` | Copy install command (in detail view) |
+| `Shift+U` | Refresh marketplace registry and cache |
+| `c` | Copy install command (marketplace for discoverable) |
+| `y` | Copy plugin command (for discoverable plugins) |
 | `?` | Show help |
 | `Esc` or `q` | Quit |
 

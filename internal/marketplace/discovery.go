@@ -61,12 +61,17 @@ var PopularMarketplaces = []PopularMarketplace{
 }
 
 // DiscoverPopularMarketplaces fetches and returns manifests for popular marketplaces
-// Uses HARDCODED list only - does not fetch registry
+// Checks for cached registry first, falls back to hardcoded list
 // Uses cache when available, fetches from GitHub otherwise
 // Returns partial results on partial failures (best-effort)
 func DiscoverPopularMarketplaces() (map[string]*MarketplaceManifest, error) {
-	// Use hardcoded list - registry is only checked for notifications
+	// Try to load from cached registry first (if user pressed Shift+U)
 	marketplaceList := PopularMarketplaces
+	if cachedRegistry, err := loadRegistryFromCache(); err == nil && cachedRegistry != nil {
+		// Use registry list (could have more marketplaces than hardcoded)
+		marketplaceList = cachedRegistry.Marketplaces
+	}
+	// Otherwise use hardcoded fallback
 
 	var (
 		manifests = make(map[string]*MarketplaceManifest)
