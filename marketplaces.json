@@ -66,6 +66,22 @@
       "description": "Comprehensive production system with 65 plugins, 91 AI agents, and multi-agent orchestration",
       "pluginCount": 65,
       "tags": ["agents", "orchestration", "production", "workflows", "multi-agent"]
+    },
+    {
+      "name": "docker-plugins",
+      "displayName": "Docker Official Plugins",
+      "githubRepo": "docker/claude-plugins",
+      "description": "Official Docker Inc. marketplace with Docker Desktop MCP Toolkit integration",
+      "pluginCount": 1,
+      "tags": ["docker", "official", "containers", "mcp", "integration"]
+    },
+    {
+      "name": "ccplugins-marketplace",
+      "displayName": "CC Plugins Curated",
+      "githubRepo": "ccplugins/marketplace",
+      "description": "Curated collection of 200 plugins across 13 categories from DevOps to Marketing",
+      "pluginCount": 200,
+      "tags": ["curated", "comprehensive", "devops", "marketing", "quality"]
     }
   ]
 }
