@@ -140,12 +140,12 @@ func (m Model) applySlideVTransition(content string) string {
 func (m Model) renderFilterTabs() string {
 	// Tab styles
 	activeTab := lipgloss.NewStyle().
-		Foreground(Purple).
+		Foreground(PlumBright).
 		Bold(true).
 		Padding(0, 1)
 
 	inactiveTab := lipgloss.NewStyle().
-		Foreground(Gray).
+		Foreground(TextTertiary).
 		Padding(0, 1)
 
 	// Build tabs with counts
@@ -212,7 +212,7 @@ func (m Model) listView() string {
 	} else if m.refreshing {
 		b.WriteString(m.spinner.View())
 		b.WriteString(" ")
-		refreshStyle := lipgloss.NewStyle().Foreground(Peach).Bold(true)
+		refreshStyle := lipgloss.NewStyle().Foreground(PeachSoft).Bold(true)
 		b.WriteString(refreshStyle.Render("Refreshing marketplace data from GitHub..."))
 	} else if len(m.allPlugins) == 0 {
 		b.WriteString(DescriptionStyle.Render("No plugins found."))
@@ -508,7 +508,7 @@ func (m Model) detailView() string {
 	if !p.Installed {
 		if m.copiedFlash {
 			// Show "Copied!" feedback
-			copiedStyle := lipgloss.NewStyle().Foreground(Green).Bold(true)
+			copiedStyle := lipgloss.NewStyle().Foreground(Success).Bold(true)
 			footerParts = append(footerParts, copiedStyle.Render("✓ Copied!"))
 		} else {
 			if p.IsDiscoverable {
@@ -641,7 +641,7 @@ func (m Model) helpView() string {
 	tips := []string{
 		"Just start typing to search",
 		"Ctrl+key for navigation (fzf-style)",
-		"Green ● = installed, Gray ○ = available",
+		"Green ● = installed, gray ○ = available",
 	}
 	for _, tip := range tips {
 		b.WriteString(fmt.Sprintf("    • %s\n", HelpTextStyle.Render(tip)))

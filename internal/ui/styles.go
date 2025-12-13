@@ -2,16 +2,27 @@ package ui
 
 import "github.com/charmbracelet/lipgloss"
 
-// Colors
+// Colors - Orange/Peach themed semantic palette
 var (
-	Purple     = lipgloss.Color("#7D56F4")
-	LightPurple = lipgloss.Color("#9D76FF")
-	Green      = lipgloss.Color("#04B575")
-	Gray       = lipgloss.Color("#626262")
-	LightGray  = lipgloss.Color("#ABABAB")
-	DarkGray   = lipgloss.Color("#3C3C3C")
-	White      = lipgloss.Color("#FAFAFA")
-	Peach      = lipgloss.Color("#FFAB91")
+	// Brand / Primary (Orange Scale - Dark to Bright)
+	PlumMedium  = lipgloss.Color("#A0522D") // Deep burnt orange for selected borders
+	PlumBright  = lipgloss.Color("#E67E22") // Rich orange for active elements, highlights
+	PlumGlow    = lipgloss.Color("#FF8C42") // Bright orange for hover, glow states
+
+	// Accent (Warm Peach)
+	PeachSoft = lipgloss.Color("#FFAB91") // Notifications, discovery, headers
+
+	// Semantic
+	Success = lipgloss.Color("#10B981") // Teal-green complements orange
+
+	// Text Hierarchy (Warm-tinted)
+	TextPrimary   = lipgloss.Color("#FFF5EE") // Warm white/seashell
+	TextSecondary = lipgloss.Color("#D4C4B8") // Warm beige-gray for descriptions
+	TextTertiary  = lipgloss.Color("#A89888") // Warm mid-gray for de-emphasized
+	TextMuted     = lipgloss.Color("#6B5D54") // Warm dark gray for subtle text
+
+	// UI Structure
+	BorderSubtle = lipgloss.Color("#5C4033") // Warm brown for borders
 )
 
 // Styles
@@ -22,155 +33,155 @@ var (
 
 	// Title
 	TitleStyle = lipgloss.NewStyle().
-			Foreground(Peach).
+			Foreground(PeachSoft).
 			Bold(true).
 			MarginBottom(1)
 
 	// Update notification box with gradient border
 	UpdateNotificationStyle = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
-				BorderForeground(Peach).
-				Foreground(Peach).
+				BorderForeground(PeachSoft).
+				Foreground(PeachSoft).
 				Bold(true).
 				Padding(0, 1)
 
 	// Search input
 	SearchPromptStyle = lipgloss.NewStyle().
-				Foreground(Purple).
+				Foreground(PlumBright).
 				Bold(true)
 
 	SearchInputStyle = lipgloss.NewStyle().
-				Foreground(White)
+				Foreground(TextPrimary)
 
 	// Plugin list item - installed
 	InstalledIndicator = lipgloss.NewStyle().
-				Foreground(Green).
+				Foreground(Success).
 				SetString("●")
 
 	// Plugin list item - available
 	AvailableIndicator = lipgloss.NewStyle().
-				Foreground(Gray).
+				Foreground(TextTertiary).
 				SetString("○")
 
 	// Discover badge for plugins from uninstalled marketplaces
 	DiscoverBadge = lipgloss.NewStyle().
-			Foreground(Peach).
+			Foreground(PeachSoft).
 			Bold(true).
 			SetString("[Discover]")
 
 	// Plugin name
 	PluginNameStyle = lipgloss.NewStyle().
-			Foreground(White).
+			Foreground(TextPrimary).
 			Bold(true)
 
 	// Plugin name when selected/highlighted
 	PluginNameSelectedStyle = lipgloss.NewStyle().
-				Foreground(LightPurple).
+				Foreground(PlumGlow).
 				Bold(true)
 
 	// Plugin marketplace tag
 	MarketplaceStyle = lipgloss.NewStyle().
-				Foreground(Gray)
+				Foreground(TextTertiary)
 
 	// Plugin version
 	VersionStyle = lipgloss.NewStyle().
-			Foreground(DarkGray)
+			Foreground(TextMuted)
 
 	// Plugin description
 	DescriptionStyle = lipgloss.NewStyle().
-				Foreground(LightGray)
+				Foreground(TextSecondary)
 
 	// Plugin card - normal state
 	PluginCardStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(DarkGray).
+			BorderForeground(BorderSubtle).
 			Padding(0, 1)
 
 	// Plugin card - selected state
 	PluginCardSelectedStyle = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
-				BorderForeground(Purple).
+				BorderForeground(PlumMedium). // Richer plum for selected cards
 				Padding(0, 1)
 
 	// Status bar
 	StatusBarStyle = lipgloss.NewStyle().
-			Foreground(Gray).
+			Foreground(TextTertiary).
 			MarginTop(1)
 
 	// Dim separator for tabs/status bar
 	DimSeparator = lipgloss.NewStyle().
-			Foreground(DarkGray)
+			Foreground(TextMuted)
 
 	// Help text
 	HelpStyle = lipgloss.NewStyle().
-			Foreground(DarkGray)
+			Foreground(TextMuted)
 
 	// Detail view styles
 	DetailBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(Purple).
+			BorderForeground(PlumBright).
 			Padding(1, 2)
 
 	DetailTitleStyle = lipgloss.NewStyle().
-				Foreground(White).
+				Foreground(TextPrimary).
 				Bold(true).
 				MarginBottom(1)
 
 	DetailLabelStyle = lipgloss.NewStyle().
-				Foreground(Gray).
+				Foreground(TextTertiary).
 				Width(12)
 
 	DetailValueStyle = lipgloss.NewStyle().
-				Foreground(White)
+				Foreground(TextPrimary)
 
 	DetailDescStyle = lipgloss.NewStyle().
-			Foreground(LightGray).
+			Foreground(TextSecondary).
 			MarginTop(1).
 			MarginBottom(1)
 
 	InstallCommandStyle = lipgloss.NewStyle().
-				Foreground(Green).
-				Background(DarkGray).
+				Foreground(Success).
+				Background(TextMuted).
 				Padding(0, 1)
 
 	// Discover message style for marketplace install instructions
 	DiscoverMessageStyle = lipgloss.NewStyle().
-				Foreground(Peach).
+				Foreground(PeachSoft).
 				Italic(true)
 
 	KeyStyle = lipgloss.NewStyle().
-			Foreground(Purple).
+			Foreground(PlumBright).
 			Bold(true)
 
 	// Badge styles
 	InstalledBadge = lipgloss.NewStyle().
-			Foreground(Green).
+			Foreground(Success).
 			Bold(true).
 			SetString("[Installed]")
 
 	AvailableBadge = lipgloss.NewStyle().
-			Foreground(Gray).
+			Foreground(TextTertiary).
 			SetString("[Available]")
 
 	// Help view styles
 	HelpSectionStyle = lipgloss.NewStyle().
-				Foreground(Peach).
+				Foreground(PeachSoft).
 				Bold(true)
 
 	HelpTextStyle = lipgloss.NewStyle().
-			Foreground(LightGray)
+			Foreground(TextSecondary)
 
 	// Animation highlight bars - sliding selection indicator
 	HighlightBarFull = lipgloss.NewStyle().
-				Foreground(Purple).
+				Foreground(PlumBright).
 				Bold(true).
 				SetString("▌ ")
 
 	HighlightBarMedium = lipgloss.NewStyle().
-				Foreground(LightPurple).
+				Foreground(PlumGlow).
 				SetString("▌ ")
 
 	HighlightBarLight = lipgloss.NewStyle().
-				Foreground(Gray).
+				Foreground(TextTertiary).
 				SetString("│ ")
 )

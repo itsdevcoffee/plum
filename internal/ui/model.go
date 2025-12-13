@@ -119,7 +119,7 @@ func NewModel() Model {
 	// Initialize spinner
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(Peach)
+	s.Style = lipgloss.NewStyle().Foreground(PeachSoft)
 
 	// Initialize spring for animations
 	spring := harmonica.NewSpring(harmonica.FPS(animationFPS), springFrequency, springDamping)
