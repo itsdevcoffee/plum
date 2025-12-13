@@ -183,7 +183,7 @@ func (m Model) listView() string {
 	var b strings.Builder
 
 	// Header - Title with optional inline notification
-	title := "🍑 plum - Plugin Search"
+	title := "🍑 plum - Claude Plugin Manager"
 
 	if m.newMarketplacesCount > 0 {
 		plural := ""
