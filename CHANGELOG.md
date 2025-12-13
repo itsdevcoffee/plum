@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2025-12-13
+
 ### Added
 - **Marketplace Discovery System** - Browse and discover plugins from popular marketplaces even if not installed locally
 - **Dynamic Registry** - Auto-fetches marketplace list from GitHub (`marketplaces.json`)
@@ -32,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Notification displays in styled box aligned to right of header
 - Registry cache refreshes every 6 hours, marketplace cache every 24 hours
 
+### Design
+- Orange/peach themed color palette with warm, earthy aesthetic
+- Semantic color naming (PlumBright, TextSecondary, Success, etc.)
+- Updated title: "Claude Plugin Manager"
+- Professional screenshots showcasing discovery features
+
 ### Technical
 - New package: `internal/marketplace/` with discovery, registry, cache, and GitHub fetching
 - Plugin struct adds `IsDiscoverable` field
@@ -39,10 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parallel fetching of marketplace data for fast startup
 - Graceful fallback to hardcoded list if registry unavailable
 - Smart comparison: compares against cached registry after first update
+- Cross-platform path resolution with `CLAUDE_CONFIG_DIR` support
 
-## [0.1.0] - 2025-12-10
-
-### Added
+### Initial Features (from development)
 - Initial release of Plum 🍑
 - Fuzzy search across all Claude Code plugin marketplaces
 - Filter plugins by All, Available, or Installed status
