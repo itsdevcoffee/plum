@@ -4,7 +4,7 @@
 
 Plum is a fast, fuzzy-search TUI that helps you browse, search, and install plugins from all your configured Claude Code marketplaces in one place.
 
-![List View](assets/list-view-card.png)
+![List View](assets/screenshots/list-view-card.png)
 
 ## Popular Marketplaces
 
@@ -94,15 +94,17 @@ plum
 
 ## Screenshots
 
-### Fuzzy Search
-Type to instantly filter plugins across all marketplaces:
+### Discover New Marketplaces
+Browse plugins from 8 popular marketplaces - even ones you haven't installed yet.
+The Discover filter shows plugins from uninstalled marketplaces with [Discover] badges:
 
-![Search](assets/search-fuzzy.png)
+![Discover Tab](assets/screenshots/discover-tab.png)
 
-### Plugin Details
-View comprehensive information with one-click install commands:
+### Two-Step Installation for New Marketplaces
+When you find a plugin from an uninstalled marketplace, plum shows you exactly
+what to install. Press 'c' to copy the marketplace command, 'y' to copy the plugin command:
 
-![Detail View](assets/detail-view.png)
+![Discover Detail](assets/screenshots/discover-detail-view.png)
 
 ### Multiple View Modes
 Switch between card and slim views with `Ctrl+v`:
@@ -112,13 +114,13 @@ Switch between card and slim views with `Ctrl+v`:
 <td width="50%">
 
 **Card View** (Default)
-<img src="assets/list-view-card.png" alt="Card View">
+<img src="assets/screenshots/list-view-card.png" alt="Card View">
 
 </td>
 <td width="50%">
 
 **Slim View** (Compact)
-<img src="assets/list-view-slim.png" alt="Slim View">
+<img src="assets/screenshots/list-view-slim.png" alt="Slim View">
 
 </td>
 </tr>
@@ -127,7 +129,7 @@ Switch between card and slim views with `Ctrl+v`:
 ### Built-in Help
 Press `?` to see all keyboard shortcuts:
 
-![Help Menu](assets/help-menu.png)
+![Help Menu](assets/screenshots/help-menu.png)
 
 ## Building from Source
 
