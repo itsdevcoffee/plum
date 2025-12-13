@@ -87,9 +87,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 	case registryCheckedMsg:
-		// Registry check completed - store new marketplace count
+		// Registry check completed - store new marketplace count and force re-render
 		m.newMarketplacesCount = msg.newCount
-		return m, nil
+		// Return a no-op command to force Bubble Tea to re-render the view
+		return m, func() tea.Msg { return nil }
 
 	case spinner.TickMsg:
 		if m.loading || m.refreshing {

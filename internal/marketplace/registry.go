@@ -61,13 +61,7 @@ func FetchRegistry() ([]PopularMarketplace, error) {
 // Returns new marketplaces count and the full list
 // Compares against CACHED registry if available, otherwise uses provided list
 func FetchRegistryWithComparison(current []PopularMarketplace) ([]PopularMarketplace, int, error) {
-	updated, err := FetchRegistry()
-	if err != nil {
-		return current, 0, err
-	}
-
-	// Try to load the previously cached registry for comparison
-	// This way after Shift+U, we compare against what we already have cached
+	// IMPORTANT: Load cached registry BEFORE fetching new one for comparison
 	cachedRegistry, err := loadRegistryFromCache()
 	var compareList []PopularMarketplace
 	if err == nil && cachedRegistry != nil {
@@ -77,6 +71,18 @@ func FetchRegistryWithComparison(current []PopularMarketplace) ([]PopularMarketp
 		// No cached registry - compare against hardcoded list
 		compareList = current
 	}
+
+	// Now fetch the latest registry (DON'T save to cache yet - only save on Shift+U)
+	registry, err := fetchRegistryFromGitHub()
+	if err != nil {
+		// Return cached list if available, otherwise hardcoded
+		if cachedRegistry != nil {
+			return cachedRegistry.Marketplaces, 0, nil
+		}
+		return current, 0, err
+	}
+
+	updated := registry.Marketplaces
 
 	// Count new marketplaces
 	knownNames := make(map[string]bool)
