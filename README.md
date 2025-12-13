@@ -2,7 +2,7 @@
 
 **A better way to discover Claude Code marketplace plugins.**
 
-Plum is a fast, fuzzy-search TUI that helps you browse, search, and install plugins from all your configured Claude Code marketplaces in one place.
+Plum is a fast, fuzzy-search TUI that lets you discover and install plugins from 10 popular marketplaces - even ones you haven't installed yet. Browse 600+ plugins instantly, no setup required.
 
 ![List View](assets/screenshots/list-view-card.png)
 
@@ -67,7 +67,7 @@ plum
 
 ## Key Features
 
-- **Discover 350+ plugins** from 8 popular marketplaces - even ones you haven't installed yet
+- **Discover 600+ plugins** from 10 popular marketplaces - even ones you haven't installed yet
 - **Auto-updating registry** - notifies when new marketplaces are available
 - **Instant fuzzy search** across all plugins (installed + discoverable)
 - **Smart filtering**: All, Discover, Ready, or Installed
@@ -95,7 +95,7 @@ plum
 ## Screenshots
 
 ### Discover New Marketplaces
-Browse plugins from 8 popular marketplaces - even ones you haven't installed yet.
+Browse plugins from 10 popular marketplaces - even ones you haven't installed yet.
 The Discover filter shows plugins from uninstalled marketplaces with [Discover] badges:
 
 ![Discover Tab](assets/screenshots/discover-tab.png)
