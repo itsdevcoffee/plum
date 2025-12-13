@@ -150,6 +150,23 @@ go build -o plum ./cmd/plum
 
 ## Troubleshooting
 
+**"command not found: plum" after installing**
+
+The installation worked, but `plum` isn't in your PATH. Add Go's bin directory:
+
+```bash
+# Add to your shell config (~/.zshrc, ~/.bashrc, or ~/.bash_profile)
+export PATH="$PATH:$HOME/go/bin"
+
+# Reload shell
+source ~/.zshrc  # or ~/.bashrc
+
+# Now run plum
+plum
+```
+
+Or run directly: `~/go/bin/plum`
+
 **"Claude Code settings not found"**
 - Run `claude-code` at least once to initialize your configuration
 
