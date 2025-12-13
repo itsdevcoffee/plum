@@ -47,6 +47,14 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 <td><a href="https://github.com/wshobson/agents">wshobson-agents</a></td>
 <td>Comprehensive production system with <strong>65 plugins</strong>, 91 specialized AI agents, 47 agent skills, and 15 multi-agent workflow orchestrators across 23 categories.</td>
 </tr>
+<tr>
+<td><a href="https://github.com/docker/claude-plugins">docker-plugins</a></td>
+<td>Official Docker Inc. marketplace with Docker Desktop MCP Toolkit integration for containerized MCP servers. Requires Docker Desktop 4.28+.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/ccplugins/marketplace">ccplugins-marketplace</a></td>
+<td>Massive curated collection with <strong>200 plugins</strong> organized across 13 categories including DevOps, Testing, Documentation, Marketing, Security, and more.</td>
+</tr>
 </table>
 
 **Have a marketplace?** Submit a PR to add it to this list! We welcome all Claude Code plugin marketplaces.
