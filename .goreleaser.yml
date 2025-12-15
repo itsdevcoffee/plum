@@ -1,0 +1,84 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+
+builds:
+  - id: plum
+    main: ./cmd/plum
+    binary: plum
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: plum
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+
+# Homebrew tap - GoReleaser will create/update homebrew-plum repo automatically
+brews:
+  - name: plum
+    repository:
+      owner: itsdevcoffee
+      name: homebrew-plum
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: itsdevcoffee
+      email: itstexmex@gmail.com
+    homepage: https://github.com/itsdevcoffee/plum
+    description: "Claude Plugin Manager - Discover and install plugins from 10+ marketplaces"
+    license: MIT
+    folder: Formula
+    install: |
+      bin.install "plum"
+    test: |
+      system "#{bin}/plum", "--version"
+
+release:
+  github:
+    owner: itsdevcoffee
+    name: plum
+  draft: false
+  prerelease: auto
+  name_template: "{{.ProjectName}} v{{.Version}}"
