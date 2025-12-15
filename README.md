@@ -66,25 +66,21 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 
 ## Installation
 
-### Homebrew (macOS/Linux)
+**macOS/Linux users (recommended):**
 
 ```bash
 brew install itsdevcoffee/plum/plum
+plum
 ```
 
-### Go
+**All platforms (requires Go 1.24+):**
 
 ```bash
 go install github.com/itsdevcoffee/plum/cmd/plum@latest
-```
-
-**Note:** Ensure `$GOPATH/bin` is in your PATH, or run directly with `~/go/bin/plum`
-
-Then run:
-
-```bash
 plum
 ```
+
+**Note:** If `plum` command isn't found after `go install`, add `$GOPATH/bin` to your PATH or run `~/go/bin/plum` directly.
 
 ## Key Features
 
