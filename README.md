@@ -78,13 +78,13 @@ brew install itsdevcoffee/plum/plum
 go install github.com/itsdevcoffee/plum/cmd/plum@latest
 ```
 
+**Note:** Ensure `$GOPATH/bin` is in your PATH, or run directly with `~/go/bin/plum`
+
 Then run:
 
 ```bash
 plum
 ```
-
-**Requirements:** [Claude Code](https://claude.ai/claude-code) must be installed and configured with at least one marketplace.
 
 ## Key Features
 
