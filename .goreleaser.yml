@@ -69,7 +69,7 @@ brews:
     homepage: https://github.com/itsdevcoffee/plum
     description: "Claude Plugin Manager - Discover and install plugins from 10+ marketplaces"
     license: MIT
-    folder: Formula
+    directory: Formula
     install: |
       bin.install "plum"
     test: |
