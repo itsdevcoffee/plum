@@ -66,6 +66,14 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 
 ## Installation
 
+### Homebrew (macOS/Linux)
+
+```bash
+brew install itsdevcoffee/plum/plum
+```
+
+### Go
+
 ```bash
 go install github.com/itsdevcoffee/plum/cmd/plum@latest
 ```
