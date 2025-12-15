@@ -1,5 +1,10 @@
 # 🍑 Plum
 
+[![Go Version](https://img.shields.io/github/go-mod/go-version/itsdevcoffee/plum)](https://go.dev/)
+[![Release](https://img.shields.io/github/v/release/itsdevcoffee/plum)](https://github.com/itsdevcoffee/plum/releases)
+[![License](https://img.shields.io/github/license/itsdevcoffee/plum)](LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/itsdevcoffee/plum)](https://goreportcard.com/report/github.com/itsdevcoffee/plum)
+
 **A better way to discover Claude Code marketplace plugins.**
 
 Plum is a fast, fuzzy-search TUI that lets you discover and install plugins from 10 popular marketplaces - even ones you haven't installed yet. Browse 600+ plugins instantly, no setup required.
