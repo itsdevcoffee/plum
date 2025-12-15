@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-12-13
+
+### Added
+- **Homebrew tap support** - Install with `brew install itsdevcoffee/plum/plum`
+- **GoReleaser automation** - Automated multi-platform releases via GitHub Actions
+- **Pre-built binaries** - macOS (Intel/ARM), Linux (amd64/arm64), Windows (amd64/arm64)
+- **Version flag** - Check version with `plum --version` or `plum -v`
+
+### Changed
+- Release process now automated via GoReleaser
+- Binaries include embedded version, commit hash, and build date
+- Cross-platform distribution improved
+
 ## [0.1.0] - 2025-12-13
 
 ### Added
