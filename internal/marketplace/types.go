@@ -2,10 +2,10 @@ package marketplace
 
 // MarketplaceManifest represents the marketplace.json structure
 type MarketplaceManifest struct {
-	Name     string               `json:"name"`
-	Owner    MarketplaceOwner     `json:"owner"`
-	Metadata MarketplaceMetadata  `json:"metadata"`
-	Plugins  []MarketplacePlugin  `json:"plugins"`
+	Name     string              `json:"name"`
+	Owner    MarketplaceOwner    `json:"owner"`
+	Metadata MarketplaceMetadata `json:"metadata"`
+	Plugins  []MarketplacePlugin `json:"plugins"`
 }
 
 // MarketplaceOwner represents the owner of a marketplace

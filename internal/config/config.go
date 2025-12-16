@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/itsdevcoffee/plum/internal/plugin"
 	"github.com/itsdevcoffee/plum/internal/marketplace"
+	"github.com/itsdevcoffee/plum/internal/plugin"
 )
 
 // KnownMarketplaces represents the known_marketplaces.json structure

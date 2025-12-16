@@ -24,10 +24,10 @@ const (
 
 // MarketplaceRegistry represents the registry structure
 type MarketplaceRegistry struct {
-	Version      string                `json:"version"`
-	LastUpdated  string                `json:"lastUpdated"`
-	Description  string                `json:"description"`
-	Marketplaces []PopularMarketplace  `json:"marketplaces"`
+	Version      string               `json:"version"`
+	LastUpdated  string               `json:"lastUpdated"`
+	Description  string               `json:"description"`
+	Marketplaces []PopularMarketplace `json:"marketplaces"`
 }
 
 // RegistryCacheEntry represents a cached registry with metadata
