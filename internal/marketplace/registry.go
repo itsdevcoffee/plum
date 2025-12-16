@@ -111,7 +111,7 @@ func fetchRegistryFromGitHub() (*MarketplaceRegistry, error) {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("User-Agent", "plum-marketplace-browser/0.1.0")
+	req.Header.Set("User-Agent", "plum-marketplace-browser/0.2.0")
 
 	client := httpClient()
 	resp, err := client.Do(req)
@@ -124,9 +124,19 @@ func fetchRegistryFromGitHub() (*MarketplaceRegistry, error) {
 		return nil, fmt.Errorf("GitHub returned status %d for registry", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	// Limit response body size to prevent DoS
+	limitedBody := io.LimitReader(resp.Body, MaxResponseBodySize)
+	body, err := io.ReadAll(limitedBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read registry: %w", err)
+	}
+
+	// Check if we hit the size limit
+	if int64(len(body)) == MaxResponseBodySize {
+		var oneByte [1]byte
+		if n, _ := resp.Body.Read(oneByte[:]); n > 0 {
+			return nil, fmt.Errorf("registry response exceeded %d bytes", MaxResponseBodySize)
+		}
 	}
 
 	var registry MarketplaceRegistry

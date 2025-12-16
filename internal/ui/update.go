@@ -35,10 +35,20 @@ type animationTickMsg time.Time
 // clearCopiedFlashMsg clears the "Copied!" indicator
 type clearCopiedFlashMsg struct{}
 
+// clearClipboardErrorMsg clears the "Clipboard error!" indicator
+type clearClipboardErrorMsg struct{}
+
 // clearCopiedFlash returns a command that clears the flash after a delay
 func clearCopiedFlash() tea.Cmd {
 	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
 		return clearCopiedFlashMsg{}
+	})
+}
+
+// clearClipboardError returns a command that clears the error flash after a delay
+func clearClipboardError() tea.Cmd {
+	return tea.Tick(time.Second*3, func(t time.Time) tea.Msg {
+		return clearClipboardErrorMsg{}
 	})
 }
 
@@ -113,6 +123,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case clearCopiedFlashMsg:
 		m.copiedFlash = false
+		return m, nil
+
+	case clearClipboardErrorMsg:
+		m.clipboardErrorFlash = false
 		return m, nil
 	}
 
@@ -296,6 +310,10 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if err := clipboard.WriteAll(copyText); err == nil {
 				m.copiedFlash = true
 				return m, clearCopiedFlash()
+			} else {
+				// Show error to user instead of silently failing
+				m.clipboardErrorFlash = true
+				return m, clearClipboardError()
 			}
 		}
 		return m, nil
@@ -306,6 +324,10 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if err := clipboard.WriteAll(p.InstallCommand()); err == nil {
 				m.copiedFlash = true
 				return m, clearCopiedFlash()
+			} else {
+				// Show error to user instead of silently failing
+				m.clipboardErrorFlash = true
+				return m, clearClipboardError()
 			}
 		}
 		return m, nil

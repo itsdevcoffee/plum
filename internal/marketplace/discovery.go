@@ -6,6 +6,11 @@ import (
 	"sync"
 )
 
+const (
+	// MaxConcurrentFetches limits parallel marketplace downloads
+	MaxConcurrentFetches = 5
+)
+
 // PopularMarketplace represents a hardcoded popular marketplace
 type PopularMarketplace struct {
 	Name        string
@@ -77,13 +82,18 @@ func DiscoverPopularMarketplaces() (map[string]*MarketplaceManifest, error) {
 		mu        sync.Mutex
 		wg        sync.WaitGroup
 		errs      []error
+		sem       = make(chan struct{}, MaxConcurrentFetches) // Semaphore for concurrency limiting
 	)
 
-	// Fetch all marketplaces in parallel
+	// Fetch all marketplaces with concurrency limit
 	for _, pm := range marketplaceList {
 		wg.Add(1)
 		go func(marketplace PopularMarketplace) {
 			defer wg.Done()
+
+			// Acquire semaphore
+			sem <- struct{}{}
+			defer func() { <-sem }() // Release semaphore
 
 			manifest, err := fetchMarketplaceFromGitHub(marketplace)
 

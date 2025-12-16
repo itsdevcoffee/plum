@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -18,12 +19,47 @@ const (
 
 	// HTTPTimeout for fetching marketplace files
 	HTTPTimeout = 30 * time.Second
+
+	// MaxResponseBodySize limits HTTP response size to prevent DoS (10 MB)
+	MaxResponseBodySize = 10 << 20
+
+	// MaxRetries for transient network failures
+	MaxRetries = 3
 )
 
-// FetchManifestFromGitHub fetches marketplace.json from a GitHub repo
+var (
+	// Singleton HTTP client for connection reuse
+	httpClientOnce sync.Once
+	httpClientInst *http.Client
+)
+
+// FetchManifestFromGitHub fetches marketplace.json from a GitHub repo with retries
 // repo format: "owner/repo-name"
 // Returns the parsed manifest or error
 func FetchManifestFromGitHub(repo string) (*MarketplaceManifest, error) {
+	var lastErr error
+
+	// Retry with exponential backoff for transient failures
+	for attempt := 0; attempt < MaxRetries; attempt++ {
+		manifest, err := fetchManifestAttempt(repo)
+		if err == nil {
+			return manifest, nil
+		}
+
+		lastErr = err
+
+		// Backoff before retry (except on last attempt): 1s, 2s, 4s
+		if attempt < MaxRetries-1 {
+			backoff := time.Duration(1<<uint(attempt)) * time.Second
+			time.Sleep(backoff)
+		}
+	}
+
+	return nil, fmt.Errorf("failed after %d attempts: %w", MaxRetries, lastErr)
+}
+
+// fetchManifestAttempt performs a single fetch attempt
+func fetchManifestAttempt(repo string) (*MarketplaceManifest, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), HTTPTimeout)
 	defer cancel()
 
@@ -35,7 +71,7 @@ func FetchManifestFromGitHub(repo string) (*MarketplaceManifest, error) {
 	}
 
 	// Add User-Agent header (GitHub best practice)
-	req.Header.Set("User-Agent", "plum-marketplace-browser/0.1.0")
+	req.Header.Set("User-Agent", "plum-marketplace-browser/0.2.0")
 
 	client := httpClient()
 	resp, err := client.Do(req)
@@ -48,9 +84,20 @@ func FetchManifestFromGitHub(repo string) (*MarketplaceManifest, error) {
 		return nil, fmt.Errorf("GitHub returned status %d for %s", resp.StatusCode, url)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	// Limit response body size to prevent DoS
+	limitedBody := io.LimitReader(resp.Body, MaxResponseBodySize)
+	body, err := io.ReadAll(limitedBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Check if we hit the size limit
+	if int64(len(body)) == MaxResponseBodySize {
+		// Try reading one more byte to confirm truncation
+		var oneByte [1]byte
+		if n, _ := resp.Body.Read(oneByte[:]); n > 0 {
+			return nil, fmt.Errorf("response body exceeded %d bytes", MaxResponseBodySize)
+		}
 	}
 
 	var manifest MarketplaceManifest
@@ -68,15 +115,18 @@ func buildRawURL(repo string) string {
 		GitHubRawBase, repo, DefaultBranch)
 }
 
-// httpClient returns a configured HTTP client with timeout and sensible defaults
+// httpClient returns a singleton HTTP client for connection reuse
 func httpClient() *http.Client {
-	return &http.Client{
-		Timeout: HTTPTimeout,
-		Transport: &http.Transport{
-			MaxIdleConns:        10,
-			MaxIdleConnsPerHost: 5,
-			IdleConnTimeout:     90 * time.Second,
-			TLSHandshakeTimeout: 10 * time.Second,
-		},
-	}
+	httpClientOnce.Do(func() {
+		httpClientInst = &http.Client{
+			Timeout: HTTPTimeout,
+			Transport: &http.Transport{
+				MaxIdleConns:        10,
+				MaxIdleConnsPerHost: 5,
+				IdleConnTimeout:     90 * time.Second,
+				TLSHandshakeTimeout: 10 * time.Second,
+			},
+		}
+	})
+	return httpClientInst
 }

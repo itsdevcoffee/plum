@@ -14,6 +14,7 @@ var (
 
 	// Semantic
 	Success = lipgloss.Color("#10B981") // Teal-green complements orange
+	Error   = lipgloss.Color("#EF4444") // Red for errors
 
 	// Text Hierarchy (Warm-tinted)
 	TextPrimary   = lipgloss.Color("#FFF5EE") // Warm white/seashell

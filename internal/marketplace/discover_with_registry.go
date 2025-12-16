@@ -22,13 +22,18 @@ func DiscoverWithRegistry() (map[string]*MarketplaceManifest, error) {
 		mu        sync.Mutex
 		wg        sync.WaitGroup
 		errs      []error
+		sem       = make(chan struct{}, MaxConcurrentFetches) // Semaphore for concurrency limiting
 	)
 
-	// Fetch all marketplaces in parallel
+	// Fetch all marketplaces with concurrency limit
 	for _, pm := range marketplaceList {
 		wg.Add(1)
 		go func(marketplace PopularMarketplace) {
 			defer wg.Done()
+
+			// Acquire semaphore
+			sem <- struct{}{}
+			defer func() { <-sem }() // Release semaphore
 
 			// Skip cache - force fresh fetch from GitHub
 			manifest, err := FetchManifestFromGitHub(marketplace.GitHubRepo)

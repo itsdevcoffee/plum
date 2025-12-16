@@ -83,9 +83,10 @@ type Model struct {
 	viewState    ViewState
 	displayMode  ListDisplayMode
 	filterMode   FilterMode
-	windowWidth  int
-	windowHeight int
-	copiedFlash  bool // Brief "Copied!" indicator
+	windowWidth         int
+	windowHeight        int
+	copiedFlash         bool // Brief "Copied!" indicator
+	clipboardErrorFlash bool // Brief "Clipboard error!" indicator
 
 	// Animation state
 	cursorY         float64 // Animated cursor position
