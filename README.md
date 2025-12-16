@@ -9,7 +9,7 @@
 
 Plum is a fast, fuzzy-search TUI that lets you discover and install plugins from 10 popular marketplaces - even ones you haven't installed yet. Browse 600+ plugins instantly, no setup required.
 
-![List View](assets/screenshots/list-view-card.png)
+![Plum Demo](assets/videos/plum-demo-hq.gif)
 
 ## Popular Marketplaces
 
