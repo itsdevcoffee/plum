@@ -51,11 +51,11 @@ jobs:
             exit 1
           fi
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
-          args: --timeout=5m --out-format=colored-line-number
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+
+      - name: Run golangci-lint
+        run: golangci-lint run --timeout=5m --out-format=colored-line-number
 
   vuln-check:
     name: Vulnerability Check
