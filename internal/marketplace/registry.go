@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -143,7 +144,7 @@ func loadRegistryFromCache() (*MarketplaceRegistry, error) {
 		return nil, err
 	}
 
-	cachePath := cacheDir + "/" + RegistryCacheName + ".json"
+	cachePath := filepath.Join(cacheDir, RegistryCacheName+".json")
 
 	data, err := os.ReadFile(cachePath)
 	if err != nil {
@@ -163,14 +164,15 @@ func loadRegistryFromCache() (*MarketplaceRegistry, error) {
 	return entry.Registry, nil
 }
 
-// saveRegistryToCache saves the registry to cache
+// saveRegistryToCache saves the registry to cache using atomic write
 func saveRegistryToCache(registry *MarketplaceRegistry) error {
 	cacheDir, err := PlumCacheDir()
 	if err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	// Create cache directory if it doesn't exist (user-only permissions)
+	if err := os.MkdirAll(cacheDir, 0700); err != nil {
 		return err
 	}
 
@@ -184,6 +186,34 @@ func saveRegistryToCache(registry *MarketplaceRegistry) error {
 		return err
 	}
 
-	cachePath := cacheDir + "/" + RegistryCacheName + ".json"
-	return os.WriteFile(cachePath, data, 0644)
+	cachePath := filepath.Join(cacheDir, RegistryCacheName+".json")
+
+	// Atomic write: temp file + rename
+	tmpFile, err := os.CreateTemp(cacheDir, ".tmp-"+RegistryCacheName+"-*.json")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+	tmpPath := tmpFile.Name()
+	defer os.Remove(tmpPath) // Cleanup on failure
+
+	if _, err := tmpFile.Write(data); err != nil {
+		tmpFile.Close()
+		return fmt.Errorf("failed to write temp file: %w", err)
+	}
+
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	// Set restrictive permissions (user-only read/write)
+	if err := os.Chmod(tmpPath, 0600); err != nil {
+		return fmt.Errorf("failed to set permissions: %w", err)
+	}
+
+	// Atomic rename (POSIX guarantee)
+	if err := os.Rename(tmpPath, cachePath); err != nil {
+		return fmt.Errorf("failed to rename temp file: %w", err)
+	}
+
+	return nil
 }

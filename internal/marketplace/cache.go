@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
 const (
 	// CacheTTL is how long cached marketplace data remains valid (24 hours)
 	CacheTTL = 24 * time.Hour
+
+	// MaxMarketplaceNameLength limits marketplace name length for security
+	MaxMarketplaceNameLength = 100
 )
 
 // CacheEntry represents a cached marketplace manifest with metadata
@@ -20,8 +24,44 @@ type CacheEntry struct {
 	Source    string               `json:"source"`
 }
 
-// PlumCacheDir returns the path to plum's cache directory (~/.plum/cache/marketplaces/)
-func PlumCacheDir() (string, error) {
+// validateMarketplaceName ensures marketplace name is safe for filesystem use
+// Prevents path traversal and injection attacks
+func validateMarketplaceName(name string) error {
+	if name == "" {
+		return fmt.Errorf("marketplace name cannot be empty")
+	}
+
+	// Reject path traversal attempts
+	if strings.Contains(name, "..") {
+		return fmt.Errorf("marketplace name contains path traversal: %q", name)
+	}
+
+	// Reject path separators (both Unix and Windows)
+	if strings.ContainsAny(name, "/\\") {
+		return fmt.Errorf("marketplace name contains path separator: %q", name)
+	}
+
+	// Only allow safe characters: alphanumeric, dash, underscore, dot
+	for _, r := range name {
+		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') ||
+			(r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.') {
+			return fmt.Errorf("marketplace name contains invalid character %q", r)
+		}
+	}
+
+	// Enforce length limit
+	if len(name) > MaxMarketplaceNameLength {
+		return fmt.Errorf("marketplace name too long (max %d characters): %d", MaxMarketplaceNameLength, len(name))
+	}
+
+	return nil
+}
+
+// plumCacheDir is a variable to allow testing with a custom directory
+var plumCacheDir = defaultPlumCacheDir
+
+// defaultPlumCacheDir returns the default path to plum's cache directory
+func defaultPlumCacheDir() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("cannot determine home directory: %w", err)
@@ -35,9 +75,19 @@ func PlumCacheDir() (string, error) {
 	return filepath.Join(home, ".plum", "cache", "marketplaces"), nil
 }
 
+// PlumCacheDir returns the path to plum's cache directory (~/.plum/cache/marketplaces/)
+func PlumCacheDir() (string, error) {
+	return plumCacheDir()
+}
+
 // LoadFromCache loads a marketplace manifest from cache if valid
 // Returns nil if cache miss or expired (no error)
 func LoadFromCache(marketplaceName string) (*MarketplaceManifest, error) {
+	// Validate marketplace name for security
+	if err := validateMarketplaceName(marketplaceName); err != nil {
+		return nil, err
+	}
+
 	cacheDir, err := PlumCacheDir()
 	if err != nil {
 		return nil, err
@@ -66,15 +116,20 @@ func LoadFromCache(marketplaceName string) (*MarketplaceManifest, error) {
 	return entry.Manifest, nil
 }
 
-// SaveToCache saves a marketplace manifest to cache
+// SaveToCache saves a marketplace manifest to cache using atomic write
 func SaveToCache(marketplaceName string, manifest *MarketplaceManifest) error {
+	// Validate marketplace name for security
+	if err := validateMarketplaceName(marketplaceName); err != nil {
+		return err
+	}
+
 	cacheDir, err := PlumCacheDir()
 	if err != nil {
 		return err
 	}
 
-	// Create cache directory if it doesn't exist
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	// Create cache directory if it doesn't exist (user-only permissions)
+	if err := os.MkdirAll(cacheDir, 0700); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -90,7 +145,35 @@ func SaveToCache(marketplaceName string, manifest *MarketplaceManifest) error {
 	}
 
 	cachePath := filepath.Join(cacheDir, marketplaceName+".json")
-	return os.WriteFile(cachePath, data, 0644)
+
+	// Atomic write: temp file + rename
+	tmpFile, err := os.CreateTemp(cacheDir, ".tmp-"+marketplaceName+"-*.json")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+	tmpPath := tmpFile.Name()
+	defer os.Remove(tmpPath) // Cleanup on failure
+
+	if _, err := tmpFile.Write(data); err != nil {
+		tmpFile.Close()
+		return fmt.Errorf("failed to write temp file: %w", err)
+	}
+
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	// Set restrictive permissions (user-only read/write)
+	if err := os.Chmod(tmpPath, 0600); err != nil {
+		return fmt.Errorf("failed to set permissions: %w", err)
+	}
+
+	// Atomic rename (POSIX guarantee)
+	if err := os.Rename(tmpPath, cachePath); err != nil {
+		return fmt.Errorf("failed to rename temp file: %w", err)
+	}
+
+	return nil
 }
 
 // isCacheValid checks if cache entry is still valid based on TTL
