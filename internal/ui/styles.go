@@ -5,9 +5,9 @@ import "github.com/charmbracelet/lipgloss"
 // Colors - Orange/Peach themed semantic palette
 var (
 	// Brand / Primary (Orange Scale - Dark to Bright)
-	PlumMedium  = lipgloss.Color("#A0522D") // Deep burnt orange for selected borders
-	PlumBright  = lipgloss.Color("#E67E22") // Rich orange for active elements, highlights
-	PlumGlow    = lipgloss.Color("#FF8C42") // Bright orange for hover, glow states
+	PlumMedium = lipgloss.Color("#A0522D") // Deep burnt orange for selected borders
+	PlumBright = lipgloss.Color("#E67E22") // Rich orange for active elements, highlights
+	PlumGlow   = lipgloss.Color("#FF8C42") // Bright orange for hover, glow states
 
 	// Accent (Warm Peach)
 	PeachSoft = lipgloss.Color("#FFAB91") // Notifications, discovery, headers

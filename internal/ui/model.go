@@ -69,20 +69,20 @@ const (
 // Model is the main application model
 type Model struct {
 	// Data
-	allPlugins          []plugin.Plugin
-	results             []search.RankedPlugin
-	loading             bool
-	refreshing          bool // True when manually refreshing cache
+	allPlugins           []plugin.Plugin
+	results              []search.RankedPlugin
+	loading              bool
+	refreshing           bool // True when manually refreshing cache
 	newMarketplacesCount int  // Number of new marketplaces available in registry
 
 	// UI state
-	textInput    textinput.Model
-	spinner      spinner.Model
-	cursor       int
-	scrollOffset int
-	viewState    ViewState
-	displayMode  ListDisplayMode
-	filterMode   FilterMode
+	textInput           textinput.Model
+	spinner             spinner.Model
+	cursor              int
+	scrollOffset        int
+	viewState           ViewState
+	displayMode         ListDisplayMode
+	filterMode          FilterMode
 	windowWidth         int
 	windowHeight        int
 	copiedFlash         bool // Brief "Copied!" indicator
@@ -95,12 +95,12 @@ type Model struct {
 	spring          harmonica.Spring
 
 	// View transition state
-	transitionProgress    float64         // 0.0 = old view, 1.0 = new view
-	transitionVelocity    float64
-	targetTransition      float64
-	previousView          ViewState       // View we're transitioning FROM
-	transitionDirection   int             // 1 = forward (right to left), -1 = back (left to right)
-	transitionStyle       TransitionStyle // Current animation style
+	transitionProgress  float64 // 0.0 = old view, 1.0 = new view
+	transitionVelocity  float64
+	targetTransition    float64
+	previousView        ViewState       // View we're transitioning FROM
+	transitionDirection int             // 1 = forward (right to left), -1 = back (left to right)
+	transitionStyle     TransitionStyle // Current animation style
 
 	// Error state
 	err error
@@ -207,13 +207,6 @@ type cacheRefreshedMsg struct {
 // registryCheckedMsg is sent when registry check completes
 type registryCheckedMsg struct {
 	newCount int
-}
-
-// refreshCache clears cache and reloads all plugins
-func refreshCache() tea.Msg {
-	// This will be imported from marketplace package
-	// to avoid circular dependency, we'll call it from update.go
-	return refreshCacheMsg{}
 }
 
 // doRefreshCache performs the actual cache refresh

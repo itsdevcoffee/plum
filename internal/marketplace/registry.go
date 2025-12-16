@@ -24,10 +24,10 @@ const (
 
 // MarketplaceRegistry represents the registry structure
 type MarketplaceRegistry struct {
-	Version      string                `json:"version"`
-	LastUpdated  string                `json:"lastUpdated"`
-	Description  string                `json:"description"`
-	Marketplaces []PopularMarketplace  `json:"marketplaces"`
+	Version      string               `json:"version"`
+	LastUpdated  string               `json:"lastUpdated"`
+	Description  string               `json:"description"`
+	Marketplaces []PopularMarketplace `json:"marketplaces"`
 }
 
 // RegistryCacheEntry represents a cached registry with metadata
@@ -118,7 +118,7 @@ func fetchRegistryFromGitHub() (*MarketplaceRegistry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch registry: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GitHub returned status %d for registry", resp.StatusCode)
@@ -156,6 +156,7 @@ func loadRegistryFromCache() (*MarketplaceRegistry, error) {
 
 	cachePath := filepath.Join(cacheDir, RegistryCacheName+".json")
 
+	// #nosec G304 -- cachePath is constructed from trusted cache directory and constant registry name
 	data, err := os.ReadFile(cachePath)
 	if err != nil {
 		return nil, err
@@ -204,10 +205,10 @@ func saveRegistryToCache(registry *MarketplaceRegistry) error {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
 	tmpPath := tmpFile.Name()
-	defer os.Remove(tmpPath) // Cleanup on failure
+	defer func() { _ = os.Remove(tmpPath) }() // Cleanup on failure - best effort
 
 	if _, err := tmpFile.Write(data); err != nil {
-		tmpFile.Close()
+		_ = tmpFile.Close() // Best effort cleanup
 		return fmt.Errorf("failed to write temp file: %w", err)
 	}
 
@@ -220,8 +221,8 @@ func saveRegistryToCache(registry *MarketplaceRegistry) error {
 		return fmt.Errorf("failed to set permissions: %w", err)
 	}
 
-	// Atomic rename (POSIX guarantee)
-	if err := os.Rename(tmpPath, cachePath); err != nil {
+	// Atomic rename (with Windows fallback)
+	if err := atomicRename(tmpPath, cachePath); err != nil {
 		return fmt.Errorf("failed to rename temp file: %w", err)
 	}
 

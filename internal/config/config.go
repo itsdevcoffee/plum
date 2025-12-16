@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/itsdevcoffee/plum/internal/plugin"
 	"github.com/itsdevcoffee/plum/internal/marketplace"
+	"github.com/itsdevcoffee/plum/internal/plugin"
 )
 
 // KnownMarketplaces represents the known_marketplaces.json structure
@@ -51,6 +51,7 @@ func LoadKnownMarketplaces() (KnownMarketplaces, error) {
 		return nil, err
 	}
 
+	// #nosec G304 -- path is derived from known config dirs, not untrusted input
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -74,6 +75,7 @@ func LoadInstalledPlugins() (*InstalledPluginsV2, error) {
 		return nil, err
 	}
 
+	// #nosec G304 -- path is derived from known config dirs, not untrusted input
 	data, err := os.ReadFile(path)
 	if err != nil {
 		// Return empty if file doesn't exist
@@ -94,6 +96,7 @@ func LoadInstalledPlugins() (*InstalledPluginsV2, error) {
 // LoadMarketplaceManifest loads a marketplace.json file from a marketplace directory
 func LoadMarketplaceManifest(marketplacePath string) (*marketplace.MarketplaceManifest, error) {
 	manifestPath := filepath.Join(marketplacePath, ".claude-plugin", "marketplace.json")
+	// #nosec G304 -- manifestPath is constructed from validated local project path
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {
 		return nil, err
