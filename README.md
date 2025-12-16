@@ -197,6 +197,12 @@ Contributions are welcome! Whether it's:
 
 Feel free to open an issue or pull request.
 
+## 🔐 Security
+
+Plum treats marketplace and plugin metadata as untrusted input and does not execute plugins or forward plugin content to AI agents.
+
+For details on our threat model, trust boundaries, and how to report vulnerabilities, see [SECURITY.md](SECURITY.md).
+
 ## License
 
 MIT - see [LICENSE](LICENSE) for details.
