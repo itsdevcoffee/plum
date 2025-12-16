@@ -156,6 +156,7 @@ func loadRegistryFromCache() (*MarketplaceRegistry, error) {
 
 	cachePath := filepath.Join(cacheDir, RegistryCacheName+".json")
 
+	// #nosec G304 -- cachePath is constructed from trusted cache directory and constant registry name
 	data, err := os.ReadFile(cachePath)
 	if err != nil {
 		return nil, err
@@ -204,10 +205,10 @@ func saveRegistryToCache(registry *MarketplaceRegistry) error {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
 	tmpPath := tmpFile.Name()
-	defer os.Remove(tmpPath) // Cleanup on failure
+	defer func() { _ = os.Remove(tmpPath) }() // Cleanup on failure - best effort
 
 	if _, err := tmpFile.Write(data); err != nil {
-		tmpFile.Close()
+		_ = tmpFile.Close() // Best effort cleanup
 		return fmt.Errorf("failed to write temp file: %w", err)
 	}
 

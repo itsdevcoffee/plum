@@ -14,7 +14,7 @@ func TestFetchManifestFromGitHub_BodySizeLimit(t *testing.T) {
 	largeBody := strings.Repeat("x", int(MaxResponseBodySize)+1000)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(largeBody))
+		_, _ = w.Write([]byte(largeBody))
 	}))
 	defer server.Close()
 
@@ -45,7 +45,7 @@ func TestFetchManifestFromGitHub_Retry(t *testing.T) {
 		}
 		// Succeed on the 3rd attempt
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"name":"test","owner":{},"metadata":{},"plugins":[]}`))
+		_, _ = w.Write([]byte(`{"name":"test","owner":{},"metadata":{},"plugins":[]}`))
 	}))
 	defer server.Close()
 
@@ -87,7 +87,7 @@ func TestHTTPClient_Singleton(t *testing.T) {
 func TestFetchManifestAttempt_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{invalid json`))
+		_, _ = w.Write([]byte(`{invalid json`))
 	}))
 	defer server.Close()
 
@@ -116,7 +116,7 @@ func TestFetchManifestAttempt_Timeout(t *testing.T) {
 		// Sleep longer than the timeout
 		time.Sleep(HTTPTimeout + time.Second)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"name":"test","owner":{},"metadata":{},"plugins":[]}`))
+		_, _ = w.Write([]byte(`{"name":"test","owner":{},"metadata":{},"plugins":[]}`))
 	}))
 	defer server.Close()
 

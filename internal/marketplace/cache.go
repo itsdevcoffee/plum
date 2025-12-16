@@ -95,6 +95,7 @@ func LoadFromCache(marketplaceName string) (*MarketplaceManifest, error) {
 
 	cachePath := filepath.Join(cacheDir, marketplaceName+".json")
 
+	// #nosec G304 -- cachePath is constructed from validated marketplace name and trusted cache directory
 	data, err := os.ReadFile(cachePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -152,10 +153,10 @@ func SaveToCache(marketplaceName string, manifest *MarketplaceManifest) error {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
 	tmpPath := tmpFile.Name()
-	defer os.Remove(tmpPath) // Cleanup on failure
+	defer func() { _ = os.Remove(tmpPath) }() // Cleanup on failure - best effort
 
 	if _, err := tmpFile.Write(data); err != nil {
-		tmpFile.Close()
+		_ = tmpFile.Close() // Best effort cleanup
 		return fmt.Errorf("failed to write temp file: %w", err)
 	}
 
