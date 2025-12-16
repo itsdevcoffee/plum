@@ -133,7 +133,7 @@ func fetchManifestAttempt(repo string) (*MarketplaceManifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch from GitHub: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, &httpStatusError{

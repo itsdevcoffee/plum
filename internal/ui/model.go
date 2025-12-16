@@ -209,13 +209,6 @@ type registryCheckedMsg struct {
 	newCount int
 }
 
-// refreshCache clears cache and reloads all plugins
-func refreshCache() tea.Msg {
-	// This will be imported from marketplace package
-	// to avoid circular dependency, we'll call it from update.go
-	return refreshCacheMsg{}
-}
-
 // doRefreshCache performs the actual cache refresh
 func doRefreshCache() tea.Msg {
 	// Clear cache and reload

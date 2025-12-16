@@ -118,7 +118,7 @@ func fetchRegistryFromGitHub() (*MarketplaceRegistry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch registry: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GitHub returned status %d for registry", resp.StatusCode)
