@@ -510,6 +510,10 @@ func (m Model) detailView() string {
 			// Show "Copied!" feedback
 			copiedStyle := lipgloss.NewStyle().Foreground(Success).Bold(true)
 			footerParts = append(footerParts, copiedStyle.Render("✓ Copied!"))
+		} else if m.clipboardErrorFlash {
+			// Show clipboard error feedback
+			errorStyle := lipgloss.NewStyle().Foreground(Error).Bold(true)
+			footerParts = append(footerParts, errorStyle.Render("✗ Clipboard error"))
 		} else {
 			if p.IsDiscoverable {
 				// Discoverable plugin - show both copy options
