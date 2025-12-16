@@ -35,7 +35,7 @@ Plum treats the following as untrusted:
 
 1. **Local filesystem** within user home directory (`~/.plum/`)
 2. **Compiled Plum binary** (built from source or official releases)
-3. **Hardcoded GitHub raw content base URL** (`https://raw.githubusercontent.com`)
+3. **Fixed external endpoints** with expected hostnames (e.g., `raw.githubusercontent.com`) - treated as dependencies, not trust anchors
 
 ## Trust Boundaries
 
@@ -73,7 +73,7 @@ Plum treats the following as untrusted:
 
 **Risk**: Plugin descriptions or names crafted to manipulate future AI agent processing if metadata is ever forwarded as context.
 
-**Context**: Research on prompt injection (e.g., [Adversarial Machine Learning](https://arxiv.org/abs/2302.12173)) shows that even display-only text can pose risks if later processed by LLMs.
+**Context**: Recent research on prompt injection and indirect prompt injection shows that even display-only text can pose risks if later processed by LLMs.
 
 **Current Status**: Plum does not forward plugin text to any AI system. This risk is acknowledged for future-proofing.
 

@@ -219,6 +219,8 @@ An optional automated agent that reviews plugin metadata for suspicious patterns
 
 ## Implementation Roadmap
 
+**Note**: Version numbers are aspirational and may change based on community feedback and maintainer capacity.
+
 ### Phase 1: Schema Validation (v0.3.0)
 - [ ] Define strict JSON schema for `MarketplaceManifest`
 - [ ] Implement validation on manifest fetch
