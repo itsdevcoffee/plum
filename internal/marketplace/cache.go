@@ -168,8 +168,8 @@ func SaveToCache(marketplaceName string, manifest *MarketplaceManifest) error {
 		return fmt.Errorf("failed to set permissions: %w", err)
 	}
 
-	// Atomic rename (POSIX guarantee)
-	if err := os.Rename(tmpPath, cachePath); err != nil {
+	// Atomic rename (with Windows fallback)
+	if err := atomicRename(tmpPath, cachePath); err != nil {
 		return fmt.Errorf("failed to rename temp file: %w", err)
 	}
 
@@ -179,4 +179,30 @@ func SaveToCache(marketplaceName string, manifest *MarketplaceManifest) error {
 // isCacheValid checks if cache entry is still valid based on TTL
 func isCacheValid(entry CacheEntry) bool {
 	return time.Since(entry.FetchedAt) < CacheTTL
+}
+
+// atomicRename performs an atomic rename with Windows fallback
+// On POSIX systems, os.Rename is atomic and replaces the destination
+// On Windows, os.Rename fails if the destination exists, so we handle that case
+func atomicRename(tmpPath, finalPath string) error {
+	err := os.Rename(tmpPath, finalPath)
+	if err == nil {
+		return nil
+	}
+
+	// If rename failed and destination exists, remove it and retry (Windows workaround)
+	if _, statErr := os.Stat(finalPath); statErr == nil {
+		// Destination exists - remove it
+		if removeErr := os.Remove(finalPath); removeErr != nil {
+			return fmt.Errorf("failed to remove existing file: %w", removeErr)
+		}
+		// Retry rename
+		if retryErr := os.Rename(tmpPath, finalPath); retryErr != nil {
+			return fmt.Errorf("failed to rename after remove: %w", retryErr)
+		}
+		return nil
+	}
+
+	// Original error wasn't due to destination existing
+	return err
 }

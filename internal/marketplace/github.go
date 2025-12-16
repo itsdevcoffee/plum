@@ -3,17 +3,16 @@ package marketplace
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 )
 
 const (
-	// GitHubRawBase is the base URL for GitHub raw content
-	GitHubRawBase = "https://raw.githubusercontent.com"
-
 	// DefaultBranch to fetch from
 	DefaultBranch = "main"
 
@@ -28,10 +27,61 @@ const (
 )
 
 var (
+	// GitHubRawBase is the base URL for GitHub raw content (variable for testing)
+	GitHubRawBase = "https://raw.githubusercontent.com"
+)
+
+var (
 	// Singleton HTTP client for connection reuse
 	httpClientOnce sync.Once
 	httpClientInst *http.Client
 )
+
+// httpStatusError wraps HTTP status code errors for retry logic
+type httpStatusError struct {
+	StatusCode int
+	Message    string
+}
+
+func (e *httpStatusError) Error() string {
+	return e.Message
+}
+
+// isRetryableError determines if an error should trigger a retry
+// Only retries transient failures: network errors, timeouts, 5xx, and 429
+func isRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Check for HTTP status errors
+	var statusErr *httpStatusError
+	if errors.As(err, &statusErr) {
+		// Retry on 5xx (server errors) and 429 (rate limiting)
+		if statusErr.StatusCode >= 500 || statusErr.StatusCode == http.StatusTooManyRequests {
+			return true
+		}
+		// Don't retry on 4xx client errors (except 429 handled above)
+		if statusErr.StatusCode >= 400 && statusErr.StatusCode < 500 {
+			return false
+		}
+	}
+
+	// Check for network/timeout errors
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		// Network errors and timeouts are retryable
+		return true
+	}
+
+	// Context timeout/cancellation
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return true
+	}
+
+	// For other errors (parsing, etc.), don't retry
+	return false
+}
 
 // FetchManifestFromGitHub fetches marketplace.json from a GitHub repo with retries
 // repo format: "owner/repo-name"
@@ -47,6 +97,11 @@ func FetchManifestFromGitHub(repo string) (*MarketplaceManifest, error) {
 		}
 
 		lastErr = err
+
+		// Only retry transient failures (network errors, 5xx, 429)
+		if !isRetryableError(err) {
+			return nil, err
+		}
 
 		// Backoff before retry (except on last attempt): 1s, 2s, 4s
 		if attempt < MaxRetries-1 {
@@ -81,7 +136,10 @@ func fetchManifestAttempt(repo string) (*MarketplaceManifest, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GitHub returned status %d for %s", resp.StatusCode, url)
+		return nil, &httpStatusError{
+			StatusCode: resp.StatusCode,
+			Message:    fmt.Sprintf("GitHub returned status %d for %s", resp.StatusCode, url),
+		}
 	}
 
 	// Limit response body size to prevent DoS

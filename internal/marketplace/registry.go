@@ -220,8 +220,8 @@ func saveRegistryToCache(registry *MarketplaceRegistry) error {
 		return fmt.Errorf("failed to set permissions: %w", err)
 	}
 
-	// Atomic rename (POSIX guarantee)
-	if err := os.Rename(tmpPath, cachePath); err != nil {
+	// Atomic rename (with Windows fallback)
+	if err := atomicRename(tmpPath, cachePath); err != nil {
 		return fmt.Errorf("failed to rename temp file: %w", err)
 	}
 
