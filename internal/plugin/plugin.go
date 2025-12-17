@@ -2,21 +2,23 @@ package plugin
 
 // Plugin represents a Claude Code plugin from any marketplace
 type Plugin struct {
-	Name           string   `json:"name"`
-	Description    string   `json:"description"`
-	Version        string   `json:"version"`
-	Keywords       []string `json:"keywords"`
-	Category       string   `json:"category"`
-	Author         Author   `json:"author"`
-	Marketplace    string   `json:"-"`      // The marketplace this plugin belongs to
-	Installed      bool     `json:"-"`      // Whether this plugin is currently installed
-	IsDiscoverable bool     `json:"-"`      // Whether from a discoverable (not installed) marketplace
-	InstallPath    string   `json:"-"`      // Path if installed
-	Source         string   `json:"source"` // Source path within marketplace
-	Homepage       string   `json:"homepage"`
-	Repository     string   `json:"repository"` // Source repository URL
-	License        string   `json:"license"`    // License identifier (e.g., "MIT")
-	Tags           []string `json:"tags"`       // Categorization tags
+	Name              string   `json:"name"`
+	Description       string   `json:"description"`
+	Version           string   `json:"version"`
+	Keywords          []string `json:"keywords"`
+	Category          string   `json:"category"`
+	Author            Author   `json:"author"`
+	Marketplace       string   `json:"-"`      // Friendly marketplace name (e.g., "feedmob-plugins")
+	MarketplaceRepo   string   `json:"-"`      // Full repo URL for display (e.g., "https://github.com/feed-mob/claude-code-marketplace")
+	MarketplaceSource string   `json:"-"`      // CLI source format (e.g., "feed-mob/claude-code-marketplace" for GitHub)
+	Installed         bool     `json:"-"`      // Whether this plugin is currently installed
+	IsDiscoverable    bool     `json:"-"`      // Whether from a discoverable (not installed) marketplace
+	InstallPath       string   `json:"-"`      // Path if installed
+	Source            string   `json:"source"` // Source path within marketplace
+	Homepage          string   `json:"homepage"`
+	Repository        string   `json:"repository"` // Source repository URL
+	License           string   `json:"license"`    // License identifier (e.g., "MIT")
+	Tags              []string `json:"tags"`       // Categorization tags
 }
 
 // Author represents plugin author information

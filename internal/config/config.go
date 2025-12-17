@@ -146,6 +146,16 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 			continue
 		}
 
+		// Look up repo/source from PopularMarketplaces for known marketplaces
+		var marketplaceRepo, marketplaceSource string
+		for _, pm := range marketplace.PopularMarketplaces {
+			if pm.Name == marketplaceName {
+				marketplaceRepo = pm.Repo
+				marketplaceSource, _ = marketplace.DeriveSource(pm.Repo)
+				break
+			}
+		}
+
 		for _, mp := range manifest.Plugins {
 			fullName := mp.Name + "@" + marketplaceName
 			install, isInstalled := installedSet[fullName]
@@ -162,14 +172,16 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 					URL:     mp.Author.URL,
 					Company: mp.Author.Company,
 				},
-				Marketplace:    marketplaceName,
-				Installed:      isInstalled,
-				IsDiscoverable: false, // From installed marketplace
-				Source:         mp.Source,
-				Homepage:       mp.Homepage,
-				Repository:     mp.Repository,
-				License:        mp.License,
-				Tags:           mp.Tags,
+				Marketplace:       marketplaceName,
+				MarketplaceRepo:   marketplaceRepo,
+				MarketplaceSource: marketplaceSource,
+				Installed:         isInstalled,
+				IsDiscoverable:    false, // From installed marketplace
+				Source:            mp.Source,
+				Homepage:          mp.Homepage,
+				Repository:        mp.Repository,
+				License:           mp.License,
+				Tags:              mp.Tags,
 			}
 
 			if isInstalled {
@@ -188,13 +200,13 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 		fmt.Fprintf(os.Stderr, "Continuing with installed marketplaces only.\n")
 	} else {
 		// Process discovered marketplaces
-		for marketplaceName, manifest := range discovered {
+		for marketplaceName, disc := range discovered {
 			// Skip if we already processed this marketplace from installed
 			if processedMarketplaces[marketplaceName] {
 				continue
 			}
 
-			for _, mp := range manifest.Plugins {
+			for _, mp := range disc.Manifest.Plugins {
 				fullName := mp.Name + "@" + marketplaceName
 				install, isInstalled := installedSet[fullName]
 
@@ -210,14 +222,16 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 						URL:     mp.Author.URL,
 						Company: mp.Author.Company,
 					},
-					Marketplace:    marketplaceName,
-					Installed:      isInstalled,
-					IsDiscoverable: true, // From discovered marketplace
-					Source:         mp.Source,
-					Homepage:       mp.Homepage,
-					Repository:     mp.Repository,
-					License:        mp.License,
-					Tags:           mp.Tags,
+					Marketplace:       marketplaceName,
+					MarketplaceRepo:   disc.Repo,
+					MarketplaceSource: disc.Source,
+					Installed:         isInstalled,
+					IsDiscoverable:    true, // From discovered marketplace
+					Source:            mp.Source,
+					Homepage:          mp.Homepage,
+					Repository:        mp.Repository,
+					License:           mp.License,
+					Tags:              mp.Tags,
 				}
 
 				if isInstalled {

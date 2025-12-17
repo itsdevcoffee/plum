@@ -84,14 +84,21 @@ func isRetryableError(err error) bool {
 }
 
 // FetchManifestFromGitHub fetches marketplace.json from a GitHub repo with retries
-// repo format: "owner/repo-name"
+// repoURL format: "https://github.com/owner/repo-name" or "owner/repo-name" (legacy)
 // Returns the parsed manifest or error
-func FetchManifestFromGitHub(repo string) (*MarketplaceManifest, error) {
+func FetchManifestFromGitHub(repoURL string) (*MarketplaceManifest, error) {
+	// Extract owner/repo from full URL if needed
+	ownerRepo, err := DeriveSource(repoURL)
+	if err != nil {
+		// If DeriveSource fails, assume it's already in owner/repo format (legacy)
+		ownerRepo = repoURL
+	}
+
 	var lastErr error
 
 	// Retry with exponential backoff for transient failures
 	for attempt := 0; attempt < MaxRetries; attempt++ {
-		manifest, err := fetchManifestAttempt(repo)
+		manifest, err := fetchManifestAttempt(ownerRepo)
 		if err == nil {
 			return manifest, nil
 		}

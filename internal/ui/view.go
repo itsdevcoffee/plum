@@ -484,7 +484,7 @@ func (m Model) detailView() string {
 
 			b.WriteString(DetailLabelStyle.Render("Step 1:") + " Install the marketplace")
 			b.WriteString("\n")
-			installMarketplace := fmt.Sprintf("/plugin marketplace add %s", p.Marketplace)
+			installMarketplace := fmt.Sprintf("/plugin marketplace add %s", p.MarketplaceSource)
 			b.WriteString("  " + InstallCommandStyle.Render(installMarketplace))
 			b.WriteString("  " + HelpStyle.Render("press 'c' to copy"))
 			b.WriteString("\n\n")

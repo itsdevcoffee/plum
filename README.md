@@ -41,7 +41,7 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 <td>Automation-focused collection with <strong>15 plugins</strong> specializing in Unity game development, Blender 3D workflows, browser automation, and code quality monitoring.</td>
 </tr>
 <tr>
-<td><a href="https://github.com/feed-mob/claude-code-marketplace">feedmob-plugins</a></td>
+<td><a href="https://github.com/feed-mob/claude-code-marketplace">feedmob-claude-plugins</a></td>
 <td>Productivity and workflow tools with <strong>6 specialized plugins</strong> for data processing (CSV parsing), testing, commit automation, presentation generation, and AI news aggregation.</td>
 </tr>
 <tr>
@@ -120,6 +120,15 @@ The Discover filter shows plugins from uninstalled marketplaces with [Discover] 
 ### Two-Step Installation for New Marketplaces
 When you find a plugin from an uninstalled marketplace, plum shows you exactly
 what to install. Press 'c' to copy the marketplace command, 'y' to copy the plugin command:
+
+**Example:**
+```bash
+# Step 1: Install the marketplace
+/plugin marketplace add feed-mob/claude-code-marketplace
+
+# Step 2: Install the plugin
+/plugin install csv-parser@feedmob-claude-plugins
+```
 
 ![Discover Detail](assets/screenshots/discover-detail-view.png)
 

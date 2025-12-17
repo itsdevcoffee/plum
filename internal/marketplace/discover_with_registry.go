@@ -36,7 +36,7 @@ func DiscoverWithRegistry() (map[string]*MarketplaceManifest, error) {
 			defer func() { <-sem }() // Release semaphore
 
 			// Skip cache - force fresh fetch from GitHub
-			manifest, err := FetchManifestFromGitHub(marketplace.GitHubRepo)
+			manifest, err := FetchManifestFromGitHub(marketplace.Repo)
 			if err != nil {
 				mu.Lock()
 				errs = append(errs, fmt.Errorf("%s: %w", marketplace.Name, err))

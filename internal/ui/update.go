@@ -21,7 +21,7 @@ func init() {
 			result[i] = PopularMarketplace{
 				Name:        m.Name,
 				DisplayName: m.DisplayName,
-				GitHubRepo:  m.GitHubRepo,
+				Repo:        m.Repo,
 				Description: m.Description,
 			}
 		}
@@ -301,7 +301,7 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			var copyText string
 			if p.IsDiscoverable {
 				// Copy marketplace add command for discoverable plugins
-				copyText = fmt.Sprintf("/plugin marketplace add %s", p.Marketplace)
+				copyText = fmt.Sprintf("/plugin marketplace add %s", p.MarketplaceSource)
 			} else {
 				// Copy plugin install command for normal plugins
 				copyText = p.InstallCommand()

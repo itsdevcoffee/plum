@@ -175,7 +175,7 @@ func checkRegistryForUpdates() tea.Msg {
 type PopularMarketplace struct {
 	Name        string
 	DisplayName string
-	GitHubRepo  string
+	Repo        string
 	Description string
 }
 
