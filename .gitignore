@@ -33,3 +33,5 @@ plum
 # OS files
 .DS_Store
 Thumbs.db
+
+docs/tmp
