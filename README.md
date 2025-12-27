@@ -7,7 +7,7 @@
 
 **A better way to discover Claude Code marketplace plugins.**
 
-Plum is a fast, fuzzy-search TUI that lets you discover and install plugins from 10 popular marketplaces - even ones you haven't installed yet. Browse 600+ plugins instantly, no setup required.
+Plum is a fast, fuzzy-search TUI that lets you discover and install plugins from 11 popular marketplaces - even ones you haven't installed yet. Browse 600+ plugins instantly, no setup required.
 
 ![Plum Demo](assets/videos/plum-demo-hq.gif)
 
@@ -60,6 +60,10 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 <td><a href="https://github.com/ccplugins/marketplace">ccplugins-marketplace</a></td>
 <td>Massive curated collection with <strong>200 plugins</strong> organized across 13 categories including DevOps, Testing, Documentation, Marketing, Security, and more.</td>
 </tr>
+<tr>
+<td><a href="https://github.com/thedotmack/claude-mem">claude-mem</a></td>
+<td>Persistent memory compression system for Claude Code with context preservation across sessions. Enables Claude to maintain project knowledge continuity through automatic tool observation capture and semantic summaries.</td>
+</tr>
 </table>
 
 **Have a marketplace?** Submit a PR to add it to this list! We welcome all Claude Code plugin marketplaces.
@@ -84,7 +88,7 @@ plum
 
 ## Key Features
 
-- **Discover 600+ plugins** from 10 popular marketplaces - even ones you haven't installed yet
+- **Discover 600+ plugins** from 11 popular marketplaces - even ones you haven't installed yet
 - **Auto-updating registry** - notifies when new marketplaces are available
 - **Instant fuzzy search** across all plugins (installed + discoverable)
 - **Smart filtering**: All, Discover, Ready, or Installed

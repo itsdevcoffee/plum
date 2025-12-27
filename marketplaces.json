@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-12-11",
+  "lastUpdated": "2025-12-27",
   "description": "Official registry of popular Claude Code plugin marketplaces",
   "marketplaces": [
     {
@@ -90,6 +90,14 @@
       "description": "Curated collection of 200 plugins across 13 categories from DevOps to Marketing",
       "pluginCount": 200,
       "tags": ["curated", "comprehensive", "devops", "marketing", "quality"]
+    },
+    {
+      "name": "claude-mem",
+      "displayName": "Claude-Mem",
+      "repo": "https://github.com/thedotmack/claude-mem",
+      "description": "Persistent memory compression system for Claude Code with context preservation across sessions",
+      "pluginCount": 1,
+      "tags": ["memory", "context", "persistence", "productivity"]
     }
   ]
 }
