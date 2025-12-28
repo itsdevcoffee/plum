@@ -9,19 +9,9 @@ import (
 )
 
 func TestLoadKnownMarketplaces(t *testing.T) {
-	// Save original env
-	originalClaudeDir := os.Getenv("CLAUDE_CONFIG_DIR")
-	defer func() {
-		if originalClaudeDir != "" {
-			os.Setenv("CLAUDE_CONFIG_DIR", originalClaudeDir)
-		} else {
-			os.Unsetenv("CLAUDE_CONFIG_DIR")
-		}
-	}()
-
 	t.Run("valid known_marketplaces.json", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		os.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
+		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
 
 		// Create test file
 		pluginsDir := filepath.Join(tmpDir, "plugins")
@@ -73,7 +63,7 @@ func TestLoadKnownMarketplaces(t *testing.T) {
 	t.Run("file not found", func(t *testing.T) {
 		// Use empty temp dir (no file)
 		emptyDir := t.TempDir()
-		os.Setenv("CLAUDE_CONFIG_DIR", emptyDir)
+		t.Setenv("CLAUDE_CONFIG_DIR", emptyDir)
 
 		_, err := LoadKnownMarketplaces()
 		if err == nil {
@@ -87,7 +77,7 @@ func TestLoadKnownMarketplaces(t *testing.T) {
 
 	t.Run("invalid JSON", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		os.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
+		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
 
 		// Create invalid JSON file
 		pluginsDir := filepath.Join(tmpDir, "plugins")
@@ -108,7 +98,7 @@ func TestLoadKnownMarketplaces(t *testing.T) {
 
 	t.Run("empty JSON object", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		os.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
+		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
 
 		pluginsDir := filepath.Join(tmpDir, "plugins")
 		if err := os.MkdirAll(pluginsDir, 0755); err != nil {
@@ -132,18 +122,9 @@ func TestLoadKnownMarketplaces(t *testing.T) {
 }
 
 func TestLoadInstalledPlugins(t *testing.T) {
-	originalClaudeDir := os.Getenv("CLAUDE_CONFIG_DIR")
-	defer func() {
-		if originalClaudeDir != "" {
-			os.Setenv("CLAUDE_CONFIG_DIR", originalClaudeDir)
-		} else {
-			os.Unsetenv("CLAUDE_CONFIG_DIR")
-		}
-	}()
-
 	t.Run("valid installed_plugins_v2.json", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		os.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
+		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
 
 		pluginsDir := filepath.Join(tmpDir, "plugins")
 		if err := os.MkdirAll(pluginsDir, 0755); err != nil {
@@ -206,7 +187,7 @@ func TestLoadInstalledPlugins(t *testing.T) {
 
 	t.Run("file not found returns empty", func(t *testing.T) {
 		emptyDir := t.TempDir()
-		os.Setenv("CLAUDE_CONFIG_DIR", emptyDir)
+		t.Setenv("CLAUDE_CONFIG_DIR", emptyDir)
 
 		installed, err := LoadInstalledPlugins()
 		if err != nil {
@@ -224,7 +205,7 @@ func TestLoadInstalledPlugins(t *testing.T) {
 
 	t.Run("invalid JSON", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		os.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
+		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
 
 		pluginsDir := filepath.Join(tmpDir, "plugins")
 		if err := os.MkdirAll(pluginsDir, 0755); err != nil {
