@@ -533,6 +533,9 @@ func (m Model) detailView() string {
 			}
 		}
 	}
+	// GitHub link actions (always available)
+	footerParts = append(footerParts, KeyStyle.Render("g")+" github")
+	footerParts = append(footerParts, KeyStyle.Render("l")+" copy link")
 	footerParts = append(footerParts, KeyStyle.Render("q")+" quit")
 	b.WriteString(HelpStyle.Render(strings.Join(footerParts, "  │  ")))
 
