@@ -47,8 +47,10 @@ func DiscoverWithRegistry() (map[string]*MarketplaceManifest, error) {
 			// Update manifest name to match registry
 			manifest.Name = marketplace.Name
 
-			// Save to cache
-			_ = SaveToCache(marketplace.Name, manifest)
+			// Save to cache (log error but don't fail the fetch)
+			if err := SaveToCache(marketplace.Name, manifest); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: failed to save %s to cache: %v\n", marketplace.Name, err)
+			}
 
 			mu.Lock()
 			manifests[marketplace.Name] = manifest

@@ -166,8 +166,10 @@ func fetchMarketplaceFromGitHub(pm PopularMarketplace) (*DiscoveredMarketplace, 
 	// Update manifest name to match our hardcoded name
 	manifest.Name = pm.Name
 
-	// Save to cache (best effort - don't fail if cache write fails)
-	_ = SaveToCache(pm.Name, manifest)
+	// Save to cache (log error but don't fail)
+	if err := SaveToCache(pm.Name, manifest); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to save %s to cache: %v\n", pm.Name, err)
+	}
 
 	return &DiscoveredMarketplace{
 		Manifest: manifest,

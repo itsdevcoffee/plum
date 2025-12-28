@@ -210,16 +210,17 @@ type registryCheckedMsg struct {
 }
 
 // doRefreshCache performs the actual cache refresh
+// This runs in a goroutine automatically by Bubble Tea
 func doRefreshCache() tea.Msg {
 	// Clear cache and reload
 	if err := clearCacheAndReload(); err != nil {
-		return cacheRefreshedMsg{err: err}
+		return pluginsLoadedMsg{plugins: nil, err: err}
 	}
 
 	// Reload plugins after cache clear
 	plugins, err := config.LoadAllPlugins()
 	if err != nil {
-		return cacheRefreshedMsg{err: err}
+		return pluginsLoadedMsg{plugins: nil, err: err}
 	}
 
 	return pluginsLoadedMsg{plugins: plugins, err: nil}
