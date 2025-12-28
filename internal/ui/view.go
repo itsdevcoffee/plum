@@ -544,9 +544,10 @@ func (m Model) detailView() string {
 	// GitHub link actions (always available)
 	footerParts = append(footerParts, KeyStyle.Render("g")+" github")
 	footerParts = append(footerParts, KeyStyle.Render("l")+" copy link")
-	// Local directory (only for installed)
+	// Local directory actions (only for installed)
 	if p.Installed && p.InstallPath != "" {
 		footerParts = append(footerParts, KeyStyle.Render("o")+" open local")
+		footerParts = append(footerParts, KeyStyle.Render("p")+" copy path")
 	}
 	footerParts = append(footerParts, KeyStyle.Render("q")+" quit")
 	b.WriteString(HelpStyle.Render(strings.Join(footerParts, "  │  ")))
@@ -654,6 +655,7 @@ func (m Model) helpView() string {
 		{"c", "Copy install command (in detail view)"},
 		{"g", "Open plugin on GitHub (in detail view)"},
 		{"o", "Open local directory (installed plugins)"},
+		{"p", "Copy local path (installed plugins)"},
 		{"l", "Copy GitHub link (in detail view)"},
 		{"Shift+U", "Refresh all marketplaces"},
 		{"Esc Ctrl+g", "Clear search / Cancel / Quit"},

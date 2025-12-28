@@ -411,6 +411,19 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case "p":
+		// Copy local install path to clipboard (only for installed plugins)
+		if p := m.SelectedPlugin(); p != nil && p.Installed && p.InstallPath != "" {
+			if err := clipboard.WriteAll(p.InstallPath); err == nil {
+				m.copiedFlash = true
+				return m, clearCopiedFlash()
+			} else {
+				m.clipboardErrorFlash = true
+				return m, clearClipboardError()
+			}
+		}
+		return m, nil
+
 	case "?":
 		m.StartViewTransition(ViewHelp, 1) // Forward transition
 		return m, animationTick()

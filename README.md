@@ -115,6 +115,7 @@ plum
 | `y` | Copy plugin command (for discoverable plugins) |
 | `g` | Open plugin on GitHub (in detail view) |
 | `o` | Open local directory (installed plugins only) |
+| `p` | Copy local path to clipboard (installed plugins only) |
 | `l` | Copy GitHub link to clipboard (in detail view) |
 | `?` | Show help |
 | `Esc` or `q` | Quit / Cancel refresh |
