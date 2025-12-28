@@ -355,12 +355,21 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if p := m.SelectedPlugin(); p != nil {
 			url := p.GitHubURL()
 			if url != "" {
-				// Try to open in browser (xdg-open on Linux, open on macOS)
-				cmd := "xdg-open"
-				if runtime.GOOS == "darwin" {
+				// Open in browser (cross-platform)
+				var cmd string
+				var args []string
+				switch runtime.GOOS {
+				case "darwin":
 					cmd = "open"
+					args = []string{url}
+				case "windows":
+					cmd = "cmd"
+					args = []string{"/c", "start", url}
+				default: // linux, bsd, etc.
+					cmd = "xdg-open"
+					args = []string{url}
 				}
-				exec.Command(cmd, url).Start()
+				exec.Command(cmd, args...).Start()
 			}
 		}
 		return m, nil
