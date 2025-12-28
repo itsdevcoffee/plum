@@ -521,16 +521,26 @@ func (m Model) detailView() string {
 	b.WriteString("\n")
 	var footerParts []string
 	footerParts = append(footerParts, KeyStyle.Render("esc")+" back")
-	if !p.Installed {
-		if m.copiedFlash {
-			// Show "Copied!" feedback
-			copiedStyle := lipgloss.NewStyle().Foreground(Success).Bold(true)
-			footerParts = append(footerParts, copiedStyle.Render("✓ Copied!"))
-		} else if m.clipboardErrorFlash {
-			// Show clipboard error feedback
-			errorStyle := lipgloss.NewStyle().Foreground(Error).Bold(true)
-			footerParts = append(footerParts, errorStyle.Render("✗ Clipboard error"))
-		} else {
+
+	// Show flash messages with priority
+	if m.copiedFlash {
+		copiedStyle := lipgloss.NewStyle().Foreground(Success).Bold(true)
+		footerParts = append(footerParts, copiedStyle.Render("✓ Copied!"))
+	} else if m.linkCopiedFlash {
+		copiedStyle := lipgloss.NewStyle().Foreground(Success).Bold(true)
+		footerParts = append(footerParts, copiedStyle.Render("✓ Link Copied!"))
+	} else if m.pathCopiedFlash {
+		copiedStyle := lipgloss.NewStyle().Foreground(Success).Bold(true)
+		footerParts = append(footerParts, copiedStyle.Render("✓ Path Copied!"))
+	} else if m.openedFlash {
+		openedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FF9500")).Bold(true)
+		footerParts = append(footerParts, openedStyle.Render("✓ Opened!"))
+	} else if m.clipboardErrorFlash {
+		errorStyle := lipgloss.NewStyle().Foreground(Error).Bold(true)
+		footerParts = append(footerParts, errorStyle.Render("✗ Clipboard error"))
+	} else {
+		// Show normal action keys when no flash is active
+		if !p.Installed {
 			if p.IsDiscoverable {
 				// Discoverable plugin - show both copy options
 				footerParts = append(footerParts, KeyStyle.Render("c")+" copy marketplace")

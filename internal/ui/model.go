@@ -88,7 +88,10 @@ type Model struct {
 	filterMode          FilterMode
 	windowWidth         int
 	windowHeight        int
-	copiedFlash         bool // Brief "Copied!" indicator
+	copiedFlash         bool // Brief "Copied!" indicator (for 'c')
+	linkCopiedFlash     bool // Brief "Link Copied!" indicator (for 'l')
+	pathCopiedFlash     bool // Brief "Path Copied!" indicator (for 'p')
+	openedFlash         bool // Brief "Opened!" indicator (for 'g' and 'o')
 	clipboardErrorFlash bool // Brief "Clipboard error!" indicator
 
 	// Animation state

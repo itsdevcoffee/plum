@@ -37,6 +37,15 @@ type animationTickMsg time.Time
 // clearCopiedFlashMsg clears the "Copied!" indicator
 type clearCopiedFlashMsg struct{}
 
+// clearLinkCopiedFlashMsg clears the "Link Copied!" indicator
+type clearLinkCopiedFlashMsg struct{}
+
+// clearPathCopiedFlashMsg clears the "Path Copied!" indicator
+type clearPathCopiedFlashMsg struct{}
+
+// clearOpenedFlashMsg clears the "Opened!" indicator
+type clearOpenedFlashMsg struct{}
+
 // clearClipboardErrorMsg clears the "Clipboard error!" indicator
 type clearClipboardErrorMsg struct{}
 
@@ -44,6 +53,27 @@ type clearClipboardErrorMsg struct{}
 func clearCopiedFlash() tea.Cmd {
 	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
 		return clearCopiedFlashMsg{}
+	})
+}
+
+// clearLinkCopiedFlash returns a command that clears the flash after a delay
+func clearLinkCopiedFlash() tea.Cmd {
+	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
+		return clearLinkCopiedFlashMsg{}
+	})
+}
+
+// clearPathCopiedFlash returns a command that clears the flash after a delay
+func clearPathCopiedFlash() tea.Cmd {
+	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
+		return clearPathCopiedFlashMsg{}
+	})
+}
+
+// clearOpenedFlash returns a command that clears the flash after a delay
+func clearOpenedFlash() tea.Cmd {
+	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
+		return clearOpenedFlashMsg{}
 	})
 }
 
@@ -132,6 +162,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case clearCopiedFlashMsg:
 		m.copiedFlash = false
+		return m, nil
+
+	case clearLinkCopiedFlashMsg:
+		m.linkCopiedFlash = false
+		return m, nil
+
+	case clearPathCopiedFlashMsg:
+		m.pathCopiedFlash = false
+		return m, nil
+
+	case clearOpenedFlashMsg:
+		m.openedFlash = false
 		return m, nil
 
 	case clearClipboardErrorMsg:
@@ -370,6 +412,8 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					args = []string{url}
 				}
 				exec.Command(cmd, args...).Start()
+				m.openedFlash = true
+				return m, clearOpenedFlash()
 			}
 		}
 		return m, nil
@@ -380,8 +424,8 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			url := p.GitHubURL()
 			if url != "" {
 				if err := clipboard.WriteAll(url); err == nil {
-					m.copiedFlash = true
-					return m, clearCopiedFlash()
+					m.linkCopiedFlash = true
+					return m, clearLinkCopiedFlash()
 				} else {
 					m.clipboardErrorFlash = true
 					return m, clearClipboardError()
@@ -408,6 +452,8 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				args = []string{p.InstallPath}
 			}
 			exec.Command(cmd, args...).Start()
+			m.openedFlash = true
+			return m, clearOpenedFlash()
 		}
 		return m, nil
 
@@ -415,8 +461,8 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Copy local install path to clipboard (only for installed plugins)
 		if p := m.SelectedPlugin(); p != nil && p.Installed && p.InstallPath != "" {
 			if err := clipboard.WriteAll(p.InstallPath); err == nil {
-				m.copiedFlash = true
-				return m, clearCopiedFlash()
+				m.pathCopiedFlash = true
+				return m, clearPathCopiedFlash()
 			} else {
 				m.clipboardErrorFlash = true
 				return m, clearClipboardError()
