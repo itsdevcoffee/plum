@@ -390,6 +390,27 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case "o":
+		// Open local install directory (only for installed plugins)
+		if p := m.SelectedPlugin(); p != nil && p.Installed && p.InstallPath != "" {
+			// Open in file manager (cross-platform)
+			var cmd string
+			var args []string
+			switch runtime.GOOS {
+			case "darwin":
+				cmd = "open"
+				args = []string{p.InstallPath}
+			case "windows":
+				cmd = "explorer"
+				args = []string{p.InstallPath}
+			default: // linux, bsd, etc.
+				cmd = "xdg-open"
+				args = []string{p.InstallPath}
+			}
+			exec.Command(cmd, args...).Start()
+		}
+		return m, nil
+
 	case "?":
 		m.StartViewTransition(ViewHelp, 1) // Forward transition
 		return m, animationTick()

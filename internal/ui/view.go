@@ -465,6 +465,14 @@ func (m Model) detailView() string {
 		}
 	}
 
+	// Install path (only for installed plugins)
+	if p.Installed && p.InstallPath != "" {
+		b.WriteString(DetailLabelStyle.Render("Install Path:") + " " + DetailValueStyle.Render(p.InstallPath))
+		b.WriteString("\n")
+		b.WriteString(HelpStyle.Render("              Press 'o' to open in file manager"))
+		b.WriteString("\n")
+	}
+
 	// Description (word-wrapped)
 	b.WriteString("\n")
 	b.WriteString(wrapText(p.Description, contentWidth))
@@ -536,6 +544,10 @@ func (m Model) detailView() string {
 	// GitHub link actions (always available)
 	footerParts = append(footerParts, KeyStyle.Render("g")+" github")
 	footerParts = append(footerParts, KeyStyle.Render("l")+" copy link")
+	// Local directory (only for installed)
+	if p.Installed && p.InstallPath != "" {
+		footerParts = append(footerParts, KeyStyle.Render("o")+" open local")
+	}
 	footerParts = append(footerParts, KeyStyle.Render("q")+" quit")
 	b.WriteString(HelpStyle.Render(strings.Join(footerParts, "  │  ")))
 
@@ -641,6 +653,7 @@ func (m Model) helpView() string {
 		{"Enter", "View plugin details"},
 		{"c", "Copy install command (in detail view)"},
 		{"g", "Open plugin on GitHub (in detail view)"},
+		{"o", "Open local directory (installed plugins)"},
 		{"l", "Copy GitHub link (in detail view)"},
 		{"Shift+U", "Refresh all marketplaces"},
 		{"Esc Ctrl+g", "Clear search / Cancel / Quit"},
