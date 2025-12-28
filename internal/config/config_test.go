@@ -15,7 +15,7 @@ func TestLoadKnownMarketplaces(t *testing.T) {
 
 		// Create test file
 		pluginsDir := filepath.Join(tmpDir, "plugins")
-		if err := os.MkdirAll(pluginsDir, 0755); err != nil {
+		if err := os.MkdirAll(pluginsDir, 0750); err != nil {
 			t.Fatal(err)
 		}
 
@@ -31,7 +31,7 @@ func TestLoadKnownMarketplaces(t *testing.T) {
 			}
 		}`
 
-		if err := os.WriteFile(marketplacesFile, []byte(testData), 0644); err != nil {
+		if err := os.WriteFile(marketplacesFile, []byte(testData), 0600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -81,12 +81,12 @@ func TestLoadKnownMarketplaces(t *testing.T) {
 
 		// Create invalid JSON file
 		pluginsDir := filepath.Join(tmpDir, "plugins")
-		if err := os.MkdirAll(pluginsDir, 0755); err != nil {
+		if err := os.MkdirAll(pluginsDir, 0750); err != nil {
 			t.Fatal(err)
 		}
 
 		marketplacesFile := filepath.Join(pluginsDir, "known_marketplaces.json")
-		if err := os.WriteFile(marketplacesFile, []byte("invalid json {"), 0644); err != nil {
+		if err := os.WriteFile(marketplacesFile, []byte("invalid json {"), 0600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -101,12 +101,12 @@ func TestLoadKnownMarketplaces(t *testing.T) {
 		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
 
 		pluginsDir := filepath.Join(tmpDir, "plugins")
-		if err := os.MkdirAll(pluginsDir, 0755); err != nil {
+		if err := os.MkdirAll(pluginsDir, 0750); err != nil {
 			t.Fatal(err)
 		}
 
 		marketplacesFile := filepath.Join(pluginsDir, "known_marketplaces.json")
-		if err := os.WriteFile(marketplacesFile, []byte("{}"), 0644); err != nil {
+		if err := os.WriteFile(marketplacesFile, []byte("{}"), 0600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -127,7 +127,7 @@ func TestLoadInstalledPlugins(t *testing.T) {
 		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
 
 		pluginsDir := filepath.Join(tmpDir, "plugins")
-		if err := os.MkdirAll(pluginsDir, 0755); err != nil {
+		if err := os.MkdirAll(pluginsDir, 0750); err != nil {
 			t.Fatal(err)
 		}
 
@@ -147,7 +147,7 @@ func TestLoadInstalledPlugins(t *testing.T) {
 			}
 		}`
 
-		if err := os.WriteFile(installedFile, []byte(testData), 0644); err != nil {
+		if err := os.WriteFile(installedFile, []byte(testData), 0600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -208,12 +208,12 @@ func TestLoadInstalledPlugins(t *testing.T) {
 		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
 
 		pluginsDir := filepath.Join(tmpDir, "plugins")
-		if err := os.MkdirAll(pluginsDir, 0755); err != nil {
+		if err := os.MkdirAll(pluginsDir, 0750); err != nil {
 			t.Fatal(err)
 		}
 
 		installedFile := filepath.Join(pluginsDir, "installed_plugins_v2.json")
-		if err := os.WriteFile(installedFile, []byte("invalid json {"), 0644); err != nil {
+		if err := os.WriteFile(installedFile, []byte("invalid json {"), 0600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -231,7 +231,7 @@ func TestLoadMarketplaceManifest(t *testing.T) {
 		// Create marketplace directory structure
 		marketplaceDir := filepath.Join(tmpDir, "test-marketplace")
 		pluginDir := filepath.Join(marketplaceDir, ".claude-plugin")
-		if err := os.MkdirAll(pluginDir, 0755); err != nil {
+		if err := os.MkdirAll(pluginDir, 0750); err != nil {
 			t.Fatal(err)
 		}
 
@@ -255,7 +255,7 @@ func TestLoadMarketplaceManifest(t *testing.T) {
 			]
 		}`
 
-		if err := os.WriteFile(manifestFile, []byte(testData), 0644); err != nil {
+		if err := os.WriteFile(manifestFile, []byte(testData), 0600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -297,12 +297,12 @@ func TestLoadMarketplaceManifest(t *testing.T) {
 	t.Run("invalid JSON", func(t *testing.T) {
 		marketplaceDir := filepath.Join(tmpDir, "invalid-marketplace")
 		pluginDir := filepath.Join(marketplaceDir, ".claude-plugin")
-		if err := os.MkdirAll(pluginDir, 0755); err != nil {
+		if err := os.MkdirAll(pluginDir, 0750); err != nil {
 			t.Fatal(err)
 		}
 
 		manifestFile := filepath.Join(pluginDir, "marketplace.json")
-		if err := os.WriteFile(manifestFile, []byte("invalid json {"), 0644); err != nil {
+		if err := os.WriteFile(manifestFile, []byte("invalid json {"), 0600); err != nil {
 			t.Fatal(err)
 		}
 

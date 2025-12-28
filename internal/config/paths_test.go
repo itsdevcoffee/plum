@@ -9,26 +9,9 @@ import (
 )
 
 func TestClaudeConfigDir(t *testing.T) {
-	// Save original env vars
-	originalClaudeDir := os.Getenv("CLAUDE_CONFIG_DIR")
-	originalAppData := os.Getenv("APPDATA")
-	defer func() {
-		if originalClaudeDir != "" {
-			os.Setenv("CLAUDE_CONFIG_DIR", originalClaudeDir)
-		} else {
-			os.Unsetenv("CLAUDE_CONFIG_DIR")
-		}
-		if originalAppData != "" {
-			os.Setenv("APPDATA", originalAppData)
-		} else {
-			os.Unsetenv("APPDATA")
-		}
-	}()
-
 	t.Run("with CLAUDE_CONFIG_DIR override", func(t *testing.T) {
 		customDir := "/custom/claude/config"
-		os.Setenv("CLAUDE_CONFIG_DIR", customDir)
-		defer os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", customDir)
 
 		got, err := ClaudeConfigDir()
 		if err != nil {
@@ -44,7 +27,7 @@ func TestClaudeConfigDir(t *testing.T) {
 			t.Skip("Skipping Unix test on Windows")
 		}
 
-		os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", "")
 
 		got, err := ClaudeConfigDir()
 		if err != nil {
@@ -63,10 +46,9 @@ func TestClaudeConfigDir(t *testing.T) {
 			t.Skip("Skipping Windows test on Unix")
 		}
 
-		os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", "")
 		appdata := "C:\\Users\\TestUser\\AppData\\Roaming"
-		os.Setenv("APPDATA", appdata)
-		defer os.Unsetenv("APPDATA")
+		t.Setenv("APPDATA", appdata)
 
 		got, err := ClaudeConfigDir()
 		if err != nil {
@@ -84,8 +66,8 @@ func TestClaudeConfigDir(t *testing.T) {
 			t.Skip("Skipping Windows test on Unix")
 		}
 
-		os.Unsetenv("CLAUDE_CONFIG_DIR")
-		os.Unsetenv("APPDATA")
+		t.Setenv("CLAUDE_CONFIG_DIR", "")
+		t.Setenv("APPDATA", "")
 
 		got, err := ClaudeConfigDir()
 		if err != nil {
@@ -100,7 +82,7 @@ func TestClaudeConfigDir(t *testing.T) {
 	})
 
 	t.Run("path format validation", func(t *testing.T) {
-		os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", "")
 
 		got, err := ClaudeConfigDir()
 		if err != nil {
@@ -120,20 +102,9 @@ func TestClaudeConfigDir(t *testing.T) {
 }
 
 func TestClaudePluginsDir(t *testing.T) {
-	// Save and restore env
-	originalClaudeDir := os.Getenv("CLAUDE_CONFIG_DIR")
-	defer func() {
-		if originalClaudeDir != "" {
-			os.Setenv("CLAUDE_CONFIG_DIR", originalClaudeDir)
-		} else {
-			os.Unsetenv("CLAUDE_CONFIG_DIR")
-		}
-	}()
-
 	t.Run("derived from config dir", func(t *testing.T) {
 		customDir := "/custom/claude/config"
-		os.Setenv("CLAUDE_CONFIG_DIR", customDir)
-		defer os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", customDir)
 
 		got, err := ClaudePluginsDir()
 		if err != nil {
@@ -147,7 +118,7 @@ func TestClaudePluginsDir(t *testing.T) {
 	})
 
 	t.Run("absolute path", func(t *testing.T) {
-		os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", "")
 
 		got, err := ClaudePluginsDir()
 		if err != nil {
@@ -165,20 +136,9 @@ func TestClaudePluginsDir(t *testing.T) {
 }
 
 func TestKnownMarketplacesPath(t *testing.T) {
-	// Save and restore env
-	originalClaudeDir := os.Getenv("CLAUDE_CONFIG_DIR")
-	defer func() {
-		if originalClaudeDir != "" {
-			os.Setenv("CLAUDE_CONFIG_DIR", originalClaudeDir)
-		} else {
-			os.Unsetenv("CLAUDE_CONFIG_DIR")
-		}
-	}()
-
 	t.Run("correct file path", func(t *testing.T) {
 		customDir := "/custom/claude/config"
-		os.Setenv("CLAUDE_CONFIG_DIR", customDir)
-		defer os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", customDir)
 
 		got, err := KnownMarketplacesPath()
 		if err != nil {
@@ -192,7 +152,7 @@ func TestKnownMarketplacesPath(t *testing.T) {
 	})
 
 	t.Run("absolute path with json extension", func(t *testing.T) {
-		os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", "")
 
 		got, err := KnownMarketplacesPath()
 		if err != nil {
@@ -210,20 +170,9 @@ func TestKnownMarketplacesPath(t *testing.T) {
 }
 
 func TestInstalledPluginsPath(t *testing.T) {
-	// Save and restore env
-	originalClaudeDir := os.Getenv("CLAUDE_CONFIG_DIR")
-	defer func() {
-		if originalClaudeDir != "" {
-			os.Setenv("CLAUDE_CONFIG_DIR", originalClaudeDir)
-		} else {
-			os.Unsetenv("CLAUDE_CONFIG_DIR")
-		}
-	}()
-
 	t.Run("correct file path", func(t *testing.T) {
 		customDir := "/custom/claude/config"
-		os.Setenv("CLAUDE_CONFIG_DIR", customDir)
-		defer os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", customDir)
 
 		got, err := InstalledPluginsPath()
 		if err != nil {
@@ -237,7 +186,7 @@ func TestInstalledPluginsPath(t *testing.T) {
 	})
 
 	t.Run("absolute path with json extension", func(t *testing.T) {
-		os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", "")
 
 		got, err := InstalledPluginsPath()
 		if err != nil {
