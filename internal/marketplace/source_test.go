@@ -6,10 +6,10 @@ import (
 
 func TestDeriveSource(t *testing.T) {
 	tests := []struct {
-		name     string
-		repoURL  string
-		want     string
-		wantErr  bool
+		name    string
+		repoURL string
+		want    string
+		wantErr bool
 	}{
 		{
 			name:    "GitHub HTTPS URL",
