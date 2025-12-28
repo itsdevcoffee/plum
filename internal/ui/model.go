@@ -73,6 +73,9 @@ type Model struct {
 	results              []search.RankedPlugin
 	loading              bool
 	refreshing           bool // True when manually refreshing cache
+	refreshProgress      int  // Number of marketplaces refreshed
+	refreshTotal         int  // Total marketplaces to refresh
+	refreshCurrent       string // Current marketplace being fetched
 	newMarketplacesCount int  // Number of new marketplaces available in registry
 
 	// UI state
@@ -209,9 +212,19 @@ type registryCheckedMsg struct {
 	newCount int
 }
 
+// refreshProgressMsg is sent during refresh to update progress
+type refreshProgressMsg struct {
+	current   string // Current marketplace being fetched
+	completed int    // Number completed so far
+	total     int    // Total to fetch
+}
+
 // doRefreshCache performs the actual cache refresh
 // This runs in a goroutine automatically by Bubble Tea
 func doRefreshCache() tea.Msg {
+	// TODO: Add progress updates here once we refactor clearCacheAndReload
+	// to accept a progress callback
+
 	// Clear cache and reload
 	if err := clearCacheAndReload(); err != nil {
 		return pluginsLoadedMsg{plugins: nil, err: err}

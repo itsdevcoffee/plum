@@ -213,7 +213,15 @@ func (m Model) listView() string {
 		b.WriteString(m.spinner.View())
 		b.WriteString(" ")
 		refreshStyle := lipgloss.NewStyle().Foreground(PeachSoft).Bold(true)
-		b.WriteString(refreshStyle.Render("Refreshing marketplace data from GitHub..."))
+		if m.refreshTotal > 0 {
+			progressText := fmt.Sprintf("Refreshing marketplaces (%d/%d)", m.refreshProgress, m.refreshTotal)
+			if m.refreshCurrent != "" {
+				progressText += fmt.Sprintf(" - %s", m.refreshCurrent)
+			}
+			b.WriteString(refreshStyle.Render(progressText))
+		} else {
+			b.WriteString(refreshStyle.Render("Refreshing marketplace data from GitHub..."))
+		}
 	} else if len(m.allPlugins) == 0 {
 		b.WriteString(DescriptionStyle.Render("No plugins found."))
 	} else if len(m.results) == 0 {

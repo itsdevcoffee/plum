@@ -102,6 +102,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Return a no-op command to force Bubble Tea to re-render the view
 		return m, func() tea.Msg { return nil }
 
+	case refreshProgressMsg:
+		// Update refresh progress
+		m.refreshProgress = msg.completed
+		m.refreshTotal = msg.total
+		m.refreshCurrent = msg.current
+		return m, nil
+
 	case spinner.TickMsg:
 		if m.loading || m.refreshing {
 			var cmd tea.Cmd
@@ -246,8 +253,17 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return refreshCacheMsg{}
 		}
 
-	// Clear search or quit
+	// Clear search, cancel refresh, or quit
 	case "esc", "ctrl+g":
+		// If refreshing, cancel the refresh
+		if m.refreshing {
+			m.refreshing = false
+			m.refreshProgress = 0
+			m.refreshTotal = 0
+			m.refreshCurrent = ""
+			return m, nil
+		}
+		// Otherwise clear search or quit
 		if m.textInput.Value() != "" {
 			m.textInput.SetValue("")
 			m.results = m.filteredSearch("")

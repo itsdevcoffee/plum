@@ -16,8 +16,8 @@ const (
 	// DefaultBranch to fetch from
 	DefaultBranch = "main"
 
-	// HTTPTimeout for fetching marketplace files
-	HTTPTimeout = 30 * time.Second
+	// HTTPTimeout for fetching marketplace files (reduced for better UX)
+	HTTPTimeout = 15 * time.Second
 
 	// MaxResponseBodySize limits HTTP response size to prevent DoS (10 MB)
 	MaxResponseBodySize = 10 << 20
