@@ -43,8 +43,11 @@ type clearLinkCopiedFlashMsg struct{}
 // clearPathCopiedFlashMsg clears the "Path Copied!" indicator
 type clearPathCopiedFlashMsg struct{}
 
-// clearOpenedFlashMsg clears the "Opened!" indicator
-type clearOpenedFlashMsg struct{}
+// clearGithubOpenedFlashMsg clears the "Opened!" indicator for GitHub
+type clearGithubOpenedFlashMsg struct{}
+
+// clearLocalOpenedFlashMsg clears the "Opened!" indicator for local
+type clearLocalOpenedFlashMsg struct{}
 
 // clearClipboardErrorMsg clears the "Clipboard error!" indicator
 type clearClipboardErrorMsg struct{}
@@ -70,10 +73,17 @@ func clearPathCopiedFlash() tea.Cmd {
 	})
 }
 
-// clearOpenedFlash returns a command that clears the flash after a delay
-func clearOpenedFlash() tea.Cmd {
+// clearGithubOpenedFlash returns a command that clears the flash after a delay
+func clearGithubOpenedFlash() tea.Cmd {
 	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
-		return clearOpenedFlashMsg{}
+		return clearGithubOpenedFlashMsg{}
+	})
+}
+
+// clearLocalOpenedFlash returns a command that clears the flash after a delay
+func clearLocalOpenedFlash() tea.Cmd {
+	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
+		return clearLocalOpenedFlashMsg{}
 	})
 }
 
@@ -172,8 +182,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.pathCopiedFlash = false
 		return m, nil
 
-	case clearOpenedFlashMsg:
-		m.openedFlash = false
+	case clearGithubOpenedFlashMsg:
+		m.githubOpenedFlash = false
+		return m, nil
+
+	case clearLocalOpenedFlashMsg:
+		m.localOpenedFlash = false
 		return m, nil
 
 	case clearClipboardErrorMsg:
@@ -412,8 +426,8 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					args = []string{url}
 				}
 				exec.Command(cmd, args...).Start()
-				m.openedFlash = true
-				return m, clearOpenedFlash()
+				m.githubOpenedFlash = true
+				return m, clearGithubOpenedFlash()
 			}
 		}
 		return m, nil
@@ -452,8 +466,8 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				args = []string{p.InstallPath}
 			}
 			exec.Command(cmd, args...).Start()
-			m.openedFlash = true
-			return m, clearOpenedFlash()
+			m.localOpenedFlash = true
+			return m, clearLocalOpenedFlash()
 		}
 		return m, nil
 

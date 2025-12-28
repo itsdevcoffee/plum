@@ -91,7 +91,8 @@ type Model struct {
 	copiedFlash         bool // Brief "Copied!" indicator (for 'c')
 	linkCopiedFlash     bool // Brief "Link Copied!" indicator (for 'l')
 	pathCopiedFlash     bool // Brief "Path Copied!" indicator (for 'p')
-	openedFlash         bool // Brief "Opened!" indicator (for 'g' and 'o')
+	githubOpenedFlash   bool // Brief "Opened!" indicator (for 'g')
+	localOpenedFlash    bool // Brief "Opened!" indicator (for 'o')
 	clipboardErrorFlash bool // Brief "Clipboard error!" indicator
 
 	// Animation state

@@ -517,48 +517,70 @@ func (m Model) detailView() string {
 		}
 	}
 
-	// Footer
+	// Footer - build with flash message replacements
 	b.WriteString("\n")
 	var footerParts []string
+
+	// Define styles for flash messages
+	successStyle := lipgloss.NewStyle().Foreground(Success).Bold(true)
+	openedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FF9500")).Bold(true)
+	errorStyle := lipgloss.NewStyle().Foreground(Error).Bold(true)
+
+	// Always show esc
 	footerParts = append(footerParts, KeyStyle.Render("esc")+" back")
 
-	// Show flash messages with priority
-	if m.copiedFlash {
-		copiedStyle := lipgloss.NewStyle().Foreground(Success).Bold(true)
-		footerParts = append(footerParts, copiedStyle.Render("✓ Copied!"))
-	} else if m.linkCopiedFlash {
-		copiedStyle := lipgloss.NewStyle().Foreground(Success).Bold(true)
-		footerParts = append(footerParts, copiedStyle.Render("✓ Link Copied!"))
-	} else if m.pathCopiedFlash {
-		copiedStyle := lipgloss.NewStyle().Foreground(Success).Bold(true)
-		footerParts = append(footerParts, copiedStyle.Render("✓ Path Copied!"))
-	} else if m.openedFlash {
-		openedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FF9500")).Bold(true)
-		footerParts = append(footerParts, openedStyle.Render("✓ Opened!"))
-	} else if m.clipboardErrorFlash {
-		errorStyle := lipgloss.NewStyle().Foreground(Error).Bold(true)
-		footerParts = append(footerParts, errorStyle.Render("✗ Clipboard error"))
-	} else {
-		// Show normal action keys when no flash is active
-		if !p.Installed {
+	// Show install commands for non-installed plugins (or flash message)
+	if !p.Installed {
+		if m.copiedFlash {
+			footerParts = append(footerParts, successStyle.Render("✓ Copied!"))
+		} else if m.clipboardErrorFlash {
+			footerParts = append(footerParts, errorStyle.Render("✗ Clipboard error"))
+		} else {
 			if p.IsDiscoverable {
-				// Discoverable plugin - show both copy options
 				footerParts = append(footerParts, KeyStyle.Render("c")+" copy marketplace")
 				footerParts = append(footerParts, KeyStyle.Render("y")+" copy plugin")
 			} else {
-				// Normal plugin - single copy option
 				footerParts = append(footerParts, KeyStyle.Render("c")+" copy install command")
 			}
 		}
 	}
-	// GitHub link actions (always available)
-	footerParts = append(footerParts, KeyStyle.Render("g")+" github")
-	footerParts = append(footerParts, KeyStyle.Render("l")+" copy link")
+
+	// GitHub link (with flash replacement)
+	if m.githubOpenedFlash {
+		footerParts = append(footerParts, openedStyle.Render("✓ Opened!"))
+	} else {
+		footerParts = append(footerParts, KeyStyle.Render("g")+" github")
+	}
+
+	// Copy link (with flash replacement)
+	if m.linkCopiedFlash {
+		footerParts = append(footerParts, successStyle.Render("✓ Link Copied!"))
+	} else if m.clipboardErrorFlash && !m.copiedFlash {
+		footerParts = append(footerParts, errorStyle.Render("✗ Clipboard error"))
+	} else {
+		footerParts = append(footerParts, KeyStyle.Render("l")+" copy link")
+	}
+
 	// Local directory actions (only for installed)
 	if p.Installed && p.InstallPath != "" {
-		footerParts = append(footerParts, KeyStyle.Render("o")+" open local")
-		footerParts = append(footerParts, KeyStyle.Render("p")+" copy path")
+		// Open local (with flash replacement)
+		if m.localOpenedFlash {
+			footerParts = append(footerParts, openedStyle.Render("✓ Opened!"))
+		} else {
+			footerParts = append(footerParts, KeyStyle.Render("o")+" open local")
+		}
+
+		// Copy path (with flash replacement)
+		if m.pathCopiedFlash {
+			footerParts = append(footerParts, successStyle.Render("✓ Path Copied!"))
+		} else if m.clipboardErrorFlash && !m.copiedFlash && !m.linkCopiedFlash {
+			footerParts = append(footerParts, errorStyle.Render("✗ Clipboard error"))
+		} else {
+			footerParts = append(footerParts, KeyStyle.Render("p")+" copy path")
+		}
 	}
+
+	// Always show quit
 	footerParts = append(footerParts, KeyStyle.Render("q")+" quit")
 	b.WriteString(HelpStyle.Render(strings.Join(footerParts, "  │  ")))
 
