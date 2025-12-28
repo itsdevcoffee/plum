@@ -1,5 +1,9 @@
 package plugin
 
+import (
+	"strings"
+)
+
 // Plugin represents a Claude Code plugin from any marketplace
 type Plugin struct {
 	Name              string   `json:"name"`
@@ -58,4 +62,24 @@ func (p Plugin) AuthorName() string {
 		return p.Author.Company
 	}
 	return "Unknown"
+}
+
+// GitHubURL returns the GitHub URL for this plugin's source code
+// Constructs URL from MarketplaceRepo + Source path
+// Example: https://github.com/owner/repo/tree/main/plugins/plugin-name
+func (p Plugin) GitHubURL() string {
+	if p.MarketplaceRepo == "" {
+		return ""
+	}
+
+	// Normalize source path (remove leading ./ if present)
+	sourcePath := strings.TrimPrefix(p.Source, "./")
+
+	// If source is empty or not a relative path, default to plugin name
+	if sourcePath == "" || sourcePath == "." {
+		sourcePath = "plugins/" + p.Name
+	}
+
+	// Construct GitHub tree URL
+	return p.MarketplaceRepo + "/tree/main/" + sourcePath
 }

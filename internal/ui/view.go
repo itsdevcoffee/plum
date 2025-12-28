@@ -637,7 +637,10 @@ func (m Model) helpView() string {
 	actionKeys := []struct{ key, desc string }{
 		{"Enter", "View plugin details"},
 		{"c", "Copy install command (in detail view)"},
-		{"Esc Ctrl+g", "Clear search / Quit"},
+		{"g", "Open plugin on GitHub (in detail view)"},
+		{"l", "Copy GitHub link (in detail view)"},
+		{"Shift+U", "Refresh all marketplaces"},
+		{"Esc Ctrl+g", "Clear search / Cancel / Quit"},
 		{"?", "Toggle this help"},
 		{"Ctrl+c", "Quit plum"},
 	}

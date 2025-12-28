@@ -2,6 +2,8 @@ package ui
 
 import (
 	"fmt"
+	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -344,6 +346,37 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				// Show error to user instead of silently failing
 				m.clipboardErrorFlash = true
 				return m, clearClipboardError()
+			}
+		}
+		return m, nil
+
+	case "g":
+		// Open plugin GitHub URL in browser
+		if p := m.SelectedPlugin(); p != nil {
+			url := p.GitHubURL()
+			if url != "" {
+				// Try to open in browser (xdg-open on Linux, open on macOS)
+				cmd := "xdg-open"
+				if runtime.GOOS == "darwin" {
+					cmd = "open"
+				}
+				exec.Command(cmd, url).Start()
+			}
+		}
+		return m, nil
+
+	case "l":
+		// Copy plugin GitHub URL to clipboard
+		if p := m.SelectedPlugin(); p != nil {
+			url := p.GitHubURL()
+			if url != "" {
+				if err := clipboard.WriteAll(url); err == nil {
+					m.copiedFlash = true
+					return m, clearCopiedFlash()
+				} else {
+					m.clipboardErrorFlash = true
+					return m, clearClipboardError()
+				}
 			}
 		}
 		return m, nil
