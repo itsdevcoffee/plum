@@ -122,7 +122,7 @@ func TestLoadKnownMarketplaces(t *testing.T) {
 }
 
 func TestLoadInstalledPlugins(t *testing.T) {
-	t.Run("valid installed_plugins_v2.json", func(t *testing.T) {
+	t.Run("valid installed_plugins.json", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
 
@@ -131,7 +131,7 @@ func TestLoadInstalledPlugins(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		installedFile := filepath.Join(pluginsDir, "installed_plugins_v2.json")
+		installedFile := filepath.Join(pluginsDir, "installed_plugins.json")
 		testData := `{
 			"version": 2,
 			"plugins": {
@@ -212,7 +212,7 @@ func TestLoadInstalledPlugins(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		installedFile := filepath.Join(pluginsDir, "installed_plugins_v2.json")
+		installedFile := filepath.Join(pluginsDir, "installed_plugins.json")
 		if err := os.WriteFile(installedFile, []byte("invalid json {"), 0600); err != nil {
 			t.Fatal(err)
 		}

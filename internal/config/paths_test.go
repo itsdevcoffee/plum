@@ -179,7 +179,7 @@ func TestInstalledPluginsPath(t *testing.T) {
 			t.Fatalf("InstalledPluginsPath() error = %v", err)
 		}
 
-		want := filepath.Join(customDir, "plugins", "installed_plugins_v2.json")
+		want := filepath.Join(customDir, "plugins", "installed_plugins.json")
 		if got != want {
 			t.Errorf("InstalledPluginsPath() = %q, want %q", got, want)
 		}
@@ -197,8 +197,8 @@ func TestInstalledPluginsPath(t *testing.T) {
 			t.Errorf("InstalledPluginsPath() = %q, want absolute path", got)
 		}
 
-		if !strings.HasSuffix(got, "installed_plugins_v2.json") {
-			t.Errorf("InstalledPluginsPath() = %q, want path ending with installed_plugins_v2.json", got)
+		if !strings.HasSuffix(got, "installed_plugins.json") {
+			t.Errorf("InstalledPluginsPath() = %q, want path ending with installed_plugins.json", got)
 		}
 	})
 }

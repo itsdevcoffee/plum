@@ -55,11 +55,11 @@ func KnownMarketplacesPath() (string, error) {
 	return filepath.Join(pluginsDir, "known_marketplaces.json"), nil
 }
 
-// InstalledPluginsPath returns the path to installed_plugins_v2.json
+// InstalledPluginsPath returns the path to installed_plugins.json
 func InstalledPluginsPath() (string, error) {
 	pluginsDir, err := ClaudePluginsDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(pluginsDir, "installed_plugins_v2.json"), nil
+	return filepath.Join(pluginsDir, "installed_plugins.json"), nil
 }
