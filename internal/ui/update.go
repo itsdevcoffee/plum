@@ -113,9 +113,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.windowHeight = msg.Height
 		m.textInput.Width = msg.Width - 10
 
-		// Initialize/update help viewport with proper constraints
-		// Max content width is 76 (to fit in 80 char box with padding)
-		viewportWidth := 72 // Leave room for box padding and borders
+		// Initialize/update help viewport with tighter width
+		viewportWidth := 58 // Fits content better (62 char box - 4 for padding)
 		viewportHeight := msg.Height - 8 // Leave room for app padding and box
 
 		if m.helpViewport.Width == 0 {

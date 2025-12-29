@@ -653,7 +653,7 @@ func (m Model) generateHelpContent() string {
 	dividerStyle := lipgloss.NewStyle().Foreground(BorderSubtle)
 
 	// Header with legend on the right using JoinHorizontal
-	contentWidth := 56
+	contentWidth := 58
 
 	title := DetailTitleStyle.Render("🍑 plum Help")
 
@@ -760,12 +760,12 @@ func (m Model) generateHelpContent() string {
 func (m Model) helpView() string {
 	// Use viewport if initialized (content set on view enter)
 	if m.helpViewport.Height > 0 {
-		// Wrap viewport in box with max width
+		// Wrap viewport in box with tighter max width
 		helpBoxStyle := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(PlumBright).
 			Padding(0, 2).
-			MaxWidth(80)
+			Width(62)
 
 		return AppStyle.Render(helpBoxStyle.Render(m.helpViewport.View()))
 	}
@@ -776,7 +776,7 @@ func (m Model) helpView() string {
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(PlumBright).
 		Padding(0, 2).
-		MaxWidth(80)
+		Width(62)
 
 	return AppStyle.Render(helpBoxStyle.Render(helpContent))
 }
