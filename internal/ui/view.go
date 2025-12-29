@@ -760,19 +760,25 @@ func (m Model) generateHelpContent() string {
 func (m Model) helpView() string {
 	// Minimal wrapper with left/right margin, no bottom
 	helpWrapperStyle := lipgloss.NewStyle().
-		Padding(1, 2, 0, 2) // top, right, bottom, left
+		Padding(1, 2, 0, 2)
 
 	helpContent := m.generateHelpContent()
 
 	// Use viewport if initialized (content set on view enter)
 	if m.helpViewport.Height > 0 {
-		// Wrap viewport in box
+		viewportContent := m.helpViewport.View()
+
+		// Add scrollbar if content is scrollable
+		scrollbar := m.renderHelpScrollbar()
+		contentWithScrollbar := lipgloss.JoinHorizontal(lipgloss.Top, viewportContent, scrollbar)
+
+		// Wrap in box
 		helpBoxStyle := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(PlumBright).
 			Padding(1, 2)
 
-		return helpWrapperStyle.Render(helpBoxStyle.Render(m.helpViewport.View()))
+		return helpWrapperStyle.Render(helpBoxStyle.Render(contentWithScrollbar))
 	}
 
 	// Fallback: render without viewport
@@ -782,4 +788,51 @@ func (m Model) helpView() string {
 		Padding(1, 2)
 
 	return helpWrapperStyle.Render(helpBoxStyle.Render(helpContent))
+}
+
+// renderHelpScrollbar renders a plum-themed scrollbar for the help viewport
+func (m Model) renderHelpScrollbar() string {
+	if m.helpViewport.Height <= 0 {
+		return ""
+	}
+
+	// Check if scrolling is possible
+	totalLines := strings.Count(m.helpViewport.View(), "\n") + 1
+	if totalLines <= m.helpViewport.Height {
+		// No scrollbar needed - content fits
+		return ""
+	}
+
+	// Calculate scrollbar dimensions
+	scrollbarHeight := m.helpViewport.Height
+	scrollPercent := m.helpViewport.ScrollPercent()
+
+	// Calculate thumb size (proportional to visible content)
+	thumbHeight := (m.helpViewport.Height * scrollbarHeight) / totalLines
+	if thumbHeight < 1 {
+		thumbHeight = 1
+	}
+
+	// Calculate thumb position
+	trackHeight := scrollbarHeight - thumbHeight
+	thumbPos := int(float64(trackHeight) * scrollPercent)
+
+	// Render scrollbar with plum theme
+	var scrollbar strings.Builder
+
+	thumbStyle := lipgloss.NewStyle().Foreground(PlumBright)    // Orange thumb
+	trackStyle := lipgloss.NewStyle().Foreground(BorderSubtle) // Subtle track
+
+	for i := 0; i < scrollbarHeight; i++ {
+		if i >= thumbPos && i < thumbPos+thumbHeight {
+			scrollbar.WriteString(thumbStyle.Render("█")) // Filled block for thumb
+		} else {
+			scrollbar.WriteString(trackStyle.Render("░")) // Light shade for track
+		}
+		if i < scrollbarHeight-1 {
+			scrollbar.WriteString("\n")
+		}
+	}
+
+	return scrollbar.String()
 }
