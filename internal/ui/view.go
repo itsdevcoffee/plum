@@ -650,13 +650,7 @@ func (m Model) helpView() string {
 	// Context hint style for detail-view-only commands
 	contextStyle := lipgloss.NewStyle().Foreground(TextMuted).Italic(true)
 	installedOnlyStyle := lipgloss.NewStyle().Foreground(Success)
-
-	// Section box style - subtle border for each section
-	sectionBox := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(BorderSubtle).
-		Padding(0, 1).
-		MarginBottom(1)
+	dividerStyle := lipgloss.NewStyle().Foreground(BorderSubtle)
 
 	b.WriteString(DetailTitleStyle.Render("🍑 plum Help"))
 	b.WriteString("\n")
@@ -664,9 +658,8 @@ func (m Model) helpView() string {
 	b.WriteString("\n\n")
 
 	// Navigation section
-	var navSection strings.Builder
-	navSection.WriteString(HelpSectionStyle.Render("🧭 Navigation"))
-	navSection.WriteString("\n")
+	b.WriteString(HelpSectionStyle.Render("  🧭 Navigation"))
+	b.WriteString("\n")
 	navKeys := []struct{ key, desc string }{
 		{"↑ Ctrl+k/p", "Move up"},
 		{"↓ Ctrl+j/n", "Move down"},
@@ -675,28 +668,30 @@ func (m Model) helpView() string {
 		{"Home / End", "Jump to edges"},
 	}
 	for _, h := range navKeys {
-		navSection.WriteString(fmt.Sprintf("  %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
+		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
-	b.WriteString(sectionBox.Render(navSection.String()))
+	b.WriteString("\n")
+	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
+	b.WriteString("\n\n")
 
 	// Views & Browsing section
-	var viewSection strings.Builder
-	viewSection.WriteString(HelpSectionStyle.Render("👁️  Views & Browsing"))
-	viewSection.WriteString("\n")
+	b.WriteString(HelpSectionStyle.Render("  👁️  Views & Browsing"))
+	b.WriteString("\n")
 	viewKeys := []struct{ key, desc string }{
 		{"Enter", "View details"},
 		{"Shift+M", "Marketplace browser"},
 		{"?", "Toggle help"},
 	}
 	for _, h := range viewKeys {
-		viewSection.WriteString(fmt.Sprintf("  %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
+		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
-	b.WriteString(sectionBox.Render(viewSection.String()))
+	b.WriteString("\n")
+	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
+	b.WriteString("\n\n")
 
 	// Plugin Actions section (detail view)
-	var pluginSection strings.Builder
-	pluginSection.WriteString(HelpSectionStyle.Render("📦 Plugin Actions ") + contextStyle.Render("(detail view)"))
-	pluginSection.WriteString("\n")
+	b.WriteString(HelpSectionStyle.Render("  📦 Plugin Actions ") + contextStyle.Render("(detail view)"))
+	b.WriteString("\n")
 	pluginKeys := []struct{ key, desc, suffix string }{
 		{"c", "Copy install command", ""},
 		{"g", "Open on GitHub", ""},
@@ -710,51 +705,53 @@ func (m Model) helpView() string {
 		if h.suffix != "" {
 			desc += installedOnlyStyle.Render(h.suffix)
 		}
-		pluginSection.WriteString(fmt.Sprintf("  %s  %s\n", KeyStyle.Width(16).Render(h.key), desc))
+		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), desc))
 	}
-	b.WriteString(sectionBox.Render(pluginSection.String()))
+	b.WriteString("\n")
+	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
+	b.WriteString("\n\n")
 
 	// Display & Filters section
-	var displaySection strings.Builder
-	displaySection.WriteString(HelpSectionStyle.Render("🎨 Display & Filters"))
-	displaySection.WriteString("\n")
+	b.WriteString(HelpSectionStyle.Render("  🎨 Display & Filters"))
+	b.WriteString("\n")
 	displayKeys := []struct{ key, desc string }{
 		{"Tab →", "Next filter"},
 		{"Shift+Tab ←", "Previous filter"},
 		{"Ctrl+v", "Toggle view mode"},
 	}
 	for _, h := range displayKeys {
-		displaySection.WriteString(fmt.Sprintf("  %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
+		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
-	b.WriteString(sectionBox.Render(displaySection.String()))
+	b.WriteString("\n")
+	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
+	b.WriteString("\n\n")
 
 	// System section
-	var systemSection strings.Builder
-	systemSection.WriteString(HelpSectionStyle.Render("⚙️  System"))
-	systemSection.WriteString("\n")
+	b.WriteString(HelpSectionStyle.Render("  ⚙️  System"))
+	b.WriteString("\n")
 	systemKeys := []struct{ key, desc string }{
 		{"Shift+U", "Refresh marketplaces"},
 		{"Esc", "Back / Clear / Cancel"},
 		{"Ctrl+c / q", "Quit"},
 	}
 	for _, h := range systemKeys {
-		systemSection.WriteString(fmt.Sprintf("  %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
+		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
-	b.WriteString(sectionBox.Render(systemSection.String()))
+	b.WriteString("\n")
+	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
+	b.WriteString("\n\n")
 
 	// Tips section
-	var tipsSection strings.Builder
-	tipsSection.WriteString(HelpSectionStyle.Render("💡 Pro Tips"))
-	tipsSection.WriteString("\n")
+	b.WriteString(HelpSectionStyle.Render("  💡 Pro Tips"))
+	b.WriteString("\n")
 	tips := []string{
 		"Type to search instantly",
 		"Use @marketplace-name to filter by marketplace",
 		"🟢 = installed only",
 	}
 	for _, tip := range tips {
-		tipsSection.WriteString(fmt.Sprintf("  • %s\n", HelpTextStyle.Render(tip)))
+		b.WriteString(fmt.Sprintf("    • %s\n", HelpTextStyle.Render(tip)))
 	}
-	b.WriteString(sectionBox.Render(tipsSection.String()))
 
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", 60))
