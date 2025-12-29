@@ -115,20 +115,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.textInput.Width = msg.Width - 10
 
 		// Initialize/update help viewport
-		// Account for: wrapper padding (1 top), box padding (2), borders (2),
-		// header (3 lines), footer (2 lines) = 10 lines overhead
-		viewportWidth := 58
-		viewportHeight := msg.Height - 10
+		// Only update if not in help view (preserve content-based sizing)
+		if m.viewState != ViewHelp {
+			viewportWidth := 58
+			viewportHeight := msg.Height - 10
 
-		if viewportHeight < 5 {
-			viewportHeight = 5 // Minimum height
-		}
+			if viewportHeight < 5 {
+				viewportHeight = 5
+			}
 
-		if m.helpViewport.Width == 0 {
-			m.helpViewport = viewport.New(viewportWidth, viewportHeight)
-		} else {
-			m.helpViewport.Width = viewportWidth
-			m.helpViewport.Height = viewportHeight
+			if m.helpViewport.Width == 0 {
+				m.helpViewport = viewport.New(viewportWidth, viewportHeight)
+			} else {
+				m.helpViewport.Width = viewportWidth
+				// Don't update height - will be set when entering help view
+			}
 		}
 
 		return m, nil
