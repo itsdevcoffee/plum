@@ -20,18 +20,23 @@ func (m Model) View() string {
 	case ViewDetail:
 		content = m.detailView()
 	case ViewHelp:
-		content = m.helpView()
 		// Set help content in viewport if initialized
 		if m.helpViewport.Height > 0 {
-			// Generate help content without viewport
+			// Generate help content
 			helpContent := m.generateHelpContent()
 			m.helpViewport.SetContent(helpContent)
-			// Render viewport wrapped in box
+
+			// Render viewport wrapped in box with max width
 			helpBoxStyle := lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
 				BorderForeground(PlumBright).
-				Padding(0, 2)
+				Padding(0, 2).
+				MaxWidth(80)
+
 			content = AppStyle.Render(helpBoxStyle.Render(m.helpViewport.View()))
+		} else {
+			// Fallback if viewport not initialized
+			content = m.helpView()
 		}
 	case ViewMarketplaceList:
 		content = m.marketplaceListView()
