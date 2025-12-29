@@ -315,7 +315,7 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return refreshCacheMsg{}
 		}
 
-	case "m":
+	case "shift+m", "M":
 		// Open marketplace browser
 		m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewList
@@ -496,7 +496,7 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case "m":
+	case "shift+m", "M":
 		// Open marketplace browser
 		m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewDetail
@@ -518,7 +518,7 @@ func (m Model) handleHelpKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "q":
 		return m, tea.Quit
 
-	case "m":
+	case "shift+m", "M":
 		// Open marketplace browser
 		m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewHelp
@@ -567,7 +567,7 @@ func (m Model) handleMarketplaceListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.PrevMarketplaceSort()
 		return m, nil
 
-	case "m", "esc", "ctrl+g":
+	case "esc", "ctrl+g":
 		// Return to plugin list view
 		m.StartViewTransition(ViewList, -1)
 		return m, animationTick()

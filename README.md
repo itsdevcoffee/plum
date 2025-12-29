@@ -115,7 +115,7 @@ plum
 | `Shift+U` | Refresh marketplace registry and cache |
 | `c` | Copy install command (marketplace for discoverable) |
 | `y` | Copy plugin command (for discoverable plugins) |
-| `m` | Open marketplace browser |
+| `Shift+M` | Open marketplace browser |
 | `g` | Open plugin on GitHub (in detail view) |
 | `o` | Open local directory (installed plugins only) |
 | `p` | Copy local path to clipboard (installed plugins only) |

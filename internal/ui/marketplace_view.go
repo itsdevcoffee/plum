@@ -169,7 +169,7 @@ func (m Model) marketplaceStatusBar() string {
 
 	parts = append(parts, fmt.Sprintf("%d marketplaces", total))
 	parts = append(parts, fmt.Sprintf("%d installed", installed))
-	parts = append(parts, KeyStyle.Render("m")+" return to plugins")
+	parts = append(parts, KeyStyle.Render("esc")+" return to plugins")
 	parts = append(parts, KeyStyle.Render("?")+" help")
 
 	return StatusBarStyle.Render(strings.Join(parts, "  │  "))

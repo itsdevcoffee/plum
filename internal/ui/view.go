@@ -688,7 +688,7 @@ func (m Model) helpView() string {
 	b.WriteString("\n")
 	actionKeys := []struct{ key, desc string }{
 		{"Enter", "View plugin details"},
-		{"m", "Open marketplace browser"},
+		{"Shift+M", "Open marketplace browser"},
 		{"c", "Copy install command (in detail view)"},
 		{"g", "Open plugin on GitHub (in detail view)"},
 		{"o", "Open local directory (installed plugins)"},
