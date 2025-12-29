@@ -758,7 +758,10 @@ func (m Model) generateHelpContent() string {
 
 // helpView renders the help view with viewport for scrolling
 func (m Model) helpView() string {
-	// No app style wrapping - help menu controls its own spacing
+	// Minimal wrapper with left/right margin, no bottom
+	helpWrapperStyle := lipgloss.NewStyle().
+		Padding(1, 2, 0, 2) // top, right, bottom, left
+
 	helpContent := m.generateHelpContent()
 
 	// Use viewport if initialized (content set on view enter)
@@ -767,9 +770,9 @@ func (m Model) helpView() string {
 		helpBoxStyle := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(PlumBright).
-			Padding(1, 2) // Add padding back to box itself
+			Padding(1, 2)
 
-		return helpBoxStyle.Render(m.helpViewport.View())
+		return helpWrapperStyle.Render(helpBoxStyle.Render(m.helpViewport.View()))
 	}
 
 	// Fallback: render without viewport
@@ -778,5 +781,5 @@ func (m Model) helpView() string {
 		BorderForeground(PlumBright).
 		Padding(1, 2)
 
-	return helpBoxStyle.Render(helpContent)
+	return helpWrapperStyle.Render(helpBoxStyle.Render(helpContent))
 }
