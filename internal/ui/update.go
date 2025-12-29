@@ -214,6 +214,10 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleDetailKeys(msg)
 	case ViewHelp:
 		return m.handleHelpKeys(msg)
+	case ViewMarketplaceList:
+		return m.handleMarketplaceListKeys(msg)
+	case ViewMarketplaceDetail:
+		return m.handleMarketplaceDetailKeys(msg)
 	}
 
 	return m, nil
@@ -310,6 +314,14 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, func() tea.Msg {
 			return refreshCacheMsg{}
 		}
+
+	case "m":
+		// Open marketplace browser
+		m.LoadMarketplaceItems()
+		m.previousViewBeforeMarketplace = ViewList
+		m.StartViewTransition(ViewMarketplaceList, 1)
+		// TODO: Start background GitHub stats loading
+		return m, animationTick()
 
 	// Clear search, cancel refresh, or quit
 	case "esc", "ctrl+g":
@@ -484,6 +496,14 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case "m":
+		// Open marketplace browser
+		m.LoadMarketplaceItems()
+		m.previousViewBeforeMarketplace = ViewDetail
+		m.StartViewTransition(ViewMarketplaceList, 1)
+		// TODO: Start background GitHub stats loading
+		return m, animationTick()
+
 	case "?":
 		m.StartViewTransition(ViewHelp, 1) // Forward transition
 		return m, animationTick()
@@ -498,9 +518,134 @@ func (m Model) handleHelpKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "q":
 		return m, tea.Quit
 
+	case "m":
+		// Open marketplace browser
+		m.LoadMarketplaceItems()
+		m.previousViewBeforeMarketplace = ViewHelp
+		m.StartViewTransition(ViewMarketplaceList, 1)
+		// TODO: Start background GitHub stats loading
+		return m, animationTick()
+
 	case "esc", "?", "backspace", "enter":
 		m.StartViewTransition(ViewList, -1) // Back transition
 		return m, animationTick()
+	}
+
+	return m, nil
+}
+
+// handleMarketplaceListKeys handles keys in the marketplace list view
+func (m Model) handleMarketplaceListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "up", "ctrl+k", "ctrl+p":
+		if m.marketplaceCursor > 0 {
+			m.marketplaceCursor--
+		}
+		m.UpdateMarketplaceScroll()
+		return m, nil
+
+	case "down", "ctrl+j", "ctrl+n":
+		if m.marketplaceCursor < len(m.marketplaceItems)-1 {
+			m.marketplaceCursor++
+		}
+		m.UpdateMarketplaceScroll()
+		return m, nil
+
+	case "enter":
+		if len(m.marketplaceItems) > 0 && m.marketplaceCursor < len(m.marketplaceItems) {
+			m.selectedMarketplace = &m.marketplaceItems[m.marketplaceCursor]
+			m.StartViewTransition(ViewMarketplaceDetail, 1)
+			return m, animationTick()
+		}
+		return m, nil
+
+	case "tab", "right":
+		m.NextMarketplaceSort()
+		return m, nil
+
+	case "shift+tab", "left":
+		m.PrevMarketplaceSort()
+		return m, nil
+
+	case "m", "esc", "ctrl+g":
+		// Return to plugin list view
+		m.StartViewTransition(ViewList, -1)
+		return m, animationTick()
+
+	case "?":
+		m.StartViewTransition(ViewHelp, 1)
+		return m, animationTick()
+
+	case "q":
+		return m, tea.Quit
+	}
+
+	return m, nil
+}
+
+// handleMarketplaceDetailKeys handles keys in the marketplace detail view
+func (m Model) handleMarketplaceDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc", "backspace":
+		m.StartViewTransition(ViewMarketplaceList, -1)
+		return m, animationTick()
+
+	case "c":
+		// Copy marketplace install command
+		if m.selectedMarketplace != nil &&
+			m.selectedMarketplace.Status != MarketplaceInstalled {
+			installCmd := fmt.Sprintf("/plugin marketplace add %s",
+				extractMarketplaceSource(m.selectedMarketplace.Repo))
+			if err := clipboard.WriteAll(installCmd); err == nil {
+				m.copiedFlash = true
+				return m, clearCopiedFlash()
+			} else {
+				m.clipboardErrorFlash = true
+				return m, clearClipboardError()
+			}
+		}
+		return m, nil
+
+	case "f":
+		// Filter plugins by this marketplace
+		m.previousViewBeforeMarketplace = ViewList
+		m.StartViewTransition(ViewList, -1)
+		// Set search to filter by marketplace
+		m.textInput.SetValue("@" + m.selectedMarketplace.Name)
+		m.results = m.filteredSearch(m.textInput.Value())
+		m.cursor = 0
+		m.scrollOffset = 0
+		return m, animationTick()
+
+	case "g":
+		// Open GitHub repo
+		if m.selectedMarketplace != nil {
+			url := m.selectedMarketplace.Repo
+			var cmd string
+			var args []string
+			switch runtime.GOOS {
+			case "darwin":
+				cmd = "open"
+				args = []string{url}
+			case "windows":
+				cmd = "cmd"
+				args = []string{"/c", "start", url}
+			default:
+				cmd = "xdg-open"
+				args = []string{url}
+			}
+			exec.Command(cmd, args...).Start()
+			m.githubOpenedFlash = true
+			return m, clearGithubOpenedFlash()
+		}
+		return m, nil
+
+	case "?":
+		m.StartViewTransition(ViewHelp, 1)
+		return m, animationTick()
+
+	case "q":
+		return m, tea.Quit
 	}
 
 	return m, nil

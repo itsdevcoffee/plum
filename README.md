@@ -92,9 +92,11 @@ plum
 ## Key Features
 
 - **Discover 600+ plugins** from 11 popular marketplaces - even ones you haven't installed yet
+- **Marketplace browser** - View all marketplaces with GitHub stats (stars, forks, last updated)
 - **Auto-updating registry** - notifies when new marketplaces are available
 - **Instant fuzzy search** across all plugins (installed + discoverable)
 - **Smart filtering**: All, Discover, Ready, or Installed
+- **Filter by marketplace** - Use `@marketplace-name` syntax or press 'f' in marketplace details
 - **Multiple view modes**: Card (detailed) or Slim (compact)
 - **One-click install** - copy commands with `c` and `y` keys
 - **Manual refresh** with `Shift+U` to fetch latest marketplaces
@@ -113,10 +115,12 @@ plum
 | `Shift+U` | Refresh marketplace registry and cache |
 | `c` | Copy install command (marketplace for discoverable) |
 | `y` | Copy plugin command (for discoverable plugins) |
+| `m` | Open marketplace browser |
 | `g` | Open plugin on GitHub (in detail view) |
 | `o` | Open local directory (installed plugins only) |
 | `p` | Copy local path to clipboard (installed plugins only) |
 | `l` | Copy GitHub link to clipboard (in detail view) |
+| `f` | Filter plugins by marketplace (in marketplace detail) |
 | `?` | Show help |
 | `Esc` or `q` | Quit / Cancel refresh |
 

@@ -1,12 +1,16 @@
 package ui
 
 import (
+	"strings"
+	"time"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/harmonica"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/itsdevcoffee/plum/internal/config"
+	"github.com/itsdevcoffee/plum/internal/marketplace"
 	"github.com/itsdevcoffee/plum/internal/plugin"
 	"github.com/itsdevcoffee/plum/internal/search"
 )
@@ -18,6 +22,8 @@ const (
 	ViewList ViewState = iota
 	ViewDetail
 	ViewHelp
+	ViewMarketplaceList   // Marketplace browser view
+	ViewMarketplaceDetail // Marketplace detail view
 )
 
 // TransitionStyle represents the animation style for view transitions
@@ -95,6 +101,14 @@ type Model struct {
 	localOpenedFlash    bool // Brief "Opened!" indicator (for 'o')
 	clipboardErrorFlash bool // Brief "Clipboard error!" indicator
 
+	// Marketplace view state
+	marketplaceItems                  []MarketplaceItem
+	marketplaceCursor                 int
+	marketplaceScrollOffset           int
+	marketplaceSortMode               MarketplaceSortMode
+	selectedMarketplace               *MarketplaceItem
+	previousViewBeforeMarketplace     ViewState
+
 	// Animation state
 	cursorY         float64 // Animated cursor position
 	cursorYVelocity float64
@@ -133,18 +147,20 @@ func NewModel() Model {
 	spring := harmonica.NewSpring(harmonica.FPS(animationFPS), springFrequency, springDamping)
 
 	return Model{
-		textInput:          ti,
-		spinner:            s,
-		spring:             spring,
-		loading:            true,
-		viewState:          ViewList,
-		previousView:       ViewList,
-		displayMode:        DisplaySlim, // Default to slim mode
-		transitionProgress: 1.0,         // Start fully transitioned (no animation on init)
-		targetTransition:   1.0,
-		transitionStyle:    TransitionInstant, // Default to instant (no animation)
-		windowWidth:        80,
-		windowHeight:       24,
+		textInput:                     ti,
+		spinner:                       s,
+		spring:                        spring,
+		loading:                       true,
+		viewState:                     ViewList,
+		previousView:                  ViewList,
+		displayMode:                   DisplaySlim,        // Default to slim mode
+		marketplaceSortMode:           SortByPluginCount, // Default marketplace sort
+		transitionProgress:            1.0,                // Start fully transitioned (no animation on init)
+		targetTransition:              1.0,
+		transitionStyle:               TransitionInstant, // Default to instant (no animation)
+		windowWidth:                   80,
+		windowHeight:                  24,
+		previousViewBeforeMarketplace: ViewList,
 	}
 }
 
@@ -364,6 +380,21 @@ func (m *Model) applyFilter() {
 
 // filteredSearch runs search and applies the current filter
 func (m Model) filteredSearch(query string) []search.RankedPlugin {
+	// Check for marketplace filter (starts with @)
+	if strings.HasPrefix(query, "@") {
+		marketplaceName := strings.TrimPrefix(query, "@")
+		var filtered []search.RankedPlugin
+		for _, p := range m.allPlugins {
+			if p.Marketplace == marketplaceName {
+				filtered = append(filtered, search.RankedPlugin{
+					Plugin: p,
+					Score:  1.0,
+				})
+			}
+		}
+		return filtered
+	}
+
 	// First get all search results
 	allResults := search.Search(query, m.allPlugins)
 
@@ -518,4 +549,198 @@ func (m Model) IsViewTransitioning() bool {
 func (m Model) TransitionOffset() int {
 	remaining := 1.0 - m.transitionProgress
 	return int(remaining * float64(m.windowWidth) * float64(m.transitionDirection))
+}
+
+// Marketplace View Functions
+
+// LoadMarketplaceItems loads and processes all marketplaces with status and stats
+func (m *Model) LoadMarketplaceItems() error {
+	// 1. Load known marketplaces (installed)
+	knownMarketplaces, err := config.LoadKnownMarketplaces()
+	if err != nil {
+		knownMarketplaces = make(config.KnownMarketplaces)
+	}
+
+	// 2. Get marketplace list from registry (or hardcoded fallback)
+	marketplaceList, err := marketplace.FetchRegistry()
+	if err != nil {
+		marketplaceList = marketplace.PopularMarketplaces
+	}
+
+	// 3. Count installed plugins per marketplace
+	installed, _ := config.LoadInstalledPlugins()
+	installedByMarketplace := make(map[string]int)
+	if installed != nil {
+		for fullName := range installed.Plugins {
+			// fullName format: "plugin@marketplace"
+			parts := []string{fullName}
+			if idx := len(fullName) - 1; idx >= 0 {
+				for i := len(fullName) - 1; i >= 0; i-- {
+					if fullName[i] == '@' {
+						parts = []string{fullName[:i], fullName[i+1:]}
+						break
+					}
+				}
+			}
+			if len(parts) == 2 {
+				installedByMarketplace[parts[1]]++
+			}
+		}
+	}
+
+	// 4. Build MarketplaceItem array
+	var items []MarketplaceItem
+	for _, pm := range marketplaceList {
+		item := MarketplaceItem{
+			Name:                 pm.Name,
+			DisplayName:          pm.DisplayName,
+			Repo:                 pm.Repo,
+			Description:          pm.Description,
+			InstalledPluginCount: installedByMarketplace[pm.Name],
+		}
+
+		// Determine status
+		if _, isInstalled := knownMarketplaces[pm.Name]; isInstalled {
+			item.Status = MarketplaceInstalled
+		} else {
+			item.Status = MarketplaceAvailable
+		}
+
+		// Try to get total plugin count from cached manifest
+		if cached, _ := marketplace.LoadFromCache(pm.Name); cached != nil {
+			item.TotalPluginCount = len(cached.Plugins)
+			if item.Status == MarketplaceAvailable {
+				item.Status = MarketplaceCached
+			}
+		}
+
+		// Load cached GitHub stats (don't fetch yet)
+		if stats, err := marketplace.LoadStatsFromCache(pm.Name); err == nil && stats != nil {
+			item.GitHubStats = stats
+		}
+
+		items = append(items, item)
+	}
+
+	m.marketplaceItems = items
+	m.ApplyMarketplaceSort()
+
+	return nil
+}
+
+// ApplyMarketplaceSort sorts marketplace items based on current sort mode
+func (m *Model) ApplyMarketplaceSort() {
+	items := m.marketplaceItems
+
+	switch m.marketplaceSortMode {
+	case SortByPluginCount:
+		// Sort by total plugin count (descending)
+		for i := 0; i < len(items)-1; i++ {
+			for j := i + 1; j < len(items); j++ {
+				if items[i].TotalPluginCount < items[j].TotalPluginCount {
+					items[i], items[j] = items[j], items[i]
+				}
+			}
+		}
+	case SortByStars:
+		// Sort by GitHub stars (descending)
+		for i := 0; i < len(items)-1; i++ {
+			for j := i + 1; j < len(items); j++ {
+				si := 0
+				sj := 0
+				if items[i].GitHubStats != nil {
+					si = items[i].GitHubStats.Stars
+				}
+				if items[j].GitHubStats != nil {
+					sj = items[j].GitHubStats.Stars
+				}
+				if si < sj {
+					items[i], items[j] = items[j], items[i]
+				}
+			}
+		}
+	case SortByName:
+		// Sort alphabetically by display name
+		for i := 0; i < len(items)-1; i++ {
+			for j := i + 1; j < len(items); j++ {
+				if items[i].DisplayName > items[j].DisplayName {
+					items[i], items[j] = items[j], items[i]
+				}
+			}
+		}
+	case SortByLastUpdated:
+		// Sort by last push date (most recent first)
+		for i := 0; i < len(items)-1; i++ {
+			for j := i + 1; j < len(items); j++ {
+				var ti, tj time.Time
+				if items[i].GitHubStats != nil {
+					ti = items[i].GitHubStats.LastPushedAt
+				}
+				if items[j].GitHubStats != nil {
+					tj = items[j].GitHubStats.LastPushedAt
+				}
+				if ti.Before(tj) {
+					items[i], items[j] = items[j], items[i]
+				}
+			}
+		}
+	}
+
+	m.marketplaceItems = items
+}
+
+// VisibleMarketplaceItems returns visible marketplace items based on scroll
+func (m Model) VisibleMarketplaceItems() []MarketplaceItem {
+	maxVisible := m.maxVisibleItems()
+	if len(m.marketplaceItems) <= maxVisible {
+		return m.marketplaceItems
+	}
+
+	start := m.marketplaceScrollOffset
+	end := start + maxVisible
+	if end > len(m.marketplaceItems) {
+		end = len(m.marketplaceItems)
+	}
+
+	return m.marketplaceItems[start:end]
+}
+
+// UpdateMarketplaceScroll adjusts scroll offset for marketplace view
+func (m *Model) UpdateMarketplaceScroll() {
+	maxVisible := m.maxVisibleItems()
+	if len(m.marketplaceItems) <= maxVisible {
+		m.marketplaceScrollOffset = 0
+		return
+	}
+
+	// Keep cursor visible with buffer
+	if m.marketplaceCursor < m.marketplaceScrollOffset+scrollBuffer {
+		m.marketplaceScrollOffset = m.marketplaceCursor - scrollBuffer
+		if m.marketplaceScrollOffset < 0 {
+			m.marketplaceScrollOffset = 0
+		}
+	}
+
+	if m.marketplaceCursor >= m.marketplaceScrollOffset+maxVisible-scrollBuffer {
+		m.marketplaceScrollOffset = m.marketplaceCursor - maxVisible + scrollBuffer + 1
+		if m.marketplaceScrollOffset > len(m.marketplaceItems)-maxVisible {
+			m.marketplaceScrollOffset = len(m.marketplaceItems) - maxVisible
+		}
+	}
+}
+
+// NextMarketplaceSort cycles to next sort mode
+func (m *Model) NextMarketplaceSort() {
+	m.marketplaceSortMode = (m.marketplaceSortMode + 1) % 4
+	m.ApplyMarketplaceSort()
+	m.marketplaceCursor = 0
+	m.marketplaceScrollOffset = 0
+}
+
+// PrevMarketplaceSort cycles to previous sort mode
+func (m *Model) PrevMarketplaceSort() {
+	m.marketplaceSortMode = (m.marketplaceSortMode + 3) % 4
+	m.ApplyMarketplaceSort()
+	m.marketplaceCursor = 0
+	m.marketplaceScrollOffset = 0
 }

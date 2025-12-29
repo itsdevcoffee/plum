@@ -21,6 +21,10 @@ func (m Model) View() string {
 		content = m.detailView()
 	case ViewHelp:
 		content = m.helpView()
+	case ViewMarketplaceList:
+		content = m.marketplaceListView()
+	case ViewMarketplaceDetail:
+		content = m.marketplaceDetailView()
 	default:
 		content = m.listView()
 	}
@@ -684,11 +688,13 @@ func (m Model) helpView() string {
 	b.WriteString("\n")
 	actionKeys := []struct{ key, desc string }{
 		{"Enter", "View plugin details"},
+		{"m", "Open marketplace browser"},
 		{"c", "Copy install command (in detail view)"},
 		{"g", "Open plugin on GitHub (in detail view)"},
 		{"o", "Open local directory (installed plugins)"},
 		{"p", "Copy local path (installed plugins)"},
 		{"l", "Copy GitHub link (in detail view)"},
+		{"f", "Filter plugins by marketplace (in detail view)"},
 		{"Shift+U", "Refresh all marketplaces"},
 		{"Esc Ctrl+g", "Clear search / Cancel / Quit"},
 		{"?", "Toggle this help"},
