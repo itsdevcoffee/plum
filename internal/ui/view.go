@@ -652,7 +652,11 @@ func (m Model) helpView() string {
 	installedOnlyStyle := lipgloss.NewStyle().Foreground(Success)
 	dividerStyle := lipgloss.NewStyle().Foreground(BorderSubtle)
 
-	b.WriteString(DetailTitleStyle.Render("🍑 plum Help"))
+	// Header with legend on the right
+	title := DetailTitleStyle.Render("🍑 plum Help")
+	legend := installedOnlyStyle.Render("🟢") + HelpTextStyle.Render(" = installed only")
+	headerLine := title + strings.Repeat(" ", 60-lipgloss.Width(title)-lipgloss.Width(legend)) + legend
+	b.WriteString(headerLine)
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", 60))
 	b.WriteString("\n\n")
@@ -670,9 +674,8 @@ func (m Model) helpView() string {
 	for _, h := range navKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
-	b.WriteString("\n")
 	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
-	b.WriteString("\n\n")
+	b.WriteString("\n")
 
 	// Views & Browsing section
 	b.WriteString(HelpSectionStyle.Render("  👁️  Views & Browsing"))
@@ -685,9 +688,8 @@ func (m Model) helpView() string {
 	for _, h := range viewKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
-	b.WriteString("\n")
 	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
-	b.WriteString("\n\n")
+	b.WriteString("\n")
 
 	// Plugin Actions section (detail view)
 	b.WriteString(HelpSectionStyle.Render("  📦 Plugin Actions ") + contextStyle.Render("(detail view)"))
@@ -707,9 +709,8 @@ func (m Model) helpView() string {
 		}
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), desc))
 	}
-	b.WriteString("\n")
 	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
-	b.WriteString("\n\n")
+	b.WriteString("\n")
 
 	// Display & Filters section
 	b.WriteString(HelpSectionStyle.Render("  🎨 Display & Filters"))
@@ -722,9 +723,8 @@ func (m Model) helpView() string {
 	for _, h := range displayKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
-	b.WriteString("\n")
 	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
-	b.WriteString("\n\n")
+	b.WriteString("\n")
 
 	// System section
 	b.WriteString(HelpSectionStyle.Render("  ⚙️  System"))
@@ -736,21 +736,6 @@ func (m Model) helpView() string {
 	}
 	for _, h := range systemKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
-	}
-	b.WriteString("\n")
-	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
-	b.WriteString("\n\n")
-
-	// Tips section
-	b.WriteString(HelpSectionStyle.Render("  💡 Pro Tips"))
-	b.WriteString("\n")
-	tips := []string{
-		"Type to search instantly",
-		"Use @marketplace-name to filter by marketplace",
-		"🟢 = installed only",
-	}
-	for _, tip := range tips {
-		b.WriteString(fmt.Sprintf("    • %s\n", HelpTextStyle.Render(tip)))
 	}
 
 	b.WriteString("\n")
