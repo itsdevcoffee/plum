@@ -9,9 +9,9 @@ import (
 
 // helpView renders the help view with sticky header/footer
 func (m Model) helpView() string {
-	// Wrapper with margin (no bottom)
+	// Wrapper with only left/right margin (no top/bottom)
 	helpWrapperStyle := lipgloss.NewStyle().
-		Padding(1, 2, 0, 2)
+		Padding(0, 2, 0, 2)
 
 	// Generate sticky header
 	header := m.generateHelpHeader()

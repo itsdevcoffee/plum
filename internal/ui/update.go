@@ -118,7 +118,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Only update if not in help view (preserve content-based sizing)
 		if m.viewState != ViewHelp {
 			viewportWidth := 58
-			viewportHeight := msg.Height - 10
+			// Account for: box padding (2), borders (2), header (3), footer (2) = 9 lines
+			viewportHeight := msg.Height - 9
 
 			if viewportHeight < 5 {
 				viewportHeight = 5
@@ -325,8 +326,8 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 			// Calculate content height for sections only
 			contentHeight := lipgloss.Height(sectionsContent)
-			// Max height = terminal - wrapper - box - header - footer
-			maxHeight := m.windowHeight - 10
+			// Max height = terminal - box - header - footer (no wrapper top padding)
+			maxHeight := m.windowHeight - 9
 
 			if maxHeight < 5 {
 				maxHeight = 5
