@@ -324,16 +324,22 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.helpViewport.Width > 0 {
 			sectionsContent := m.generateHelpSections()
 
-			// Calculate content height for sections only
-			contentHeight := lipgloss.Height(sectionsContent)
-			// Max height = terminal - box - header - footer (no wrapper top padding)
-			maxHeight := m.windowHeight - 9
+			// Calculate fixed overhead heights
+			headerHeight := 3  // Title + divider
+			footerHeight := 2  // Divider + text
+			boxPadding := 4    // Box padding top/bottom (2) + borders (2)
 
-			if maxHeight < 5 {
-				maxHeight = 5
+			// Available height for viewport = terminal - all overhead
+			maxHeight := m.windowHeight - headerHeight - footerHeight - boxPadding
+
+			if maxHeight < 3 {
+				maxHeight = 3 // Absolute minimum
 			}
 
-			// Set viewport height to content or max, whichever is smaller
+			// Calculate actual content height
+			contentHeight := lipgloss.Height(sectionsContent)
+
+			// Use smaller of content or available space
 			if contentHeight < maxHeight {
 				m.helpViewport.Height = contentHeight
 			} else {
