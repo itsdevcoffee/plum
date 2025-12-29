@@ -115,9 +115,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.textInput.Width = msg.Width - 10
 
 		// Initialize/update help viewport
+		// Account for: wrapper padding (1 top), box padding (2), borders (2),
+		// header (3 lines), footer (2 lines) = 10 lines overhead
 		viewportWidth := 58
-		// Height should fit terminal minus box borders and padding
-		viewportHeight := msg.Height - 4 // Just borders (top+bottom) and minimal spacing
+		viewportHeight := msg.Height - 10
+
+		if viewportHeight < 5 {
+			viewportHeight = 5 // Minimum height
+		}
 
 		if m.helpViewport.Width == 0 {
 			m.helpViewport = viewport.New(viewportWidth, viewportHeight)
@@ -319,9 +324,12 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 			// Calculate content height for sections only
 			contentHeight := lipgloss.Height(sectionsContent)
-			// Max height = terminal - header - footer - borders - padding
-			// Header: ~3 lines, Footer: ~2 lines, Box: ~4 lines padding/border
-			maxHeight := m.windowHeight - 9
+			// Max height = terminal - wrapper - box - header - footer
+			maxHeight := m.windowHeight - 10
+
+			if maxHeight < 5 {
+				maxHeight = 5
+			}
 
 			// Set viewport height to content or max, whichever is smaller
 			if contentHeight < maxHeight {
