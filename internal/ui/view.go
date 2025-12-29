@@ -393,32 +393,32 @@ func (m Model) statusBar() string {
 	case useVerbose:
 		// Verbose: full descriptions (only in card/verbose mode)
 		parts = append(parts, position+" "+m.FilterModeName())
-		parts = append(parts, "↑↓/ctrl+jk navigate")
-		parts = append(parts, "tab filter")
-		parts = append(parts, "ctrl+v "+oppositeView)
-		parts = append(parts, "enter details")
-		parts = append(parts, "?")
+		parts = append(parts, KeyStyle.Render("↑↓/ctrl+jk")+" navigate")
+		parts = append(parts, KeyStyle.Render("tab")+" filter")
+		parts = append(parts, KeyStyle.Render("ctrl+v")+" "+oppositeView)
+		parts = append(parts, KeyStyle.Render("enter")+" details")
+		parts = append(parts, KeyStyle.Render("?"))
 
 	case width >= 70:
 		// Standard: concise but complete
 		parts = append(parts, position)
-		parts = append(parts, "↑↓ nav")
-		parts = append(parts, "tab filter")
-		parts = append(parts, "Shift+M marketplaces")
-		parts = append(parts, "ctrl+v "+oppositeView)
-		parts = append(parts, "? help")
+		parts = append(parts, KeyStyle.Render("↑↓")+" nav")
+		parts = append(parts, KeyStyle.Render("tab")+" filter")
+		parts = append(parts, KeyStyle.Render("Shift+M")+" marketplaces")
+		parts = append(parts, KeyStyle.Render("ctrl+v")+" "+oppositeView)
+		parts = append(parts, KeyStyle.Render("?")+" help")
 
 	case width >= 50:
 		// Compact: essentials only
 		parts = append(parts, position)
-		parts = append(parts, "↑↓ nav")
-		parts = append(parts, "tab filter")
-		parts = append(parts, "? help")
+		parts = append(parts, KeyStyle.Render("↑↓")+" nav")
+		parts = append(parts, KeyStyle.Render("tab")+" filter")
+		parts = append(parts, KeyStyle.Render("?")+" help")
 
 	default:
 		// Minimal: bare minimum
 		parts = append(parts, position)
-		parts = append(parts, "?=help")
+		parts = append(parts, KeyStyle.Render("?")+"=help")
 	}
 
 	return StatusBarStyle.Render(strings.Join(parts, "  │  "))
