@@ -313,13 +313,15 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "?":
-		// Set help content in viewport before transitioning
+		// Set help SECTIONS content in viewport (not header/footer)
 		if m.helpViewport.Width > 0 {
-			helpContent := m.generateHelpContent()
+			sectionsContent := m.generateHelpSections()
 
-			// Calculate actual content height
-			contentHeight := lipgloss.Height(helpContent)
-			maxHeight := m.windowHeight - 4 // Max height allowed
+			// Calculate content height for sections only
+			contentHeight := lipgloss.Height(sectionsContent)
+			// Max height = terminal - header - footer - borders - padding
+			// Header: ~3 lines, Footer: ~2 lines, Box: ~4 lines padding/border
+			maxHeight := m.windowHeight - 9
 
 			// Set viewport height to content or max, whichever is smaller
 			if contentHeight < maxHeight {
@@ -328,10 +330,10 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				m.helpViewport.Height = maxHeight
 			}
 
-			m.helpViewport.SetContent(helpContent)
-			m.helpViewport.GotoTop() // Start at top
+			m.helpViewport.SetContent(sectionsContent)
+			m.helpViewport.GotoTop()
 		}
-		m.StartViewTransition(ViewHelp, 1) // Forward transition
+		m.StartViewTransition(ViewHelp, 1)
 		return m, animationTick()
 
 	case "tab", "right":
