@@ -395,7 +395,7 @@ func (m Model) statusBar() string {
 		parts = append(parts, position+" "+m.FilterModeName())
 		parts = append(parts, KeyStyle.Render("↑↓/ctrl+jk")+" navigate")
 		parts = append(parts, KeyStyle.Render("tab")+" filter")
-		parts = append(parts, KeyStyle.Render("ctrl+v")+" "+oppositeView)
+		parts = append(parts, KeyStyle.Render("Shift+V")+" "+oppositeView)
 		parts = append(parts, KeyStyle.Render("enter")+" details")
 		parts = append(parts, KeyStyle.Render("?"))
 
@@ -405,7 +405,7 @@ func (m Model) statusBar() string {
 		parts = append(parts, KeyStyle.Render("↑↓")+" nav")
 		parts = append(parts, KeyStyle.Render("tab")+" filter")
 		parts = append(parts, KeyStyle.Render("Shift+M")+" marketplaces")
-		parts = append(parts, KeyStyle.Render("ctrl+v")+" "+oppositeView)
+		parts = append(parts, KeyStyle.Render("Shift+V")+" "+oppositeView)
 		parts = append(parts, KeyStyle.Render("?")+" help")
 
 	case width >= 50:
@@ -729,7 +729,7 @@ func (m Model) generateHelpContent() string {
 	displayKeys := []struct{ key, desc string }{
 		{"Tab →", "Next filter"},
 		{"Shift+Tab ←", "Previous filter"},
-		{"Ctrl+v", "Toggle view mode"},
+		{"Shift+V", "Toggle view mode"},
 	}
 	for _, h := range displayKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))

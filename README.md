@@ -111,7 +111,7 @@ plum
 | `Enter` | View details |
 | `Tab` or `→` | Next filter (All/Discover/Ready/Installed) |
 | `Shift+Tab` or `←` | Previous filter |
-| `Ctrl+v` | Toggle card/slim view |
+| `Shift+V` | Toggle card/slim view |
 | `Shift+U` | Refresh marketplace registry and cache |
 | `c` | Copy install command (marketplace for discoverable) |
 | `y` | Copy plugin command (for discoverable plugins) |

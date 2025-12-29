@@ -321,7 +321,7 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.PrevFilter()
 		return m, nil
 
-	case "ctrl+v":
+	case "shift+v", "V":
 		m.ToggleDisplayMode()
 		return m, nil
 
