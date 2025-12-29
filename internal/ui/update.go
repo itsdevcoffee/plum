@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/itsdevcoffee/plum/internal/marketplace"
 )
 
@@ -305,8 +306,20 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "?":
 		// Set help content in viewport before transitioning
-		if m.helpViewport.Height > 0 {
+		if m.helpViewport.Width > 0 {
 			helpContent := m.generateHelpContent()
+
+			// Calculate actual content height
+			contentHeight := lipgloss.Height(helpContent)
+			maxHeight := m.windowHeight - 4 // Max height allowed
+
+			// Set viewport height to content or max, whichever is smaller
+			if contentHeight < maxHeight {
+				m.helpViewport.Height = contentHeight
+			} else {
+				m.helpViewport.Height = maxHeight
+			}
+
 			m.helpViewport.SetContent(helpContent)
 			m.helpViewport.GotoTop() // Start at top
 		}
