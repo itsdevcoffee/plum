@@ -758,6 +758,10 @@ func (m Model) generateHelpContent() string {
 
 // helpView renders the help view with viewport for scrolling
 func (m Model) helpView() string {
+	// Custom app style for help (no bottom margin)
+	helpAppStyle := lipgloss.NewStyle().
+		Padding(1, 2, 0, 2) // top, right, bottom, left
+
 	// Use viewport if initialized (content set on view enter)
 	if m.helpViewport.Height > 0 {
 		// Wrap viewport in box with tighter max width
@@ -767,7 +771,7 @@ func (m Model) helpView() string {
 			Padding(0, 2).
 			Width(62)
 
-		return AppStyle.Render(helpBoxStyle.Render(m.helpViewport.View()))
+		return helpAppStyle.Render(helpBoxStyle.Render(m.helpViewport.View()))
 	}
 
 	// Fallback: render without viewport
@@ -778,5 +782,5 @@ func (m Model) helpView() string {
 		Padding(0, 2).
 		Width(62)
 
-	return AppStyle.Render(helpBoxStyle.Render(helpContent))
+	return helpAppStyle.Render(helpBoxStyle.Render(helpContent))
 }
