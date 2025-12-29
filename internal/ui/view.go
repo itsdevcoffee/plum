@@ -21,6 +21,18 @@ func (m Model) View() string {
 		content = m.detailView()
 	case ViewHelp:
 		content = m.helpView()
+		// Set help content in viewport if initialized
+		if m.helpViewport.Height > 0 {
+			// Generate help content without viewport
+			helpContent := m.generateHelpContent()
+			m.helpViewport.SetContent(helpContent)
+			// Render viewport wrapped in box
+			helpBoxStyle := lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(PlumBright).
+				Padding(0, 2)
+			content = AppStyle.Render(helpBoxStyle.Render(m.helpViewport.View()))
+		}
 	case ViewMarketplaceList:
 		content = m.marketplaceListView()
 	case ViewMarketplaceDetail:
@@ -643,8 +655,8 @@ func wrapText(text string, maxWidth int) string {
 	return result.String()
 }
 
-// helpView renders the help view with grouped sections
-func (m Model) helpView() string {
+// generateHelpContent generates the help menu content without box wrapper
+func (m Model) generateHelpContent() string {
 	var b strings.Builder
 
 	// Context hint style for detail-view-only commands
@@ -751,13 +763,22 @@ func (m Model) helpView() string {
 
 	b.WriteString(strings.Repeat("─", 56))
 	b.WriteString("\n")
-	b.WriteString(HelpTextStyle.Render("  Press any key to return"))
+	b.WriteString(HelpTextStyle.Render("  Press any key to return  (↑↓ to scroll)"))
 
-	// Use tighter padding for help view
-	helpBoxStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(PlumBright).
-		Padding(0, 2)
+	return b.String()
+}
 
-	return AppStyle.Render(helpBoxStyle.Render(b.String()))
+// helpView renders the help view (wraps generateHelpContent in viewport if needed)
+func (m Model) helpView() string {
+	// For backward compatibility if viewport not initialized
+	if m.helpViewport.Height == 0 {
+		helpBoxStyle := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(PlumBright).
+			Padding(0, 2)
+		return AppStyle.Render(helpBoxStyle.Render(m.generateHelpContent()))
+	}
+
+	// Content is rendered via viewport in View() function
+	return m.generateHelpContent()
 }

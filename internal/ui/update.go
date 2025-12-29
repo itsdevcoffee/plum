@@ -8,6 +8,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/itsdevcoffee/plum/internal/marketplace"
 )
@@ -111,6 +112,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.windowWidth = msg.Width
 		m.windowHeight = msg.Height
 		m.textInput.Width = msg.Width - 10
+
+		// Initialize/update help viewport
+		if m.helpViewport.Width == 0 {
+			m.helpViewport = viewport.New(msg.Width-8, msg.Height-6)
+		} else {
+			m.helpViewport.Width = msg.Width - 8
+			m.helpViewport.Height = msg.Height - 6
+		}
+
 		return m, nil
 
 	case pluginsLoadedMsg:
@@ -514,6 +524,8 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 // handleHelpKeys handles keys in the help view
 func (m Model) handleHelpKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg.String() {
 	case "q":
 		return m, tea.Quit
@@ -529,9 +541,12 @@ func (m Model) handleHelpKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc", "?", "backspace", "enter":
 		m.StartViewTransition(ViewList, -1) // Back transition
 		return m, animationTick()
-	}
 
-	return m, nil
+	default:
+		// Pass other keys to viewport for scrolling
+		m.helpViewport, cmd = m.helpViewport.Update(msg)
+		return m, cmd
+	}
 }
 
 // handleMarketplaceListKeys handles keys in the marketplace list view

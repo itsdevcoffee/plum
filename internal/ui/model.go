@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/harmonica"
 	"github.com/charmbracelet/lipgloss"
@@ -87,6 +88,7 @@ type Model struct {
 	// UI state
 	textInput           textinput.Model
 	spinner             spinner.Model
+	helpViewport        viewport.Model
 	cursor              int
 	scrollOffset        int
 	viewState           ViewState
