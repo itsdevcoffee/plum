@@ -652,13 +652,26 @@ func (m Model) helpView() string {
 	installedOnlyStyle := lipgloss.NewStyle().Foreground(Success)
 	dividerStyle := lipgloss.NewStyle().Foreground(BorderSubtle)
 
-	// Header with legend on the right
-	title := DetailTitleStyle.Render("🍑 plum Help")
-	legend := installedOnlyStyle.Render("🟢") + HelpTextStyle.Render(" = installed only")
-	headerLine := title + strings.Repeat(" ", 60-lipgloss.Width(title)-lipgloss.Width(legend)) + legend
+	// Header with legend on the right (use lipgloss for proper alignment)
+	titleStyle := DetailTitleStyle.Copy()
+	legendStyle := lipgloss.NewStyle().Foreground(TextMuted)
+
+	title := titleStyle.Render("🍑 plum Help")
+	legend := legendStyle.Render(installedOnlyStyle.Render("🟢") + " = installed only")
+
+	// Calculate spacing needed
+	contentWidth := 56 // Account for box padding
+	titleWidth := lipgloss.Width(title)
+	legendWidth := lipgloss.Width(legend)
+	spacerWidth := contentWidth - titleWidth - legendWidth
+	if spacerWidth < 0 {
+		spacerWidth = 0
+	}
+
+	headerLine := title + strings.Repeat(" ", spacerWidth) + legend
 	b.WriteString(headerLine)
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", contentWidth))
 	b.WriteString("\n\n")
 
 	// Navigation section
@@ -738,10 +751,15 @@ func (m Model) helpView() string {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
 
-	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 60))
+	b.WriteString(strings.Repeat("─", 56))
 	b.WriteString("\n")
 	b.WriteString(HelpTextStyle.Render("  Press any key to return"))
 
-	return AppStyle.Render(DetailBoxStyle.Render(b.String()))
+	// Use tighter padding for help view
+	helpBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(PlumBright).
+		Padding(0, 2)
+
+	return AppStyle.Render(helpBoxStyle.Render(b.String()))
 }
