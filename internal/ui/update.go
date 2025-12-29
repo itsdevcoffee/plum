@@ -113,9 +113,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.windowHeight = msg.Height
 		m.textInput.Width = msg.Width - 10
 
-		// Initialize/update help viewport with tighter width
-		viewportWidth := 58 // Fits content better (62 char box - 4 for padding)
-		viewportHeight := msg.Height - 8 // Leave room for app padding and box
+		// Initialize/update help viewport
+		viewportWidth := 58
+		// Height should fit terminal minus box borders and padding
+		viewportHeight := msg.Height - 4 // Just borders (top+bottom) and minimal spacing
 
 		if m.helpViewport.Width == 0 {
 			m.helpViewport = viewport.New(viewportWidth, viewportHeight)
