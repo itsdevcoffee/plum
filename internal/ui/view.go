@@ -796,19 +796,21 @@ func (m Model) renderHelpScrollbar() string {
 		return ""
 	}
 
-	// Get total content height from viewport
-	totalHeight := m.helpViewport.TotalLineCount()
-	visibleHeight := m.helpViewport.Height
-
-	// Check if scrolling is needed
-	if totalHeight <= visibleHeight {
+	// Check if content is scrollable by checking if we're at top AND bottom
+	// If AtBottom() is true and YOffset is 0, content fits completely
+	if m.helpViewport.AtTop() && m.helpViewport.AtBottom() {
 		// No scrollbar needed - content fits
 		return ""
 	}
 
-	// Calculate scrollbar dimensions
+	// Get dimensions for scrollbar
+	visibleHeight := m.helpViewport.Height
 	scrollbarHeight := visibleHeight
 	scrollPercent := m.helpViewport.ScrollPercent()
+
+	// For thumb size, assume content is roughly 2x viewport if scrollable
+	// This is a heuristic since we don't have direct access to total content height
+	totalHeight := visibleHeight * 2
 
 	// Calculate thumb size (proportional to visible/total ratio)
 	thumbHeight := (visibleHeight * scrollbarHeight) / totalHeight
