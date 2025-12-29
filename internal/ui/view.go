@@ -404,6 +404,7 @@ func (m Model) statusBar() string {
 		parts = append(parts, position)
 		parts = append(parts, "↑↓ nav")
 		parts = append(parts, "tab filter")
+		parts = append(parts, "Shift+M marketplaces")
 		parts = append(parts, "ctrl+v "+oppositeView)
 		parts = append(parts, "? help")
 
