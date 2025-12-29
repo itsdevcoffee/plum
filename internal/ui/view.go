@@ -758,27 +758,20 @@ func (m Model) generateHelpContent() string {
 
 // helpView renders the help view with viewport for scrolling
 func (m Model) helpView() string {
-	helpContent := m.generateHelpContent()
-
-	// Use viewport if it's initialized and content is taller than viewport
+	// Use viewport if initialized (content set on view enter)
 	if m.helpViewport.Height > 0 {
-		// Update viewport content
-		m.helpViewport.SetContent(helpContent)
-
-		// Render viewport
-		viewportContent := m.helpViewport.View()
-
-		// Wrap in box with max width
+		// Wrap viewport in box with max width
 		helpBoxStyle := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(PlumBright).
 			Padding(0, 2).
 			MaxWidth(80)
 
-		return AppStyle.Render(helpBoxStyle.Render(viewportContent))
+		return AppStyle.Render(helpBoxStyle.Render(m.helpViewport.View()))
 	}
 
 	// Fallback: render without viewport
+	helpContent := m.generateHelpContent()
 	helpBoxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(PlumBright).

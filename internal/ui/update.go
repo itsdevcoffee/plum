@@ -304,6 +304,12 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "?":
+		// Set help content in viewport before transitioning
+		if m.helpViewport.Height > 0 {
+			helpContent := m.generateHelpContent()
+			m.helpViewport.SetContent(helpContent)
+			m.helpViewport.GotoTop() // Start at top
+		}
 		m.StartViewTransition(ViewHelp, 1) // Forward transition
 		return m, animationTick()
 
