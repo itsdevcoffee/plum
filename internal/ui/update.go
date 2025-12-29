@@ -115,21 +115,38 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.textInput.Width = msg.Width - 10
 
 		// Initialize/update help viewport
-		// Only update if not in help view (preserve content-based sizing)
-		if m.viewState != ViewHelp {
-			viewportWidth := 58
-			// Account for: box padding (2), borders (2), header (3), footer (2) = 9 lines
-			viewportHeight := msg.Height - 9
+		viewportWidth := 58
 
+		if m.helpViewport.Width == 0 {
+			// Initial creation
+			viewportHeight := msg.Height - 9
 			if viewportHeight < 5 {
 				viewportHeight = 5
 			}
+			m.helpViewport = viewport.New(viewportWidth, viewportHeight)
+		} else {
+			// Always update width
+			m.helpViewport.Width = viewportWidth
 
-			if m.helpViewport.Width == 0 {
-				m.helpViewport = viewport.New(viewportWidth, viewportHeight)
-			} else {
-				m.helpViewport.Width = viewportWidth
-				// Don't update height - will be set when entering help view
+			// If in help view, recalculate height based on content + terminal size
+			if m.viewState == ViewHelp {
+				sectionsContent := m.generateHelpSections()
+				contentHeight := lipgloss.Height(sectionsContent)
+				maxHeight := msg.Height - 9
+
+				if maxHeight < 3 {
+					maxHeight = 3
+				}
+
+				// Resize viewport to fit
+				if contentHeight < maxHeight {
+					m.helpViewport.Height = contentHeight
+				} else {
+					m.helpViewport.Height = maxHeight
+				}
+
+				// Re-set content to update wrapping
+				m.helpViewport.SetContent(sectionsContent)
 			}
 		}
 
