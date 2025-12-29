@@ -113,25 +113,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.windowHeight = msg.Height
 		m.textInput.Width = msg.Width - 10
 
-		// Initialize/update help viewport with max width constraint
-		viewportWidth := msg.Width - 8
-		if viewportWidth > 76 { // Max width 80 - 4 for padding
-			viewportWidth = 76
-		}
+		// Initialize/update help viewport with proper constraints
+		// Max content width is 76 (to fit in 80 char box with padding)
+		viewportWidth := 72 // Leave room for box padding and borders
+		viewportHeight := msg.Height - 8 // Leave room for app padding and box
 
 		if m.helpViewport.Width == 0 {
-			m.helpViewport = viewport.New(viewportWidth, msg.Height-6)
-			m.helpViewport.KeyMap = viewport.KeyMap{
-				PageDown: viewport.DefaultKeyMap().PageDown,
-				PageUp:   viewport.DefaultKeyMap().PageUp,
-				HalfPageUp: viewport.DefaultKeyMap().HalfPageUp,
-				HalfPageDown: viewport.DefaultKeyMap().HalfPageDown,
-				Down:     viewport.DefaultKeyMap().Down,
-				Up:       viewport.DefaultKeyMap().Up,
-			}
+			m.helpViewport = viewport.New(viewportWidth, viewportHeight)
 		} else {
 			m.helpViewport.Width = viewportWidth
-			m.helpViewport.Height = msg.Height - 6
+			m.helpViewport.Height = viewportHeight
 		}
 
 		return m, nil

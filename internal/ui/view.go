@@ -20,24 +20,7 @@ func (m Model) View() string {
 	case ViewDetail:
 		content = m.detailView()
 	case ViewHelp:
-		// Set help content in viewport if initialized
-		if m.helpViewport.Height > 0 {
-			// Generate help content
-			helpContent := m.generateHelpContent()
-			m.helpViewport.SetContent(helpContent)
-
-			// Render viewport wrapped in box with max width
-			helpBoxStyle := lipgloss.NewStyle().
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(PlumBright).
-				Padding(0, 2).
-				MaxWidth(80)
-
-			content = AppStyle.Render(helpBoxStyle.Render(m.helpViewport.View()))
-		} else {
-			// Fallback if viewport not initialized
-			content = m.helpView()
-		}
+		content = m.helpView()
 	case ViewMarketplaceList:
 		content = m.marketplaceListView()
 	case ViewMarketplaceDetail:
@@ -773,17 +756,34 @@ func (m Model) generateHelpContent() string {
 	return b.String()
 }
 
-// helpView renders the help view (wraps generateHelpContent in viewport if needed)
+// helpView renders the help view with viewport for scrolling
 func (m Model) helpView() string {
-	// For backward compatibility if viewport not initialized
-	if m.helpViewport.Height == 0 {
+	helpContent := m.generateHelpContent()
+
+	// Use viewport if it's initialized and content is taller than viewport
+	if m.helpViewport.Height > 0 {
+		// Update viewport content
+		m.helpViewport.SetContent(helpContent)
+
+		// Render viewport
+		viewportContent := m.helpViewport.View()
+
+		// Wrap in box with max width
 		helpBoxStyle := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(PlumBright).
-			Padding(0, 2)
-		return AppStyle.Render(helpBoxStyle.Render(m.generateHelpContent()))
+			Padding(0, 2).
+			MaxWidth(80)
+
+		return AppStyle.Render(helpBoxStyle.Render(viewportContent))
 	}
 
-	// Content is rendered via viewport in View() function
-	return m.generateHelpContent()
+	// Fallback: render without viewport
+	helpBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(PlumBright).
+		Padding(0, 2).
+		MaxWidth(80)
+
+	return AppStyle.Render(helpBoxStyle.Render(helpContent))
 }
