@@ -342,9 +342,9 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			sectionsContent := m.generateHelpSections()
 
 			// Calculate fixed overhead heights
-			headerHeight := 3  // Title + divider
-			footerHeight := 2  // Divider + text
-			boxPadding := 4    // Box padding top/bottom (2) + borders (2)
+			headerHeight := 3 // Title + divider
+			footerHeight := 2 // Divider + text
+			boxPadding := 4   // Box padding top/bottom (2) + borders (2)
 
 			// Available height for viewport = terminal - all overhead
 			maxHeight := m.windowHeight - headerHeight - footerHeight - boxPadding

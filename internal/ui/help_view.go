@@ -217,7 +217,7 @@ func (m Model) renderHelpScrollbar() string {
 	// Render scrollbar with plum theme
 	var scrollbar strings.Builder
 
-	thumbStyle := lipgloss.NewStyle().Foreground(PlumBright)    // Orange thumb
+	thumbStyle := lipgloss.NewStyle().Foreground(PlumBright)   // Orange thumb
 	trackStyle := lipgloss.NewStyle().Foreground(BorderSubtle) // Brown track
 
 	for i := 0; i < visibleHeight; i++ {

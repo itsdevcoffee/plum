@@ -642,4 +642,3 @@ func wrapText(text string, maxWidth int) string {
 
 	return result.String()
 }
-

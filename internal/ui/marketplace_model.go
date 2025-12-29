@@ -33,9 +33,9 @@ type MarketplaceSortMode int
 
 const (
 	SortByPluginCount MarketplaceSortMode = iota // Most plugins first
-	SortByStars                                   // Most stars first
-	SortByName                                    // Alphabetical
-	SortByLastUpdated                             // Most recently updated first
+	SortByStars                                  // Most stars first
+	SortByName                                   // Alphabetical
+	SortByLastUpdated                            // Most recently updated first
 )
 
 // MarketplaceSortModeNames for display

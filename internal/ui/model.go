@@ -79,11 +79,11 @@ type Model struct {
 	allPlugins           []plugin.Plugin
 	results              []search.RankedPlugin
 	loading              bool
-	refreshing           bool // True when manually refreshing cache
-	refreshProgress      int  // Number of marketplaces refreshed
-	refreshTotal         int  // Total marketplaces to refresh
+	refreshing           bool   // True when manually refreshing cache
+	refreshProgress      int    // Number of marketplaces refreshed
+	refreshTotal         int    // Total marketplaces to refresh
 	refreshCurrent       string // Current marketplace being fetched
-	newMarketplacesCount int  // Number of new marketplaces available in registry
+	newMarketplacesCount int    // Number of new marketplaces available in registry
 
 	// UI state
 	textInput           textinput.Model
@@ -104,12 +104,12 @@ type Model struct {
 	clipboardErrorFlash bool // Brief "Clipboard error!" indicator
 
 	// Marketplace view state
-	marketplaceItems                  []MarketplaceItem
-	marketplaceCursor                 int
-	marketplaceScrollOffset           int
-	marketplaceSortMode               MarketplaceSortMode
-	selectedMarketplace               *MarketplaceItem
-	previousViewBeforeMarketplace     ViewState
+	marketplaceItems              []MarketplaceItem
+	marketplaceCursor             int
+	marketplaceScrollOffset       int
+	marketplaceSortMode           MarketplaceSortMode
+	selectedMarketplace           *MarketplaceItem
+	previousViewBeforeMarketplace ViewState
 
 	// Animation state
 	cursorY         float64 // Animated cursor position
@@ -155,9 +155,9 @@ func NewModel() Model {
 		loading:                       true,
 		viewState:                     ViewList,
 		previousView:                  ViewList,
-		displayMode:                   DisplaySlim,        // Default to slim mode
+		displayMode:                   DisplaySlim,       // Default to slim mode
 		marketplaceSortMode:           SortByPluginCount, // Default marketplace sort
-		transitionProgress:            1.0,                // Start fully transitioned (no animation on init)
+		transitionProgress:            1.0,               // Start fully transitioned (no animation on init)
 		targetTransition:              1.0,
 		transitionStyle:               TransitionInstant, // Default to instant (no animation)
 		windowWidth:                   80,
