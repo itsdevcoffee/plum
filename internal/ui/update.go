@@ -185,6 +185,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	default:
+		// Update viewport if in help view (handles smooth scrolling)
+		if m.viewState == ViewHelp && m.helpViewport.Height > 0 {
+			var cmd tea.Cmd
+			m.helpViewport, cmd = m.helpViewport.Update(msg)
+			return m, cmd
+		}
+
 	case clearCopiedFlashMsg:
 		m.copiedFlash = false
 		return m, nil
