@@ -652,23 +652,21 @@ func (m Model) helpView() string {
 	installedOnlyStyle := lipgloss.NewStyle().Foreground(Success)
 	dividerStyle := lipgloss.NewStyle().Foreground(BorderSubtle)
 
-	// Header with legend on the right (use lipgloss for proper alignment)
-	titleStyle := DetailTitleStyle.Copy()
-	legendStyle := lipgloss.NewStyle().Foreground(TextMuted)
+	// Header with legend on the right using JoinHorizontal
+	contentWidth := 56
 
-	title := titleStyle.Render("🍑 plum Help")
-	legend := legendStyle.Render(installedOnlyStyle.Render("🟢") + " = installed only")
+	title := DetailTitleStyle.Render("🍑 plum Help")
 
-	// Calculate spacing needed
-	contentWidth := 56 // Account for box padding
-	titleWidth := lipgloss.Width(title)
-	legendWidth := lipgloss.Width(legend)
-	spacerWidth := contentWidth - titleWidth - legendWidth
-	if spacerWidth < 0 {
-		spacerWidth = 0
-	}
+	legendText := installedOnlyStyle.Render("🟢") + " = installed only"
+	legendStyle := lipgloss.NewStyle().
+		Foreground(TextMuted).
+		Align(lipgloss.Right).
+		Width(contentWidth - lipgloss.Width(title))
+	legend := legendStyle.Render(legendText)
 
-	headerLine := title + strings.Repeat(" ", spacerWidth) + legend
+	// Join horizontally along top edge
+	headerLine := lipgloss.JoinHorizontal(lipgloss.Top, title, legend)
+
 	b.WriteString(headerLine)
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", contentWidth))
