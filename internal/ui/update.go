@@ -553,6 +553,7 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				cmd = "xdg-open"
 				args = []string{p.InstallPath}
 			}
+			// #nosec G204 -- cmd is determined by runtime.GOOS (trusted), args is install path from config (validated)
 			_ = exec.Command(cmd, args...).Start()
 			m.localOpenedFlash = true
 			return m, clearLocalOpenedFlash()
@@ -715,6 +716,7 @@ func (m Model) handleMarketplaceDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 				cmd = "xdg-open"
 				args = []string{url}
 			}
+			// #nosec G204 -- cmd is determined by runtime.GOOS (trusted), args is marketplace repo URL (from registry)
 			_ = exec.Command(cmd, args...).Start()
 			m.githubOpenedFlash = true
 			return m, clearGithubOpenedFlash()
