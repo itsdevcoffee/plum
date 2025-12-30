@@ -396,7 +396,6 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		_ = m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewList
 		m.StartViewTransition(ViewMarketplaceList, 1)
-		// TODO: Start background GitHub stats loading
 		return m, animationTick()
 
 	// Clear search, cancel refresh, or quit
@@ -579,7 +578,6 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		_ = m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewDetail
 		m.StartViewTransition(ViewMarketplaceList, 1)
-		// TODO: Start background GitHub stats loading
 		return m, animationTick()
 
 	case "?":
@@ -603,7 +601,6 @@ func (m Model) handleHelpKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		_ = m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewHelp
 		m.StartViewTransition(ViewMarketplaceList, 1)
-		// TODO: Start background GitHub stats loading
 		return m, animationTick()
 
 	case "esc", "?", "backspace", "enter":
