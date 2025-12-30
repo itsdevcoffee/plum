@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-12-30
+
+### Added
+- **Marketplace Browser** (`Shift+M`) - Dedicated view for browsing all 11 marketplaces
+  - GitHub stats integration (stars, forks, last commit date)
+  - Status badges: Installed/Cached/Available/New
+  - Plugin count and your installed count per marketplace
+  - Sort modes: by plugins, stars, name, or last updated
+  - Detail view with full marketplace info
+  - Filter plugins by marketplace with 'f' key
+- **Plugin Source Access** - Quick access to plugin code
+  - `g` - Open plugin on GitHub in browser
+  - `o` - Open local directory (installed plugins)
+  - `p` - Copy local path to clipboard
+  - `l` - Copy GitHub link to clipboard
+- **@marketplace Filter Syntax** - Type `@marketplace-name` to filter plugins by marketplace
+- **Enhanced Refresh** - Shift+U improvements
+  - Progress counter showing X/Y marketplaces
+  - Shows current marketplace being fetched
+  - Reduced timeout from 30s to 15s
+  - Press Esc to cancel refresh
+- **Scrollable Help Menu** - Help view now scrolls on small terminals
+  - Sticky header and footer (always visible)
+  - Visual scrollbar (plum-themed █ and ░)
+  - Responsive to terminal resize
+- **claude-mem Marketplace** - Added to registry (11 total marketplaces now)
+
+### Changed
+- **Key Binding Consistency** - All major commands now use Shift modifiers
+  - `Ctrl+v` → `Shift+V` (toggle view mode)
+  - `m` → `Shift+M` (marketplace browser) - avoids search conflicts
+- **Help Menu Redesign**
+  - Organized into logical sections with emoji headers
+  - Fixed width (62 chars) for better readability
+  - Removed clutter, added visual dividers
+  - Context hints for detail-view-only commands
+- **Status Bar Enhancement** - Keys now highlighted in orange for better visibility
+- **Visual Feedback** - Specific flash messages for each action
+  - 'g' → "✓ Opened!" (orange)
+  - 'l' → "✓ Link Copied!" (green)
+  - 'o' → "✓ Opened!" (orange)
+  - 'p' → "✓ Path Copied!" (green)
+  - Flash messages replace specific keys instead of adding clutter
+
+### Fixed
+- **Installed Tab** - Now correctly reads `installed_plugins.json` (was looking for `_v2` suffix)
+- **CI/CD** - All linting issues resolved, tests passing
+- **Cache Errors** - SaveToCache failures now logged instead of silently ignored
+- **Help Menu Sizing** - Box height matches content, no unnecessary expansion
+- **Header Clipping** - Help header stays visible on all terminal sizes
+
 ## [0.2.0] - 2025-12-13
 
 ### Added
