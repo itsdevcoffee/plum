@@ -174,12 +174,40 @@ Press `?` to see all keyboard shortcuts:
 
 ## Building from Source
 
+**Requirements:** Go 1.24+
+
 ```bash
 git clone https://github.com/itsdevcoffee/plum.git
 cd plum
 go build -o plum ./cmd/plum
 ./plum
 ```
+
+## Development
+
+**Prerequisites:**
+- Go 1.24+ ([download](https://go.dev/dl/))
+- golangci-lint (optional, for local linting)
+
+**Run tests:**
+```bash
+go test ./...                    # Run all tests
+go test -cover ./...             # With coverage
+go test -v ./internal/ui         # Specific package
+```
+
+**Format code:**
+```bash
+gofmt -w .
+```
+
+**Run linter (requires Go 1.24):**
+```bash
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+golangci-lint run
+```
+
+**Note:** Ensure your golangci-lint is built with Go 1.24+ to match the project's Go version. If you see version mismatch errors, reinstall with: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest`
 
 ## Troubleshooting
 

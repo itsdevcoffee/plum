@@ -13,10 +13,11 @@ const (
 
 // PopularMarketplace represents a hardcoded popular marketplace
 type PopularMarketplace struct {
-	Name        string `json:"name"`
-	DisplayName string `json:"displayName"`
-	Repo        string `json:"repo"` // Full repo URL (e.g., https://github.com/owner/repo)
-	Description string `json:"description"`
+	Name        string        `json:"name"`
+	DisplayName string        `json:"displayName"`
+	Repo        string        `json:"repo"` // Full repo URL (e.g., https://github.com/owner/repo)
+	Description string        `json:"description"`
+	StaticStats *GitHubStats  `json:"staticStats,omitempty"` // Static GitHub stats snapshot (fallback if cache empty)
 }
 
 // DiscoveredMarketplace contains a marketplace manifest with source information
@@ -26,55 +27,92 @@ type DiscoveredMarketplace struct {
 	Source   string // Derived CLI source (owner/repo for GitHub, full URL for others)
 }
 
-// PopularMarketplaces is the hardcoded list from README.md
+// PopularMarketplaces is the hardcoded list from README.md with static GitHub stats
+// Stats snapshot: 2025-12-30 (automatically updated periodically)
 var PopularMarketplaces = []PopularMarketplace{
 	{
 		Name:        "claude-code-plugins-plus",
 		DisplayName: "Claude Code Plugins Plus",
 		Repo:        "https://github.com/jeremylongshore/claude-code-plugins",
 		Description: "The largest collection with 254 plugins and 185 Agent Skills",
+		// Note: Stats unavailable for this repo (private or rate limited)
 	},
 	{
 		Name:        "claude-code-marketplace",
 		DisplayName: "Claude Code Marketplace",
 		Repo:        "https://github.com/ananddtyagi/claude-code-marketplace",
 		Description: "Community-driven marketplace with granular installation",
+		// Note: Stats unavailable for this repo (private or rate limited)
 	},
 	{
 		Name:        "claude-code-plugins",
 		DisplayName: "Claude Code Plugins",
 		Repo:        "https://github.com/anthropics/claude-code",
 		Description: "Official Anthropic plugins maintained by the Claude Code team",
+		StaticStats: &GitHubStats{Stars: 49810, Forks: 3529, OpenIssues: 6540},
 	},
 	{
 		Name:        "mag-claude-plugins",
 		DisplayName: "MAG Claude Plugins",
 		Repo:        "https://github.com/MadAppGang/claude-code",
 		Description: "Battle-tested workflows with 4 specialized plugins",
+		StaticStats: &GitHubStats{Stars: 190, Forks: 17, OpenIssues: 1},
 	},
 	{
 		Name:        "dev-gom-plugins",
 		DisplayName: "Dev-GOM Plugins",
 		Repo:        "https://github.com/Dev-GOM/claude-code-marketplace",
 		Description: "Automation-focused collection with 15 plugins",
+		StaticStats: &GitHubStats{Stars: 41, Forks: 5, OpenIssues: 0},
 	},
 	{
 		Name:        "feedmob-claude-plugins",
 		DisplayName: "FeedMob Plugins",
 		Repo:        "https://github.com/feed-mob/claude-code-marketplace",
 		Description: "Productivity and workflow tools with 6 specialized plugins",
+		StaticStats: &GitHubStats{Stars: 2, Forks: 1, OpenIssues: 1},
 	},
 	{
 		Name:        "claude-plugins-official",
 		DisplayName: "Claude Plugins Official",
 		Repo:        "https://github.com/anthropics/claude-plugins-official",
 		Description: "Official Anthropic plugins for Claude Code",
+		// Note: Repo may not exist or is private
 	},
 	{
 		Name:        "anthropic-agent-skills",
 		DisplayName: "Anthropic Agent Skills",
 		Repo:        "https://github.com/anthropics/skills",
-		Description: "Official Anthropic skills reference with document manipulation and examples",
+		Description: "Official Anthropic Agent Skills reference repository",
+		StaticStats: &GitHubStats{Stars: 29937, Forks: 2738, OpenIssues: 117},
+	},
+	{
+		Name:        "wshobson-agents",
+		DisplayName: "Hobson's Agent Collection",
+		Repo:        "https://github.com/wshobson/agents",
+		Description: "Comprehensive production system with 65 plugins and multi-agent orchestration",
+		StaticStats: &GitHubStats{Stars: 23895, Forks: 2654, OpenIssues: 257},
+	},
+	{
+		Name:        "docker-plugins",
+		DisplayName: "Docker Official Plugins",
+		Repo:        "https://github.com/docker/claude-plugins",
+		Description: "Official Docker Inc. marketplace with Docker Desktop MCP Toolkit integration",
+		StaticStats: &GitHubStats{Stars: 11, Forks: 3, OpenIssues: 0},
+	},
+	{
+		Name:        "ccplugins-marketplace",
+		DisplayName: "CC Plugins Curated",
+		Repo:        "https://github.com/ccplugins/marketplace",
+		Description: "Curated collection of 200 plugins across 13 categories",
+		StaticStats: &GitHubStats{Stars: 10, Forks: 7, OpenIssues: 2},
+	},
+	{
+		Name:        "claude-mem",
+		DisplayName: "Claude-Mem",
+		Repo:        "https://github.com/thedotmack/claude-mem",
+		Description: "Persistent memory compression system for Claude Code with context preservation",
+		StaticStats: &GitHubStats{Stars: 9585, Forks: 578, OpenIssues: 14},
 	},
 }
 

@@ -109,6 +109,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyMsg(msg)
 
+	case tea.MouseMsg:
+		// Pass mouse events to viewports for scroll wheel support
+		var cmd tea.Cmd
+		if m.viewState == ViewHelp && m.helpViewport.Height > 0 {
+			m.helpViewport, cmd = m.helpViewport.Update(msg)
+			return m, cmd
+		}
+		if m.viewState == ViewDetail && m.detailViewport.Height > 0 {
+			m.detailViewport, cmd = m.detailViewport.Update(msg)
+			return m, cmd
+		}
+		return m, nil
+
 	case tea.WindowSizeMsg:
 		m.windowWidth = msg.Width
 		m.windowHeight = msg.Height
@@ -147,6 +160,48 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				// Re-set content to update wrapping
 				m.helpViewport.SetContent(sectionsContent)
+			}
+		}
+
+		// Initialize/update detail viewport
+		detailViewportWidth := m.ContentWidth() - 10
+		if detailViewportWidth < 40 {
+			detailViewportWidth = 40
+		}
+
+		if m.detailViewport.Width == 0 {
+			// Initial creation
+			// Overhead: header(2) + footer(1) + box border(2) + box padding(2) + buffer(2) = 9
+			viewportHeight := msg.Height - 9
+			if viewportHeight < 5 {
+				viewportHeight = 5
+			}
+			m.detailViewport = viewport.New(detailViewportWidth, viewportHeight)
+		} else {
+			// Always update width
+			m.detailViewport.Width = detailViewportWidth
+
+			// If in detail view, recalculate height based on content + terminal size
+			if m.viewState == ViewDetail {
+				if p := m.SelectedPlugin(); p != nil {
+					detailContent := m.generateDetailContent(p, detailViewportWidth)
+					contentHeight := lipgloss.Height(detailContent)
+					maxHeight := msg.Height - 9 // Match help menu overhead
+
+					if maxHeight < 3 {
+						maxHeight = 3
+					}
+
+					// Resize viewport to fit
+					if contentHeight < maxHeight {
+						m.detailViewport.Height = contentHeight
+					} else {
+						m.detailViewport.Height = maxHeight
+					}
+
+					// Re-set content to update wrapping
+					m.detailViewport.SetContent(detailContent)
+				}
 			}
 		}
 
@@ -331,6 +386,32 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Actions
 	case "enter":
 		if len(m.results) > 0 {
+			// Set detail viewport content before transition (like help menu)
+			if m.detailViewport.Width > 0 {
+				if p := m.SelectedPlugin(); p != nil {
+					contentWidth := m.ContentWidth() - 10
+					if contentWidth < 40 {
+						contentWidth = 40
+					}
+					detailContent := m.generateDetailContent(p, contentWidth)
+
+					// Calculate viewport height (match WindowSizeMsg overhead)
+					contentHeight := lipgloss.Height(detailContent)
+					maxHeight := m.windowHeight - 9
+					if maxHeight < 3 {
+						maxHeight = 3
+					}
+
+					if contentHeight < maxHeight {
+						m.detailViewport.Height = contentHeight
+					} else {
+						m.detailViewport.Height = maxHeight
+					}
+
+					m.detailViewport.SetContent(detailContent)
+					m.detailViewport.GotoTop() // Reset scroll position
+				}
+			}
 			m.StartViewTransition(ViewDetail, 1) // Forward transition
 			return m, animationTick()
 		}
@@ -396,7 +477,6 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		_ = m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewList
 		m.StartViewTransition(ViewMarketplaceList, 1)
-		// TODO: Start background GitHub stats loading
 		return m, animationTick()
 
 	// Clear search, cancel refresh, or quit
@@ -579,15 +659,18 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		_ = m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewDetail
 		m.StartViewTransition(ViewMarketplaceList, 1)
-		// TODO: Start background GitHub stats loading
 		return m, animationTick()
 
 	case "?":
 		m.StartViewTransition(ViewHelp, 1) // Forward transition
 		return m, animationTick()
-	}
 
-	return m, nil
+	default:
+		// Pass other keys to viewport for scrolling (up/down/pgup/pgdown)
+		var cmd tea.Cmd
+		m.detailViewport, cmd = m.detailViewport.Update(msg)
+		return m, cmd
+	}
 }
 
 // handleHelpKeys handles keys in the help view
@@ -603,7 +686,6 @@ func (m Model) handleHelpKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		_ = m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewHelp
 		m.StartViewTransition(ViewMarketplaceList, 1)
-		// TODO: Start background GitHub stats loading
 		return m, animationTick()
 
 	case "esc", "?", "backspace", "enter":

@@ -89,6 +89,7 @@ type Model struct {
 	textInput           textinput.Model
 	spinner             spinner.Model
 	helpViewport        viewport.Model
+	detailViewport      viewport.Model
 	cursor              int
 	scrollOffset        int
 	viewState           ViewState
@@ -611,9 +612,12 @@ func (m *Model) LoadMarketplaceItems() error {
 			}
 		}
 
-		// Load cached GitHub stats (don't fetch yet)
+		// Load GitHub stats: prefer cache, fallback to static stats
 		if stats, err := marketplace.LoadStatsFromCache(pm.Name); err == nil && stats != nil {
 			item.GitHubStats = stats
+		} else if pm.StaticStats != nil {
+			// Use static stats as fallback (snapshot from codebase)
+			item.GitHubStats = pm.StaticStats
 		}
 
 		items = append(items, item)
