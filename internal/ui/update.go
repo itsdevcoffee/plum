@@ -157,8 +157,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if m.detailViewport.Width == 0 {
-			// Initial creation - conservative overhead (header + footer + box + wrapper)
-			viewportHeight := msg.Height - 12
+			// Initial creation
+			// Overhead calculation (match help menu pattern):
+			// header(~3) + footer(~2) + box border(2) + box padding(2) + wrapper(4) = ~13
+			viewportHeight := msg.Height - 13
 			if viewportHeight < 5 {
 				viewportHeight = 5
 			}
@@ -172,7 +174,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if p := m.SelectedPlugin(); p != nil {
 					detailContent := m.generateDetailContent(p, detailViewportWidth)
 					contentHeight := lipgloss.Height(detailContent)
-					maxHeight := msg.Height - 12 // Conservative overhead
+					maxHeight := msg.Height - 13 // Match initial overhead
 
 					if maxHeight < 3 {
 						maxHeight = 3
@@ -381,9 +383,9 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					}
 					detailContent := m.generateDetailContent(p, contentWidth)
 
-					// Calculate viewport height
+					// Calculate viewport height (match WindowSizeMsg overhead)
 					contentHeight := lipgloss.Height(detailContent)
-					maxHeight := m.windowHeight - 12
+					maxHeight := m.windowHeight - 13
 					if maxHeight < 3 {
 						maxHeight = 3
 					}

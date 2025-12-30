@@ -488,19 +488,12 @@ func (m Model) generateDetailContent(p *plugin.Plugin, contentWidth int) string 
 		b.WriteString("\n")
 	}
 
-	return b.String()
-}
-
-// generateDetailFooter generates the sticky footer for detail view
-func (m Model) generateDetailFooter(p *plugin.Plugin, contentWidth int) string {
-	var b strings.Builder
-
-	// Separator before footer
-	b.WriteString(strings.Repeat("─", contentWidth))
-	b.WriteString("\n")
-
-	// Install command (only for non-installed plugins)
+	// Install instructions (move from footer to scrollable content)
 	if !p.Installed {
+		b.WriteString("\n")
+		b.WriteString(strings.Repeat("─", contentWidth))
+		b.WriteString("\n")
+
 		if p.IsDiscoverable {
 			// Marketplace not installed - show 2-step instructions
 			b.WriteString(DiscoverMessageStyle.Render("⚠ This marketplace is not installed yet"))
@@ -523,8 +516,14 @@ func (m Model) generateDetailFooter(p *plugin.Plugin, contentWidth int) string {
 			b.WriteString(DetailLabelStyle.Render("Install:") + " " + InstallCommandStyle.Render(p.InstallCommand()))
 			b.WriteString("\n")
 		}
-		b.WriteString("\n")
 	}
+
+	return b.String()
+}
+
+// generateDetailFooter generates the sticky footer for detail view (key bindings only)
+func (m Model) generateDetailFooter(p *plugin.Plugin, contentWidth int) string {
+	var b strings.Builder
 
 	// Footer - build with flash message replacements
 	b.WriteString("\n")
@@ -609,6 +608,10 @@ func (m Model) detailView() string {
 		contentWidth = 40
 	}
 
+	// Wrapper with left/right margin (match help menu pattern)
+	detailWrapperStyle := lipgloss.NewStyle().
+		Padding(0, 2, 0, 2)
+
 	header := m.generateDetailHeader(p, contentWidth)
 	footer := m.generateDetailFooter(p, contentWidth)
 
@@ -627,9 +630,13 @@ func (m Model) detailView() string {
 			footer,
 		)
 
-		// Apply box style with full width
-		boxStyle := DetailBoxStyle.Width(contentWidth + 4)
-		return AppStyle.Render(boxStyle.Render(fullContent))
+		// Wrap in box (match help menu pattern)
+		detailBoxStyle := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(PlumBright).
+			Padding(1, 2)
+
+		return detailWrapperStyle.Render(detailBoxStyle.Render(fullContent))
 	}
 
 	// Fallback: render without viewport (safety)
