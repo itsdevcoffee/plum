@@ -4,7 +4,9 @@ import (
 	"strings"
 )
 
-// Plugin represents a Claude Code plugin from any marketplace
+// Plugin represents a Claude Code plugin from any marketplace.
+// Contains metadata, installation state, and marketplace source information.
+// Used for search, display, and installation command generation.
 type Plugin struct {
 	Name              string   `json:"name"`
 	Description       string   `json:"description"`

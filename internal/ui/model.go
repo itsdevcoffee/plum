@@ -74,7 +74,9 @@ const (
 	springDamping   = 0.9  // < 1 = bouncy, 1 = smooth, > 1 = slow
 )
 
-// Model is the main application model
+// Model is the main Bubble Tea application model for Plum TUI.
+// It manages all UI state including plugins, search results, viewports,
+// and marketplace data. Thread-safe for use in Bubble Tea's Update() loop.
 type Model struct {
 	// Data
 	allPlugins           []plugin.Plugin
