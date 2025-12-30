@@ -14,7 +14,10 @@ type RankedPlugin struct {
 	Score  int
 }
 
-// Search performs fuzzy search on plugins and returns ranked results
+// Search performs fuzzy search on plugins and returns ranked results.
+// Empty query returns all plugins sorted by installed status then name.
+// Scoring algorithm: exact match (100), partial (70), fuzzy (0-50),
+// keywords (30), category (15), description (25), installed boost (+5).
 func Search(query string, plugins []plugin.Plugin) []RankedPlugin {
 	if query == "" {
 		// Return all plugins sorted by name when no query

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -73,7 +74,9 @@ const (
 	springDamping   = 0.9  // < 1 = bouncy, 1 = smooth, > 1 = slow
 )
 
-// Model is the main application model
+// Model is the main Bubble Tea application model for Plum TUI.
+// It manages all UI state including plugins, search results, viewports,
+// and marketplace data. Thread-safe for use in Bubble Tea's Update() loop.
 type Model struct {
 	// Data
 	allPlugins           []plugin.Plugin
@@ -615,9 +618,9 @@ func (m *Model) LoadMarketplaceItems() error {
 		// Load GitHub stats: prefer cache, fallback to static stats
 		if stats, err := marketplace.LoadStatsFromCache(pm.Name); err == nil && stats != nil {
 			item.GitHubStats = stats
-		} else if pm.StaticStats != nil {
-			// Use static stats as fallback (snapshot from codebase)
-			item.GitHubStats = pm.StaticStats
+		} else {
+			// Fallback to static stats from PopularMarketplaces (by name lookup)
+			item.GitHubStats = getStaticStatsByName(pm.Name)
 		}
 
 		items = append(items, item)
@@ -635,59 +638,69 @@ func (m *Model) ApplyMarketplaceSort() {
 
 	switch m.marketplaceSortMode {
 	case SortByPluginCount:
-		// Sort by total plugin count (descending)
-		for i := 0; i < len(items)-1; i++ {
-			for j := i + 1; j < len(items); j++ {
-				if items[i].TotalPluginCount < items[j].TotalPluginCount {
-					items[i], items[j] = items[j], items[i]
-				}
-			}
-		}
+		sortMarketplacesByPluginCount(items)
 	case SortByStars:
-		// Sort by GitHub stars (descending)
-		for i := 0; i < len(items)-1; i++ {
-			for j := i + 1; j < len(items); j++ {
-				si := 0
-				sj := 0
-				if items[i].GitHubStats != nil {
-					si = items[i].GitHubStats.Stars
-				}
-				if items[j].GitHubStats != nil {
-					sj = items[j].GitHubStats.Stars
-				}
-				if si < sj {
-					items[i], items[j] = items[j], items[i]
-				}
-			}
-		}
+		sortMarketplacesByStars(items)
 	case SortByName:
-		// Sort alphabetically by display name
-		for i := 0; i < len(items)-1; i++ {
-			for j := i + 1; j < len(items); j++ {
-				if items[i].DisplayName > items[j].DisplayName {
-					items[i], items[j] = items[j], items[i]
-				}
-			}
-		}
+		sortMarketplacesByName(items)
 	case SortByLastUpdated:
-		// Sort by last push date (most recent first)
-		for i := 0; i < len(items)-1; i++ {
-			for j := i + 1; j < len(items); j++ {
-				var ti, tj time.Time
-				if items[i].GitHubStats != nil {
-					ti = items[i].GitHubStats.LastPushedAt
-				}
-				if items[j].GitHubStats != nil {
-					tj = items[j].GitHubStats.LastPushedAt
-				}
-				if ti.Before(tj) {
-					items[i], items[j] = items[j], items[i]
-				}
-			}
-		}
+		sortMarketplacesByLastUpdated(items)
 	}
 
 	m.marketplaceItems = items
+}
+
+// sortMarketplacesByPluginCount sorts by total plugin count (descending)
+func sortMarketplacesByPluginCount(items []MarketplaceItem) {
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].TotalPluginCount > items[j].TotalPluginCount
+	})
+}
+
+// sortMarketplacesByStars sorts by GitHub stars (descending)
+func sortMarketplacesByStars(items []MarketplaceItem) {
+	sort.Slice(items, func(i, j int) bool {
+		si := 0
+		sj := 0
+		if items[i].GitHubStats != nil {
+			si = items[i].GitHubStats.Stars
+		}
+		if items[j].GitHubStats != nil {
+			sj = items[j].GitHubStats.Stars
+		}
+		return si > sj
+	})
+}
+
+// sortMarketplacesByName sorts alphabetically by display name
+func sortMarketplacesByName(items []MarketplaceItem) {
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].DisplayName < items[j].DisplayName
+	})
+}
+
+// sortMarketplacesByLastUpdated sorts by last push date (most recent first)
+func sortMarketplacesByLastUpdated(items []MarketplaceItem) {
+	sort.Slice(items, func(i, j int) bool {
+		var ti, tj time.Time
+		if items[i].GitHubStats != nil {
+			ti = items[i].GitHubStats.LastPushedAt
+		}
+		if items[j].GitHubStats != nil {
+			tj = items[j].GitHubStats.LastPushedAt
+		}
+		return ti.After(tj)
+	})
+}
+
+// getStaticStatsByName looks up static stats from PopularMarketplaces by name
+func getStaticStatsByName(name string) *marketplace.GitHubStats {
+	for _, pm := range marketplace.PopularMarketplaces {
+		if pm.Name == name && pm.StaticStats != nil {
+			return pm.StaticStats
+		}
+	}
+	return nil
 }
 
 // VisibleMarketplaceItems returns visible marketplace items based on scroll

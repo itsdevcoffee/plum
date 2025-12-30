@@ -528,6 +528,10 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // handleDetailKeys handles keys in the detail view
+// TODO(Phase 4.2): Split into sub-handlers to reduce complexity (currently 35)
+//   - handleDetailCopyActions() for c, y, l, p keys
+//   - handleDetailNavigationActions() for open, back, transitions
+//   - See keybindings.go for centralized key definitions
 func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "q":
