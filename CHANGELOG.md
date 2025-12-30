@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2025-12-30
+
+### Fixed
+- **Marketplace Stats Display** - GitHub stats (⭐ stars, 🍴 forks, 🕒 updated) now display correctly in marketplace browser
+  - Fixed static stats lookup when using remote registry
+  - Stars and Updated sorting tabs now work as intended
+  - Stats load from cache → static fallback → none (graceful degradation)
+
+### Added
+- **Expanded UI Test Suite** - 49 additional test cases (total: 166+ across all packages)
+  - Copy functionality tests (install commands, marketplace commands)
+  - Marketplace browser navigation tests
+  - Display mode toggle and quit behavior tests
+  - Helper method validation (counts, widths, filters)
+  - Animation state and transition tests
+  - UI coverage: 10.6% → 20.2%
+- **Strict Linting** - Enhanced code quality enforcement
+  - Added 6 new linters: revive, gocritic, gocyclo, unconvert, unparam, prealloc
+  - Cyclomatic complexity monitoring (threshold: 40)
+  - Style, performance, and diagnostic checks
+  - Total: 11 linters active in CI/CD
+- **Centralized Key Bindings** - keybindings.go for maintainability
+  - 18 semantic actions (ActionQuit, ActionCopy, etc.)
+  - 5 view-specific binding maps
+  - Single source of truth for all key mappings
+  - Prepares for future complexity reduction
+- **TESTING.md Guide** - Comprehensive testing documentation
+  - Quick start commands and coverage standards
+  - 4 testing patterns with examples (table-driven, integration, fixtures, temp files)
+  - Package-specific notes and best practices
+  - Debugging guide and CI/CD info
+- **Godoc Comments** - Improved API documentation
+  - Model, Search, Plugin types documented
+  - Scoring algorithm details
+  - Usage patterns and thread-safety notes
+
+### Changed
+- **Reduced Complexity** - ApplyMarketplaceSort refactored (complexity: 21 → 5)
+  - Replaced O(n²) bubble sort with O(n log n) sort.Slice
+  - Extracted 4 dedicated comparison functions
+  - 76% complexity reduction, improved performance
+- **Refactoring TODOs** - Documented future improvements
+  - handleDetailKeys (35) - planned sub-handler split
+  - handleListKeys (36) - planned keybinding integration
+
 ## [0.3.1] - 2025-12-30
 
 ### Fixed
