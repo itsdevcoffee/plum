@@ -513,6 +513,7 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					cmd = "xdg-open"
 					args = []string{url}
 				}
+				// #nosec G204 -- cmd is determined by runtime.GOOS (trusted), args is plugin GitHub URL (validated)
 				_ = exec.Command(cmd, args...).Start()
 				m.githubOpenedFlash = true
 				return m, clearGithubOpenedFlash()
