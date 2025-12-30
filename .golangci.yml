@@ -15,6 +15,12 @@ linters:
     - goimports     # Check import formatting
     - misspell      # Check for misspelled English words
     - gosec         # Security-focused linter
+    - revive        # Drop-in replacement for golint (style issues)
+    - unconvert     # Unnecessary type conversions
+    - unparam       # Unused function parameters
+    - prealloc      # Slice preallocation opportunities
+    - gocyclo       # Cyclomatic complexity
+    - gocritic      # Comprehensive Go linter
 
 linters-settings:
   gosec:
@@ -25,6 +31,32 @@ linters-settings:
   errcheck:
     check-blank: false
     check-type-assertions: false
+
+  gocyclo:
+    # We have known high-complexity functions (handleDetailKeys: 35, handleListKeys: 31)
+    # Set threshold to 40 to catch regressions without failing on existing code
+    # TODO: Refactor to <15 in Phase 4
+    min-complexity: 40
+
+  revive:
+    severity: warning
+    rules:
+      - name: exported
+        severity: warning
+        disabled: false
+      - name: error-return
+      - name: error-naming
+      - name: if-return
+      - name: var-naming
+      - name: indent-error-flow
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - unnecessaryBlock  # Sometimes explicit blocks improve readability
 
 issues:
   exclude-use-default: false
