@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-12-30
+
+### Fixed
+- **Detail View Scrolling** - Critical UX bug where long plugin descriptions (e.g., whimsy-injector) were cut off with no scroll capability
+  - Added scrollable viewport with sticky header/footer (matches help menu pattern)
+  - Header (plugin name, badge, metadata) stays pinned to top
+  - Content (description, keywords, install instructions) scrolls with visual scrollbar
+  - Footer (key bindings) stays pinned to bottom
+  - Arrow key (↑↓) and mouse wheel scrolling support
+  - Responsive window resize maintains proper layout
+  - Scrollbar appears on right side when content overflows
+
+### Added
+- **Comprehensive Test Suite** - 117 new test cases across 6 test files
+  - `internal/search`: 98.1% coverage (35 test cases) - fuzzy matching, scoring algorithms
+  - `internal/plugin`: 100% coverage (37 test cases) - all methods and edge cases
+  - `internal/ui`: 10.6% coverage (24 test cases) - core user flows, navigation, view transitions
+  - `internal/marketplace`: 41.0% coverage (21 test cases) - GitHub stats, cache, refresh, discovery
+- **Static GitHub Stats** - Hardcoded fallback stats for 9/12 marketplaces (snapshot: 2025-12-30)
+  - Users see stats immediately on first run without API calls
+  - Fallback mechanism: cache → static stats → none
+  - Reduces GitHub API rate limit pressure
+  - Stats: claude-code (49.8k★), anthropic-agent-skills (29.9k★), wshobson-agents (23.9k★), claude-mem (9.6k★), and 5 more
+- **Development Documentation** - Comprehensive guide in README
+  - Go 1.24+ requirements clearly documented
+  - Test running commands with coverage options
+  - Code formatting and linting instructions
+  - Tooling version mismatch troubleshooting
+
+### Changed
+- Expanded PopularMarketplaces list from 8 to 12 entries (matches registry)
+- Marketplace coverage improved from 29.3% to 41.0%
+- Mouse wheel scrolling now works in both help and detail views
+
 ## [0.3.0] - 2025-12-30
 
 ### Added
