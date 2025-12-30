@@ -618,9 +618,9 @@ func (m *Model) LoadMarketplaceItems() error {
 		// Load GitHub stats: prefer cache, fallback to static stats
 		if stats, err := marketplace.LoadStatsFromCache(pm.Name); err == nil && stats != nil {
 			item.GitHubStats = stats
-		} else if pm.StaticStats != nil {
-			// Use static stats as fallback (snapshot from codebase)
-			item.GitHubStats = pm.StaticStats
+		} else {
+			// Fallback to static stats from PopularMarketplaces (by name lookup)
+			item.GitHubStats = getStaticStatsByName(pm.Name)
 		}
 
 		items = append(items, item)
@@ -691,6 +691,16 @@ func sortMarketplacesByLastUpdated(items []MarketplaceItem) {
 		}
 		return ti.After(tj)
 	})
+}
+
+// getStaticStatsByName looks up static stats from PopularMarketplaces by name
+func getStaticStatsByName(name string) *marketplace.GitHubStats {
+	for _, pm := range marketplace.PopularMarketplaces {
+		if pm.Name == name && pm.StaticStats != nil {
+			return pm.StaticStats
+		}
+	}
+	return nil
 }
 
 // VisibleMarketplaceItems returns visible marketplace items based on scroll
