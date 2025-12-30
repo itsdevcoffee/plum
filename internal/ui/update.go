@@ -109,6 +109,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyMsg(msg)
 
+	case tea.MouseMsg:
+		// Pass mouse events to viewports for scroll wheel support
+		var cmd tea.Cmd
+		if m.viewState == ViewHelp && m.helpViewport.Height > 0 {
+			m.helpViewport, cmd = m.helpViewport.Update(msg)
+			return m, cmd
+		}
+		if m.viewState == ViewDetail && m.detailViewport.Height > 0 {
+			m.detailViewport, cmd = m.detailViewport.Update(msg)
+			return m, cmd
+		}
+		return m, nil
+
 	case tea.WindowSizeMsg:
 		m.windowWidth = msg.Width
 		m.windowHeight = msg.Height
@@ -158,9 +171,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.detailViewport.Width == 0 {
 			// Initial creation
-			// Overhead calculation (match help menu pattern):
-			// header(~3) + footer(~2) + box border(2) + box padding(2) + wrapper(4) = ~13
-			viewportHeight := msg.Height - 13
+			// Overhead: header(2) + footer(1) + box border(2) + box padding(2) + buffer(2) = 9
+			viewportHeight := msg.Height - 9
 			if viewportHeight < 5 {
 				viewportHeight = 5
 			}
@@ -174,7 +186,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if p := m.SelectedPlugin(); p != nil {
 					detailContent := m.generateDetailContent(p, detailViewportWidth)
 					contentHeight := lipgloss.Height(detailContent)
-					maxHeight := msg.Height - 13 // Match initial overhead
+					maxHeight := msg.Height - 9 // Match help menu overhead
 
 					if maxHeight < 3 {
 						maxHeight = 3
@@ -385,7 +397,7 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 					// Calculate viewport height (match WindowSizeMsg overhead)
 					contentHeight := lipgloss.Height(detailContent)
-					maxHeight := m.windowHeight - 13
+					maxHeight := m.windowHeight - 9
 					if maxHeight < 3 {
 						maxHeight = 3
 					}
