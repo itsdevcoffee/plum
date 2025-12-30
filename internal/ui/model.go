@@ -224,11 +224,6 @@ func loadPlugins() tea.Msg {
 // refreshCacheMsg is sent to initiate cache refresh
 type refreshCacheMsg struct{}
 
-// cacheRefreshedMsg is sent when cache refresh completes
-type cacheRefreshedMsg struct {
-	err error
-}
-
 // registryCheckedMsg is sent when registry check completes
 type registryCheckedMsg struct {
 	newCount int

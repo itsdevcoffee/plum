@@ -393,7 +393,7 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "shift+m", "M":
 		// Open marketplace browser
-		m.LoadMarketplaceItems()
+		_ = m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewList
 		m.StartViewTransition(ViewMarketplaceList, 1)
 		// TODO: Start background GitHub stats loading
@@ -513,7 +513,7 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					cmd = "xdg-open"
 					args = []string{url}
 				}
-				exec.Command(cmd, args...).Start()
+				_ = exec.Command(cmd, args...).Start()
 				m.githubOpenedFlash = true
 				return m, clearGithubOpenedFlash()
 			}
@@ -553,7 +553,7 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				cmd = "xdg-open"
 				args = []string{p.InstallPath}
 			}
-			exec.Command(cmd, args...).Start()
+			_ = exec.Command(cmd, args...).Start()
 			m.localOpenedFlash = true
 			return m, clearLocalOpenedFlash()
 		}
@@ -574,7 +574,7 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "shift+m", "M":
 		// Open marketplace browser
-		m.LoadMarketplaceItems()
+		_ = m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewDetail
 		m.StartViewTransition(ViewMarketplaceList, 1)
 		// TODO: Start background GitHub stats loading
@@ -598,7 +598,7 @@ func (m Model) handleHelpKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "shift+m", "M":
 		// Open marketplace browser
-		m.LoadMarketplaceItems()
+		_ = m.LoadMarketplaceItems()
 		m.previousViewBeforeMarketplace = ViewHelp
 		m.StartViewTransition(ViewMarketplaceList, 1)
 		// TODO: Start background GitHub stats loading
@@ -715,7 +715,7 @@ func (m Model) handleMarketplaceDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 				cmd = "xdg-open"
 				args = []string{url}
 			}
-			exec.Command(cmd, args...).Start()
+			_ = exec.Command(cmd, args...).Start()
 			m.githubOpenedFlash = true
 			return m, clearGithubOpenedFlash()
 		}
