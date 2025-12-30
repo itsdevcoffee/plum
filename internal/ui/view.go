@@ -425,18 +425,8 @@ func (m Model) statusBar() string {
 }
 
 // detailView renders the detail view for the selected plugin
-func (m Model) detailView() string {
-	p := m.SelectedPlugin()
-	if p == nil {
-		return AppStyle.Render("No plugin selected")
-	}
-
-	// Calculate content width (account for borders and padding)
-	contentWidth := m.ContentWidth() - 10
-	if contentWidth < 40 {
-		contentWidth = 40
-	}
-
+// generateDetailHeader generates the sticky header for detail view
+func (m Model) generateDetailHeader(p *plugin.Plugin, contentWidth int) string {
 	var b strings.Builder
 
 	// Header with name and status badge
@@ -450,7 +440,13 @@ func (m Model) detailView() string {
 	b.WriteString(header)
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", contentWidth))
-	b.WriteString("\n\n")
+
+	return b.String()
+}
+
+// generateDetailContent generates the scrollable content for detail view
+func (m Model) generateDetailContent(p *plugin.Plugin, contentWidth int) string {
+	var b strings.Builder
 
 	// Details
 	details := []struct {
@@ -492,12 +488,19 @@ func (m Model) detailView() string {
 		b.WriteString("\n")
 	}
 
+	return b.String()
+}
+
+// generateDetailFooter generates the sticky footer for detail view
+func (m Model) generateDetailFooter(p *plugin.Plugin, contentWidth int) string {
+	var b strings.Builder
+
+	// Separator before footer
+	b.WriteString(strings.Repeat("─", contentWidth))
+	b.WriteString("\n")
+
 	// Install command (only for non-installed plugins)
 	if !p.Installed {
-		b.WriteString("\n")
-		b.WriteString(strings.Repeat("─", contentWidth))
-		b.WriteString("\n")
-
 		if p.IsDiscoverable {
 			// Marketplace not installed - show 2-step instructions
 			b.WriteString(DiscoverMessageStyle.Render("⚠ This marketplace is not installed yet"))
@@ -520,6 +523,7 @@ func (m Model) detailView() string {
 			b.WriteString(DetailLabelStyle.Render("Install:") + " " + InstallCommandStyle.Render(p.InstallCommand()))
 			b.WriteString("\n")
 		}
+		b.WriteString("\n")
 	}
 
 	// Footer - build with flash message replacements
@@ -589,9 +593,100 @@ func (m Model) detailView() string {
 	footerParts = append(footerParts, KeyStyle.Render("q")+" quit")
 	b.WriteString(HelpStyle.Render(strings.Join(footerParts, "  │  ")))
 
-	// Apply box style with full width
+	return b.String()
+}
+
+// detailView renders the detail view for the selected plugin with scrollable content
+func (m Model) detailView() string {
+	p := m.SelectedPlugin()
+	if p == nil {
+		return AppStyle.Render("No plugin selected")
+	}
+
+	// Calculate content width (account for borders and padding)
+	contentWidth := m.ContentWidth() - 10
+	if contentWidth < 40 {
+		contentWidth = 40
+	}
+
+	header := m.generateDetailHeader(p, contentWidth)
+	footer := m.generateDetailFooter(p, contentWidth)
+
+	// Use viewport for scrollable content (like help menu)
+	if m.detailViewport.Height > 0 {
+		viewportContent := m.detailViewport.View()
+
+		// Add scrollbar (aligned with viewport only)
+		scrollbar := m.renderDetailScrollbar()
+		contentWithScrollbar := lipgloss.JoinHorizontal(lipgloss.Top, viewportContent, scrollbar)
+
+		// Stack: header (sticky) + viewport (scrolls) + footer (sticky)
+		fullContent := lipgloss.JoinVertical(lipgloss.Left,
+			header,
+			contentWithScrollbar,
+			footer,
+		)
+
+		// Apply box style with full width
+		boxStyle := DetailBoxStyle.Width(contentWidth + 4)
+		return AppStyle.Render(boxStyle.Render(fullContent))
+	}
+
+	// Fallback: render without viewport (safety)
 	boxStyle := DetailBoxStyle.Width(contentWidth + 4)
-	return AppStyle.Render(boxStyle.Render(b.String()))
+	content := m.generateDetailContent(p, contentWidth)
+	return AppStyle.Render(boxStyle.Render(header + "\n\n" + content + "\n" + footer))
+}
+
+// renderDetailScrollbar renders the scrollbar for detail view (copy of renderHelpScrollbar)
+func (m Model) renderDetailScrollbar() string {
+	if m.detailViewport.Height <= 0 {
+		return ""
+	}
+
+	// Check if content is scrollable
+	if m.detailViewport.AtTop() && m.detailViewport.AtBottom() {
+		return "" // Content fits, no scrollbar needed
+	}
+
+	// Get dimensions
+	visibleHeight := m.detailViewport.Height
+	scrollPercent := m.detailViewport.ScrollPercent()
+
+	// Estimate total content height (heuristic)
+	totalHeight := visibleHeight * 2
+
+	// Calculate thumb size (proportional)
+	thumbHeight := (visibleHeight * visibleHeight) / totalHeight
+	if thumbHeight < 1 {
+		thumbHeight = 1
+	}
+	if thumbHeight > visibleHeight {
+		thumbHeight = visibleHeight
+	}
+
+	// Calculate thumb position
+	trackHeight := visibleHeight - thumbHeight
+	thumbPos := int(float64(trackHeight) * scrollPercent)
+
+	// Render scrollbar with plum theme
+	var scrollbar strings.Builder
+
+	thumbStyle := lipgloss.NewStyle().Foreground(PlumBright)   // Orange thumb
+	trackStyle := lipgloss.NewStyle().Foreground(BorderSubtle) // Brown track
+
+	for i := 0; i < visibleHeight; i++ {
+		if i >= thumbPos && i < thumbPos+thumbHeight {
+			scrollbar.WriteString(thumbStyle.Render("█"))
+		} else {
+			scrollbar.WriteString(trackStyle.Render("░"))
+		}
+		if i < visibleHeight-1 {
+			scrollbar.WriteString("\n")
+		}
+	}
+
+	return " " + scrollbar.String()
 }
 
 // wrapText wraps text to fit within maxWidth characters

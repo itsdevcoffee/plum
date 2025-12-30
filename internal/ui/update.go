@@ -150,6 +150,47 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+		// Initialize/update detail viewport
+		detailViewportWidth := m.ContentWidth() - 10
+		if detailViewportWidth < 40 {
+			detailViewportWidth = 40
+		}
+
+		if m.detailViewport.Width == 0 {
+			// Initial creation - conservative overhead (header + footer + box + wrapper)
+			viewportHeight := msg.Height - 12
+			if viewportHeight < 5 {
+				viewportHeight = 5
+			}
+			m.detailViewport = viewport.New(detailViewportWidth, viewportHeight)
+		} else {
+			// Always update width
+			m.detailViewport.Width = detailViewportWidth
+
+			// If in detail view, recalculate height based on content + terminal size
+			if m.viewState == ViewDetail {
+				if p := m.SelectedPlugin(); p != nil {
+					detailContent := m.generateDetailContent(p, detailViewportWidth)
+					contentHeight := lipgloss.Height(detailContent)
+					maxHeight := msg.Height - 12 // Conservative overhead
+
+					if maxHeight < 3 {
+						maxHeight = 3
+					}
+
+					// Resize viewport to fit
+					if contentHeight < maxHeight {
+						m.detailViewport.Height = contentHeight
+					} else {
+						m.detailViewport.Height = maxHeight
+					}
+
+					// Re-set content to update wrapping
+					m.detailViewport.SetContent(detailContent)
+				}
+			}
+		}
+
 		return m, nil
 
 	case pluginsLoadedMsg:
@@ -331,6 +372,32 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Actions
 	case "enter":
 		if len(m.results) > 0 {
+			// Set detail viewport content before transition (like help menu)
+			if m.detailViewport.Width > 0 {
+				if p := m.SelectedPlugin(); p != nil {
+					contentWidth := m.ContentWidth() - 10
+					if contentWidth < 40 {
+						contentWidth = 40
+					}
+					detailContent := m.generateDetailContent(p, contentWidth)
+
+					// Calculate viewport height
+					contentHeight := lipgloss.Height(detailContent)
+					maxHeight := m.windowHeight - 12
+					if maxHeight < 3 {
+						maxHeight = 3
+					}
+
+					if contentHeight < maxHeight {
+						m.detailViewport.Height = contentHeight
+					} else {
+						m.detailViewport.Height = maxHeight
+					}
+
+					m.detailViewport.SetContent(detailContent)
+					m.detailViewport.GotoTop() // Reset scroll position
+				}
+			}
 			m.StartViewTransition(ViewDetail, 1) // Forward transition
 			return m, animationTick()
 		}
@@ -583,9 +650,13 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "?":
 		m.StartViewTransition(ViewHelp, 1) // Forward transition
 		return m, animationTick()
-	}
 
-	return m, nil
+	default:
+		// Pass other keys to viewport for scrolling (up/down/pgup/pgdown)
+		var cmd tea.Cmd
+		m.detailViewport, cmd = m.detailViewport.Update(msg)
+		return m, cmd
+	}
 }
 
 // handleHelpKeys handles keys in the help view

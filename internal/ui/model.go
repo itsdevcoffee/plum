@@ -89,6 +89,7 @@ type Model struct {
 	textInput           textinput.Model
 	spinner             spinner.Model
 	helpViewport        viewport.Model
+	detailViewport      viewport.Model
 	cursor              int
 	scrollOffset        int
 	viewState           ViewState
