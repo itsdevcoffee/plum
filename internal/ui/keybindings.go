@@ -3,8 +3,9 @@ package ui
 // KeyAction represents an action that can be triggered by a key press
 type KeyAction int
 
+// Key action constants define all possible user actions in the TUI
 const (
-	ActionNone KeyAction = iota
+	ActionNone KeyAction = iota // No action
 	ActionQuit
 	ActionBack
 	ActionSelectItem
