@@ -30,22 +30,22 @@ type KeyBindings map[string]KeyAction
 
 // ListViewKeys defines key bindings for the list view
 var ListViewKeys = KeyBindings{
-	"q":          ActionQuit,
-	"ctrl+c":     ActionQuit,
-	"?":          ActionToggleHelp,
-	"enter":      ActionSelectItem,
-	"shift+v":    ActionToggleDisplayMode,
-	"V":          ActionToggleDisplayMode,
-	"tab":        ActionCycleFilterNext,
-	"right":      ActionCycleFilterNext,
-	"shift+tab":  ActionCycleFilterPrev,
-	"left":       ActionCycleFilterPrev,
-	"shift+m":    ActionOpenMarketplaceBrowser,
-	"M":          ActionOpenMarketplaceBrowser,
-	"shift+u":    ActionRefreshCache,
-	"U":          ActionRefreshCache,
-	"esc":        ActionClearSearch, // Clears search, or quits if empty
-	"ctrl+g":     ActionClearSearch,
+	"q":         ActionQuit,
+	"ctrl+c":    ActionQuit,
+	"?":         ActionToggleHelp,
+	"enter":     ActionSelectItem,
+	"shift+v":   ActionToggleDisplayMode,
+	"V":         ActionToggleDisplayMode,
+	"tab":       ActionCycleFilterNext,
+	"right":     ActionCycleFilterNext,
+	"shift+tab": ActionCycleFilterPrev,
+	"left":      ActionCycleFilterPrev,
+	"shift+m":   ActionOpenMarketplaceBrowser,
+	"M":         ActionOpenMarketplaceBrowser,
+	"shift+u":   ActionRefreshCache,
+	"U":         ActionRefreshCache,
+	"esc":       ActionClearSearch, // Clears search, or quits if empty
+	"ctrl+g":    ActionClearSearch,
 }
 
 // DetailViewKeys defines key bindings for the detail view

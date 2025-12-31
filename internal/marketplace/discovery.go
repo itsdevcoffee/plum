@@ -14,11 +14,11 @@ const (
 
 // PopularMarketplace represents a hardcoded popular marketplace
 type PopularMarketplace struct {
-	Name        string        `json:"name"`
-	DisplayName string        `json:"displayName"`
-	Repo        string        `json:"repo"` // Full repo URL (e.g., https://github.com/owner/repo)
-	Description string        `json:"description"`
-	StaticStats *GitHubStats  `json:"staticStats,omitempty"` // Static GitHub stats snapshot (fallback if cache empty)
+	Name        string       `json:"name"`
+	DisplayName string       `json:"displayName"`
+	Repo        string       `json:"repo"` // Full repo URL (e.g., https://github.com/owner/repo)
+	Description string       `json:"description"`
+	StaticStats *GitHubStats `json:"staticStats,omitempty"` // Static GitHub stats snapshot (fallback if cache empty)
 }
 
 // DiscoveredMarketplace contains a marketplace manifest with source information

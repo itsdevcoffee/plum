@@ -47,9 +47,9 @@ func TestSearch(t *testing.T) {
 		{
 			name:           "fuzzy name match",
 			query:          "tst",
-			expectCount:    2, // test-plugin, testing-tool (fuzzy)
+			expectCount:    2,              // test-plugin, testing-tool (fuzzy)
 			expectFirst:    "testing-tool", // Higher fuzzy score
-			expectMinScore: 7, // Fuzzy scoring varies
+			expectMinScore: 7,              // Fuzzy scoring varies
 		},
 		{
 			name:           "keyword exact match",
@@ -61,7 +61,7 @@ func TestSearch(t *testing.T) {
 		{
 			name:           "category match",
 			query:          "devops",
-			expectCount:    3, // docker-plugin, automation-plugin, + fuzzy matches
+			expectCount:    3,               // docker-plugin, automation-plugin, + fuzzy matches
 			expectFirst:    "docker-plugin", // Installed boost
 			expectMinScore: 15,
 		},
