@@ -58,6 +58,8 @@ linters-settings:
       - performance
     disabled-checks:
       - unnecessaryBlock  # Sometimes explicit blocks improve readability
+      - octalLiteral      # Allow old octal syntax (0750 vs 0o750)
+      - rangeValCopy      # Allow range value copies for readability
 
 issues:
   exclude-use-default: false
