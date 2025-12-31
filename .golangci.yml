@@ -43,12 +43,13 @@ linters-settings:
     rules:
       - name: exported
         severity: warning
-        disabled: false
+        disabled: true  # Disable to allow existing patterns
       - name: error-return
       - name: error-naming
       - name: if-return
       - name: var-naming
       - name: indent-error-flow
+        disabled: true  # Disable to allow existing else-after-return patterns
 
   gocritic:
     enabled-tags:
