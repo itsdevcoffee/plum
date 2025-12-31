@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"encoding/json"
 	"testing"
 )
 
@@ -371,4 +372,86 @@ func TestAuthorStruct(t *testing.T) {
 			t.Error("Expected empty Company by default")
 		}
 	})
+}
+
+// TestPluginUnmarshalJSON verifies custom JSON unmarshaling for source field
+func TestPluginUnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name         string
+		jsonData     string
+		expectSource string
+		expectName   string
+	}{
+		{
+			name: "string source path - internal plugins",
+			jsonData: `{
+				"name": "test-plugin",
+				"description": "A test plugin",
+				"source": "./plugins/test-plugin"
+			}`,
+			expectSource: "./plugins/test-plugin",
+			expectName:   "test-plugin",
+		},
+		{
+			name: "string source path - external plugins",
+			jsonData: `{
+				"name": "github-plugin",
+				"source": "./external_plugins/github"
+			}`,
+			expectSource: "./external_plugins/github",
+			expectName:   "github-plugin",
+		},
+		{
+			name: "git URL object format - claude-plugins-official pattern",
+			jsonData: `{
+				"name": "atlassian-plugin",
+				"source": {
+					"source": "url",
+					"url": "https://github.com/atlassian/atlassian-mcp-server.git"
+				}
+			}`,
+			expectSource: "https://github.com/atlassian/atlassian-mcp-server.git",
+			expectName:   "atlassian-plugin",
+		},
+		{
+			name: "git URL object with extra fields",
+			jsonData: `{
+				"name": "vercel-plugin",
+				"source": {
+					"source": "url",
+					"url": "https://github.com/vercel/mcp-server.git",
+					"ref": "main"
+				}
+			}`,
+			expectSource: "https://github.com/vercel/mcp-server.git",
+			expectName:   "vercel-plugin",
+		},
+		{
+			name: "empty source string",
+			jsonData: `{
+				"name": "empty-source",
+				"source": ""
+			}`,
+			expectSource: "",
+			expectName:   "empty-source",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var p Plugin
+			err := json.Unmarshal([]byte(tt.jsonData), &p)
+			if err != nil {
+				t.Fatalf("Unmarshal failed: %v", err)
+			}
+
+			if p.Source != tt.expectSource {
+				t.Errorf("Expected Source %q, got %q", tt.expectSource, p.Source)
+			}
+
+			if p.Name != tt.expectName {
+				t.Errorf("Expected Name %q, got %q", tt.expectName, p.Name)
+			}
+		})
+	}
 }

@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"encoding/json"
 	"strings"
 )
 
@@ -64,6 +65,47 @@ func (p Plugin) AuthorName() string {
 		return p.Author.Company
 	}
 	return "Unknown"
+}
+
+// UnmarshalJSON implements custom JSON unmarshaling for Plugin to handle
+// the "source" field which can be either a string or an object with Git URL.
+func (p *Plugin) UnmarshalJSON(data []byte) error {
+	// Create alias type to avoid infinite recursion
+	type PluginAlias Plugin
+
+	// Use a temporary struct with source as RawMessage
+	var temp struct {
+		*PluginAlias
+		SourceRaw json.RawMessage `json:"source"`
+	}
+	temp.PluginAlias = (*PluginAlias)(p)
+
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	// Parse source field which can be string or object
+	if len(temp.SourceRaw) > 0 {
+		// Try to unmarshal as string first
+		var sourceStr string
+		if err := json.Unmarshal(temp.SourceRaw, &sourceStr); err == nil {
+			p.Source = sourceStr
+		} else {
+			// Try as object with URL
+			var sourceObj struct {
+				Source string `json:"source"`
+				URL    string `json:"url"`
+			}
+			if err := json.Unmarshal(temp.SourceRaw, &sourceObj); err == nil {
+				// Use the Git URL as the source
+				if sourceObj.URL != "" {
+					p.Source = sourceObj.URL
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 // GitHubURL returns the GitHub URL for this plugin's source code
