@@ -34,16 +34,26 @@ var PopularMarketplaces = []PopularMarketplace{
 	{
 		Name:        "claude-code-plugins-plus",
 		DisplayName: "Claude Code Plugins Plus",
-		Repo:        "https://github.com/jeremylongshore/claude-code-plugins",
+		Repo:        "https://github.com/jeremylongshore/claude-code-plugins-plus-skills",
 		Description: "The largest collection with 254 plugins and 185 Agent Skills",
-		// Note: Repo moved/unavailable - API returns "Moved Permanently"
+		StaticStats: &GitHubStats{
+			Stars:        845,
+			Forks:        96,
+			LastPushedAt: mustParseTime("2025-12-31T06:30:55Z"),
+			OpenIssues:   3,
+		},
 	},
 	{
 		Name:        "claude-code-marketplace",
 		DisplayName: "Claude Code Marketplace",
-		Repo:        "https://github.com/ananddtyagi/claude-code-marketplace",
+		Repo:        "https://github.com/ananddtyagi/cc-marketplace",
 		Description: "Community-driven marketplace with granular installation",
-		// Note: Repo moved/unavailable - API returns "Moved Permanently"
+		StaticStats: &GitHubStats{
+			Stars:        577,
+			Forks:        49,
+			LastPushedAt: mustParseTime("2025-12-14T22:31:07Z"),
+			OpenIssues:   5,
+		},
 	},
 	{
 		Name:        "claude-code-plugins",
