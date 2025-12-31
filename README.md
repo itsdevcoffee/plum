@@ -24,11 +24,11 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 <th>Description</th>
 </tr>
 <tr>
-<td><a href="https://github.com/jeremylongshore/claude-code-plugins">claude-code-plugins-plus</a></td>
+<td><a href="https://github.com/jeremylongshore/claude-code-plugins-plus-skills">claude-code-plugins-plus</a></td>
 <td>The largest collection with <strong>254 plugins</strong> and 185 Agent Skills, focusing on production-ready automation tools across DevOps, security, testing, and AI/ML workflows.</td>
 </tr>
 <tr>
-<td><a href="https://github.com/ananddtyagi/claude-code-marketplace">claude-code-marketplace</a></td>
+<td><a href="https://github.com/ananddtyagi/cc-marketplace">claude-code-marketplace</a></td>
 <td>Community-driven marketplace featuring curated commands and agents with granular installation and auto-sync from a live database. Browse by category and install only what you need.</td>
 </tr>
 <tr>
