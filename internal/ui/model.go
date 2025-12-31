@@ -607,11 +607,16 @@ func (m *Model) LoadMarketplaceItems() error {
 			item.Status = MarketplaceAvailable
 		}
 
-		// Try to get total plugin count from cached manifest
+		// Try to get total plugin count from cached manifest OR local installation
 		if cached, _ := marketplace.LoadFromCache(pm.Name); cached != nil {
 			item.TotalPluginCount = len(cached.Plugins)
 			if item.Status == MarketplaceAvailable {
 				item.Status = MarketplaceCached
+			}
+		} else if entry, isInstalled := knownMarketplaces[pm.Name]; isInstalled {
+			// Marketplace is installed locally - try to load from installation
+			if localManifest, err := config.LoadMarketplaceManifest(entry.InstallLocation); err == nil {
+				item.TotalPluginCount = len(localManifest.Plugins)
 			}
 		}
 
