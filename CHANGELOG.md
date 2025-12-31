@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2025-12-31
+
+### Fixed
+- **Git URL Source Parsing** - Critical fix for claude-plugins-official compatibility
+  - Added custom JSON unmarshaling to handle source field as string OR object
+  - Fixes parsing for Git-hosted plugins (Atlassian, Figma, Vercel, Notion, Sentry, etc.)
+  - MarketplacePlugin now handles `{"source": "url", "url": "https://..."}` format
+  - Plugin.Source now handles both `"./plugins/name"` and Git URL objects
+- **Local Marketplace Loading** - Plugin counts now load from local installations when cache empty
+  - Fixes "(? plugins)" display for installed marketplaces
+  - claude-plugins-official now shows "(40 plugins)" correctly
+  - Works for any locally installed marketplace
+
+### Changed
+- **Updated Moved Repo URLs** - Fixed broken marketplace links
+  - claude-code-plugins-plus: Updated to new repo location (845 ⭐)
+  - claude-code-marketplace: Updated to new repo location (577 ⭐)
+- **Fresh Static Stats** - Updated all marketplace stats (snapshot: 2025-12-31)
+  - claude-code: 50,055 stars (+245)
+  - anthropic-agent-skills: 30,756 stars (+819)
+  - wshobson-agents: 23,995 stars (+100)
+  - claude-mem: 9,729 stars (+144)
+  - claude-plugins-official: 1,158 stars (NEW!)
+  - All 12 marketplaces now have timestamps (fixes "🕒 unknown" display)
+
+### Added
+- **Developer Script** - `scripts/update-marketplace-stats.sh`
+  - Fetches fresh GitHub stats for all marketplaces
+  - Outputs in Go code format for easy updates
+  - Rate-limited, error handling for moved repos
+  - Usage: `./scripts/update-marketplace-stats.sh`
+
 ## [0.3.2] - 2025-12-30
 
 ### Fixed
