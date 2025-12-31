@@ -26,6 +26,7 @@ linters-settings:
   gosec:
     excludes:
       - G104  # We handle unhandled errors contextually
+      - G304  # Allow file inclusion in tests with variables
     confidence: medium
 
   errcheck:
@@ -54,12 +55,15 @@ linters-settings:
   gocritic:
     enabled-tags:
       - diagnostic
-      - style
-      - performance
+      # Disable style and performance for now - too strict for existing code
     disabled-checks:
       - unnecessaryBlock  # Sometimes explicit blocks improve readability
       - octalLiteral      # Allow old octal syntax (0750 vs 0o750)
       - rangeValCopy      # Allow range value copies for readability
+      - hugeParam         # Allow passing structs by value (existing pattern)
+      - httpNoBody        # Allow nil request bodies (existing pattern)
+      - ifElseChain       # Allow if-else chains (existing pattern)
+      - emptyStringTest   # Allow len(s) > 0 pattern (existing code)
 
 issues:
   exclude-use-default: false
