@@ -111,7 +111,6 @@ plum
 ```
 
 **Requirements:** Go 1.24+
-**Note:** Version will show as "dev" when installed this way. Use Homebrew or pre-built binaries for version tracking.
 
 **Troubleshooting:** If `plum` command isn't found after `go install`, add `$GOPATH/bin` to your PATH:
 ```bash
