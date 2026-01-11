@@ -54,8 +54,14 @@ func main() {
 	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
 		ver, cmt, bDate := getVersion()
 		fmt.Printf("plum version %s\n", ver)
-		fmt.Printf("  commit: %s\n", cmt)
-		fmt.Printf("  built: %s\n", bDate)
+
+		// Only show commit and build time if available
+		if cmt != "none" && cmt != "" {
+			fmt.Printf("  commit: %s\n", cmt)
+		}
+		if bDate != "unknown" && bDate != "" {
+			fmt.Printf("  built: %s\n", bDate)
+		}
 		os.Exit(0)
 	}
 
