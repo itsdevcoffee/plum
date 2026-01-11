@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-01-11
+
+### Changed
+- **Cleaner Version Output** - Hide commit and build time when unavailable
+  - `go install` users now see clean output: `plum version v0.3.6`
+  - Homebrew/binary users still see full details with commit hash and build time
+  - Removes clutter from "none" and "unknown" values
+
 ## [0.3.5] - 2026-01-11
 
 ### Fixed
