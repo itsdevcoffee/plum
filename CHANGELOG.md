@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-01-11
+
+### Changed
+- **Updated Marketplace Data** - Fresh sync with all 12 marketplaces (snapshot: 2026-01-11)
+  - Total plugins: 600+ → **750+ plugins** (+25% growth)
+  - claude-code-marketplace: 10 → 117 plugins (+107 🚀)
+  - claude-plugins-official: 3 → 44 plugins (+41)
+  - claude-code-plugins-plus: 254 → 280 plugins (+26)
+  - claude-code-plugins: 5 → 13 plugins (+8)
+  - mag-claude-plugins: 4 → 10 plugins (+6)
+  - wshobson-agents: 65 → 68 plugins (+3)
+  - Updated GitHub stats for all marketplaces (stars, forks, last push dates)
+  - claude-code: 50,055 → 54,841 stars
+  - claude-mem: 9,729 → 13,076 stars (+35%)
+  - claude-plugins-official: 1,158 → 2,732 stars (+136%)
+  - anthropic-agent-skills: 30,756 → 37,240 stars
+
+### Added
+- **claude-plugins-official marketplace** - Added missing link to README (44 plugins)
+- **Plugin Count Verification Script** - `scripts/check-plugin-counts.go`
+  - Fetches live plugin counts from all marketplace manifests
+  - Validates accuracy of README and discovery.go
+- **CLAUDE.md Maintenance Guide** - Project workflow documentation
+  - Pre-push checklist (linting, tests, build)
+  - Routine maintenance for marketplace data syncs
+  - golangci-lint installation instructions
+
+### Fixed
+- **CI Linting** - Upgraded golangci-lint v1.64.8 → v2.8.0 for Go 1.24 support
+  - Migrated config to v2 format
+  - Using official golangci-lint-action@v9 in CI
+  - Fixed all linting issues (0 issues now)
+  - CI will no longer fail on lint step
+- **Installation Documentation** - Improved clarity with all installation options
+  - Homebrew, Windows/Manual, Go install methods clearly separated
+  - Better troubleshooting guidance for PATH issues
+
 ## [0.3.3] - 2025-12-31
 
 ### Fixed
