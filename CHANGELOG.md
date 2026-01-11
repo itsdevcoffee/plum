@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-01-11
+
+### Fixed
+- **Version Display for `go install`** - Now shows actual version instead of "dev"
+  - Uses `runtime/debug.ReadBuildInfo()` to read version from Go module system
+  - Displays correct version, commit hash, and build time
+  - No more confusion about what version is installed
+  - Works for both `go install` and pre-built binaries
+
+**Before:**
+```
+plum version dev
+  commit: none
+  built: unknown
+```
+
+**After:**
+```
+plum version v0.3.5
+  commit: 3d98de6
+  built: 2026-01-11T07:37:42Z
+```
+
 ## [0.3.4] - 2026-01-11
 
 ### Changed
