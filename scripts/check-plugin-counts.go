@@ -9,23 +9,23 @@ import (
 )
 
 type MarketplaceManifest struct {
-	Name    string                 `json:"name"`
+	Name    string                   `json:"name"`
 	Plugins []map[string]interface{} `json:"plugins"`
 }
 
 var marketplaces = map[string]string{
-	"claude-code-plugins-plus":   "jeremylongshore/claude-code-plugins-plus-skills",
-	"claude-code-marketplace":    "ananddtyagi/cc-marketplace",
-	"claude-code-plugins":        "anthropics/claude-code",
-	"mag-claude-plugins":         "MadAppGang/claude-code",
-	"dev-gom-plugins":            "Dev-GOM/claude-code-marketplace",
-	"feedmob-claude-plugins":     "feed-mob/claude-code-marketplace",
-	"claude-plugins-official":    "anthropics/claude-plugins-official",
-	"anthropic-agent-skills":     "anthropics/skills",
-	"wshobson-agents":            "wshobson/agents",
-	"docker-plugins":             "docker/claude-plugins",
-	"ccplugins-marketplace":      "ccplugins/marketplace",
-	"claude-mem":                 "thedotmack/claude-mem",
+	"claude-code-plugins-plus": "jeremylongshore/claude-code-plugins-plus-skills",
+	"claude-code-marketplace":  "ananddtyagi/cc-marketplace",
+	"claude-code-plugins":      "anthropics/claude-code",
+	"mag-claude-plugins":       "MadAppGang/claude-code",
+	"dev-gom-plugins":          "Dev-GOM/claude-code-marketplace",
+	"feedmob-claude-plugins":   "feed-mob/claude-code-marketplace",
+	"claude-plugins-official":  "anthropics/claude-plugins-official",
+	"anthropic-agent-skills":   "anthropics/skills",
+	"wshobson-agents":          "wshobson/agents",
+	"docker-plugins":           "docker/claude-plugins",
+	"ccplugins-marketplace":    "ccplugins/marketplace",
+	"claude-mem":               "thedotmack/claude-mem",
 }
 
 func fetchPluginCount(repo string) (int, error) {
@@ -36,7 +36,9 @@ func fetchPluginCount(repo string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != 200 {
 		return 0, fmt.Errorf("HTTP %d", resp.StatusCode)

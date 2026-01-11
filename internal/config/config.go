@@ -55,7 +55,7 @@ func LoadKnownMarketplaces() (KnownMarketplaces, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("Claude Code marketplaces not found at %s.\n\nPlease run Claude Code and configure at least one marketplace using the /plugin command.", path)
+			return nil, fmt.Errorf("claude Code marketplaces not found at %s - please run Claude Code and configure at least one marketplace using the /plugin command", path)
 		}
 		return nil, err
 	}

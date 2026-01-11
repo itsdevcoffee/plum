@@ -1,73 +1,60 @@
+version: "2"
 run:
-  timeout: 5m
-  tests: true
   modules-download-mode: readonly
-
+  tests: true
 linters:
   enable:
-    - errcheck      # Check for unchecked errors
-    - gosimple      # Simplify code
-    - govet         # Reports suspicious constructs
-    - ineffassign   # Detect ineffectual assignments
-    - staticcheck   # Static analysis
-    - unused        # Check for unused constants, variables, functions
-    - gofmt         # Check code formatting
-    - goimports     # Check import formatting
-    - misspell      # Check for misspelled English words
-    - gosec         # Security-focused linter
-    - revive        # Drop-in replacement for golint (style issues)
-    - unconvert     # Unnecessary type conversions
-    # Disable unparam and prealloc - too strict for existing code
-    # - unparam       # Unused function parameters
-    # - prealloc      # Slice preallocation opportunities
-    - gocyclo       # Cyclomatic complexity
-    - gocritic      # Comprehensive Go linter (with disabled checks)
-
-linters-settings:
-  gosec:
-    excludes:
-      - G104  # We handle unhandled errors contextually
-      - G304  # Allow file inclusion in tests with variables
-    confidence: medium
-
-  errcheck:
-    check-blank: false
-    check-type-assertions: false
-
-  gocyclo:
-    # We have known high-complexity functions (handleDetailKeys: 35, handleListKeys: 31)
-    # Set threshold to 40 to catch regressions without failing on existing code
-    # TODO: Refactor to <15 in Phase 4
-    min-complexity: 40
-
-  revive:
-    severity: warning
-    rules:
-      - name: exported
-        severity: warning
-        disabled: true  # Disable to allow existing patterns
-      - name: error-return
-      - name: error-naming
-      - name: if-return
-      - name: var-naming
-      - name: indent-error-flow
-        disabled: true  # Disable to allow existing else-after-return patterns
-
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      # Disable style and performance for now - too strict for existing code
-    disabled-checks:
-      - unnecessaryBlock  # Sometimes explicit blocks improve readability
-      - octalLiteral      # Allow old octal syntax (0750 vs 0o750)
-      - rangeValCopy      # Allow range value copies for readability
-      - hugeParam         # Allow passing structs by value (existing pattern)
-      - httpNoBody        # Allow nil request bodies (existing pattern)
-      - ifElseChain       # Allow if-else chains (existing pattern)
-      - emptyStringTest   # Allow len(s) > 0 pattern (existing code)
-      - singleCaseSwitch  # Allow single-case switch statements
-
+    - gocritic
+    - gocyclo
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+  settings:
+    errcheck:
+      check-type-assertions: false
+      check-blank: false
+    gocritic:
+      enabled-tags:
+        - diagnostic
+      disabled-checks:
+        - ifElseChain
+        - singleCaseSwitch
+    gocyclo:
+      min-complexity: 40
+    gosec:
+      excludes:
+        - G104
+        - G304
+      confidence: medium
+    revive:
+      severity: warning
+      rules:
+        - name: exported
+          severity: warning
+          disabled: true
+        - name: error-return
+        - name: error-naming
+        - name: if-return
+        - name: var-naming
+        - name: indent-error-flow
+          disabled: true
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
