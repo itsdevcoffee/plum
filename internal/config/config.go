@@ -135,6 +135,9 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 
 	// Track which marketplaces we've processed to avoid duplicates
 	processedMarketplaces := make(map[string]bool)
+	// Track ALL seen plugin names (across all sources) for global deduplication
+	// Maps plugin name -> source marketplace (first one wins)
+	seenPluginNames := make(map[string]string)
 
 	// 1. Process installed marketplaces first
 	for marketplaceName, entry := range marketplaces {
@@ -156,7 +159,25 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 			}
 		}
 
+		// Track duplicates within this marketplace
+		seenInThisMarketplace := make(map[string]bool)
+
 		for _, mp := range manifest.Plugins {
+			// Skip if we've already seen this plugin name in THIS marketplace (within-marketplace dedup)
+			if seenInThisMarketplace[mp.Name] {
+				continue
+			}
+			seenInThisMarketplace[mp.Name] = true
+
+			// Skip if we've already seen this plugin name from ANY marketplace (cross-marketplace dedup)
+			if existingMarket, exists := seenPluginNames[mp.Name]; exists {
+				// Only skip if from a different marketplace (same marketplace duplicates already handled above)
+				if existingMarket != marketplaceName {
+					continue
+				}
+			}
+			seenPluginNames[mp.Name] = marketplaceName
+
 			fullName := mp.Name + "@" + marketplaceName
 			install, isInstalled := installedSet[fullName]
 
@@ -193,53 +214,61 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 	}
 
 	// 2. Discover popular marketplaces (best effort - don't fail if this fails)
-	discovered, err := marketplace.DiscoverPopularMarketplaces()
-	if err != nil {
-		// Log warning but continue with installed marketplaces only
-		fmt.Fprintf(os.Stderr, "Warning: marketplace discovery failed: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Continuing with installed marketplaces only.\n")
-	} else {
-		// Process discovered marketplaces
-		for marketplaceName, disc := range discovered {
-			// Skip if we already processed this marketplace from installed
-			if processedMarketplaces[marketplaceName] {
+	discovered, _ := marketplace.DiscoverPopularMarketplaces()
+	for marketplaceName, disc := range discovered {
+		// Skip if we already processed this marketplace from installed
+		if processedMarketplaces[marketplaceName] {
+			continue
+		}
+
+		// Track duplicates within this discovered marketplace
+		seenInThisMarketplace := make(map[string]bool)
+
+		for _, mp := range disc.Manifest.Plugins {
+			// Skip if we've already seen this plugin name in THIS marketplace
+			if seenInThisMarketplace[mp.Name] {
 				continue
 			}
+			seenInThisMarketplace[mp.Name] = true
 
-			for _, mp := range disc.Manifest.Plugins {
-				fullName := mp.Name + "@" + marketplaceName
-				install, isInstalled := installedSet[fullName]
-
-				p := plugin.Plugin{
-					Name:        mp.Name,
-					Description: mp.Description,
-					Version:     mp.Version,
-					Keywords:    mp.Keywords,
-					Category:    mp.Category,
-					Author: plugin.Author{
-						Name:    mp.Author.Name,
-						Email:   mp.Author.Email,
-						URL:     mp.Author.URL,
-						Company: mp.Author.Company,
-					},
-					Marketplace:       marketplaceName,
-					MarketplaceRepo:   disc.Repo,
-					MarketplaceSource: disc.Source,
-					Installed:         isInstalled,
-					IsDiscoverable:    true, // From discovered marketplace
-					Source:            mp.Source,
-					Homepage:          mp.Homepage,
-					Repository:        mp.Repository,
-					License:           mp.License,
-					Tags:              mp.Tags,
-				}
-
-				if isInstalled {
-					p.InstallPath = install.InstallPath
-				}
-
-				plugins = append(plugins, p)
+			// Skip if we've already seen this plugin name from ANY source
+			if _, exists := seenPluginNames[mp.Name]; exists {
+				continue
 			}
+			seenPluginNames[mp.Name] = marketplaceName
+
+			fullName := mp.Name + "@" + marketplaceName
+			install, isInstalled := installedSet[fullName]
+
+			p := plugin.Plugin{
+				Name:        mp.Name,
+				Description: mp.Description,
+				Version:     mp.Version,
+				Keywords:    mp.Keywords,
+				Category:    mp.Category,
+				Author: plugin.Author{
+					Name:    mp.Author.Name,
+					Email:   mp.Author.Email,
+					URL:     mp.Author.URL,
+					Company: mp.Author.Company,
+				},
+				Marketplace:       marketplaceName,
+				MarketplaceRepo:   disc.Repo,
+				MarketplaceSource: disc.Source,
+				Installed:         isInstalled,
+				IsDiscoverable:    true, // From discovered marketplace
+				Source:            mp.Source,
+				Homepage:          mp.Homepage,
+				Repository:        mp.Repository,
+				License:           mp.License,
+				Tags:              mp.Tags,
+			}
+
+			if isInstalled {
+				p.InstallPath = install.InstallPath
+			}
+
+			plugins = append(plugins, p)
 		}
 	}
 
