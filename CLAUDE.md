@@ -16,6 +16,7 @@ go build -o ./plum ./cmd/plum
 ```
 
 **If linter is not installed:**
+
 ```bash
 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.8.0
 ```
@@ -33,6 +34,7 @@ go run scripts/check-plugin-counts.go
 ```
 
 **If changes detected:**
+
 - Update `internal/marketplace/discovery.go` with new stats and plugin counts
 - Update `README.md` marketplace table with accurate counts
 - Update total plugin count in README intro and features section
@@ -42,3 +44,23 @@ go run scripts/check-plugin-counts.go
 
 - **Linting** - CI will fail if linting doesn't pass locally. Always lint before pushing.
 - **Accurate Data** - The README is users' first impression. Accurate plugin counts and GitHub stats help them make informed decisions about installation.
+
+## Documentation
+
+Files go in `docs/` except for obvious exceptions: README.md, CLAUDE.md, LICENSE.md, CONTRIBUTING.md, AGENT.md, ... (root only).
+
+**Subdirectories:**
+
+- `context/` - Architecture, domain knowledge, static reference
+- `decisions/` - Architecture Decision Records (ADRs)
+- `handoff/` - Session state for development continuity
+- `project/` - Planning: todos, features, roadmap
+- `research/` - Explorations, comparisons, technical analysis
+- `tmp/` - Scratch files (safe to delete)
+
+**Naming:** `YYYY-MM-DD-descriptive-name.md` (lowercase, hyphens)
+
+**Rules:**
+
+- Update existing docs before creating new ones
+- Use `tmp/` when uncertain, flag for review
