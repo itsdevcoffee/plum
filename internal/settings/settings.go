@@ -2,7 +2,21 @@ package settings
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"strings"
+)
+
+const (
+	// maxSettingsFileSize is the maximum allowed size for settings.json files (10MB)
+	// This prevents DoS attacks from maliciously large files in project-scoped settings
+	maxSettingsFileSize = 10 * 1024 * 1024
+
+	// maxPluginEntries is the maximum number of plugins allowed in enabledPlugins
+	maxPluginEntries = 10000
+
+	// maxMarketplaceEntries is the maximum number of marketplaces allowed
+	maxMarketplaceEntries = 1000
 )
 
 // Settings represents the Claude Code settings.json structure
@@ -54,12 +68,21 @@ func LoadSettings(scope Scope, projectPath string) (*Settings, error) {
 // LoadSettingsFromPath loads settings from a specific file path
 // Returns empty settings (not error) if file doesn't exist
 func LoadSettingsFromPath(path string) (*Settings, error) {
-	// #nosec G304 -- path is derived from known config dirs, not untrusted input
-	data, err := os.ReadFile(path)
+	// Check file size before reading to prevent DoS from large files
+	stat, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return NewSettings(), nil
 		}
+		return nil, err
+	}
+	if stat.Size() > maxSettingsFileSize {
+		return nil, fmt.Errorf("settings file too large: %d bytes (max %d)", stat.Size(), maxSettingsFileSize)
+	}
+
+	// #nosec G304 -- path is validated via ScopePath which uses known config dirs
+	data, err := os.ReadFile(path)
+	if err != nil {
 		return nil, err
 	}
 
@@ -76,7 +99,32 @@ func LoadSettingsFromPath(path string) (*Settings, error) {
 		settings.ExtraKnownMarketplaces = make(map[string]ExtraMarketplace)
 	}
 
+	// Validate structure to prevent resource exhaustion
+	if err := validateSettings(&settings); err != nil {
+		return nil, err
+	}
+
 	return &settings, nil
+}
+
+// validateSettings validates the settings structure
+func validateSettings(s *Settings) error {
+	// Limit total entries to prevent memory exhaustion
+	if len(s.EnabledPlugins) > maxPluginEntries {
+		return fmt.Errorf("too many enabled plugins: %d (max %d)", len(s.EnabledPlugins), maxPluginEntries)
+	}
+	if len(s.ExtraKnownMarketplaces) > maxMarketplaceEntries {
+		return fmt.Errorf("too many marketplaces: %d (max %d)", len(s.ExtraKnownMarketplaces), maxMarketplaceEntries)
+	}
+
+	// Validate plugin key format (must be plugin@marketplace)
+	for key := range s.EnabledPlugins {
+		if !strings.Contains(key, "@") {
+			return fmt.Errorf("invalid plugin key format (missing @): %s", key)
+		}
+	}
+
+	return nil
 }
 
 // MergedPluginStates loads all scopes and returns plugin states
@@ -137,16 +185,20 @@ func GetPluginState(pluginFullName string, projectPath string) (*PluginState, er
 // Precedence order applies (higher precedence scope wins on conflicts)
 func AllMarketplaces(projectPath string) (map[string]ExtraMarketplace, error) {
 	result := make(map[string]ExtraMarketplace)
+	seen := make(map[string]bool)
 
-	// Load in reverse precedence order so higher precedence overwrites
-	scopes := AllScopes()
-	for i := len(scopes) - 1; i >= 0; i-- {
-		settings, err := LoadSettings(scopes[i], projectPath)
+	// Iterate in precedence order (highest first wins)
+	for _, scope := range AllScopes() {
+		settings, err := LoadSettings(scope, projectPath)
 		if err != nil {
 			continue
 		}
 
 		for name, marketplace := range settings.ExtraKnownMarketplaces {
+			if seen[name] {
+				continue // Higher precedence scope already set this
+			}
+			seen[name] = true
 			result[name] = marketplace
 		}
 	}

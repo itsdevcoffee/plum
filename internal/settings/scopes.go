@@ -92,26 +92,36 @@ func UserSettingsPath() (string, error) {
 
 // ProjectSettingsPath returns the path to project settings.json
 func ProjectSettingsPath(projectPath string) (string, error) {
-	if projectPath == "" {
-		var err error
-		projectPath, err = os.Getwd()
-		if err != nil {
-			return "", err
-		}
+	projectPath, err := normalizeProjectPath(projectPath)
+	if err != nil {
+		return "", err
 	}
 	return filepath.Join(projectPath, ".claude", "settings.json"), nil
 }
 
 // LocalSettingsPath returns the path to local settings.json
 func LocalSettingsPath(projectPath string) (string, error) {
-	if projectPath == "" {
-		var err error
-		projectPath, err = os.Getwd()
-		if err != nil {
-			return "", err
-		}
+	projectPath, err := normalizeProjectPath(projectPath)
+	if err != nil {
+		return "", err
 	}
 	return filepath.Join(projectPath, ".claude", "settings.local.json"), nil
+}
+
+// normalizeProjectPath validates and normalizes a project path
+// Returns absolute, cleaned path; defaults to cwd if empty
+func normalizeProjectPath(projectPath string) (string, error) {
+	if projectPath == "" {
+		return os.Getwd()
+	}
+
+	// Resolve to absolute path and clean it
+	absPath, err := filepath.Abs(projectPath)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Clean(absPath), nil
 }
 
 // ParseScope parses a string into a Scope

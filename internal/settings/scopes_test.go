@@ -196,3 +196,86 @@ func TestProjectSettingsPathDefaultsToCwd(t *testing.T) {
 		t.Errorf("expected %s, got %s", expected, path)
 	}
 }
+
+func TestNormalizeProjectPath(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		wantAbs bool // should result be absolute
+	}{
+		{
+			name:    "empty defaults to cwd",
+			input:   "",
+			wantAbs: true,
+		},
+		{
+			name:    "absolute path stays absolute",
+			input:   "/tmp/test-project",
+			wantAbs: true,
+		},
+		{
+			name:    "relative path becomes absolute",
+			input:   "relative/path",
+			wantAbs: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := normalizeProjectPath(tt.input)
+			if err != nil {
+				t.Fatalf("normalizeProjectPath(%q) error = %v", tt.input, err)
+			}
+
+			if tt.wantAbs && !filepath.IsAbs(result) {
+				t.Errorf("normalizeProjectPath(%q) = %s, want absolute path", tt.input, result)
+			}
+		})
+	}
+}
+
+func TestNormalizeProjectPathCleansPath(t *testing.T) {
+	// Test that path is cleaned (redundant slashes, dots removed)
+	input := "/tmp/../tmp/test-project/./subdir/../"
+	result, err := normalizeProjectPath(input)
+	if err != nil {
+		t.Fatalf("normalizeProjectPath error = %v", err)
+	}
+
+	// Path should be cleaned - no .. or . or trailing slash
+	if filepath.Base(result) == ".." || filepath.Base(result) == "." {
+		t.Errorf("path not properly cleaned: %s", result)
+	}
+}
+
+func TestProjectSettingsPathWithRelativePath(t *testing.T) {
+	// Create a temp dir and use a relative path to it
+	tmpDir := t.TempDir()
+
+	// Get relative path from cwd to tmpDir
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	relPath, err := filepath.Rel(cwd, tmpDir)
+	if err != nil {
+		// Can't create relative path (different drives on Windows), skip
+		t.Skip("cannot create relative path")
+	}
+
+	path, err := ProjectSettingsPath(relPath)
+	if err != nil {
+		t.Fatalf("ProjectSettingsPath(%q) error = %v", relPath, err)
+	}
+
+	// Result should be absolute
+	if !filepath.IsAbs(path) {
+		t.Errorf("expected absolute path, got %s", path)
+	}
+
+	// Should end with settings.json
+	if filepath.Base(path) != "settings.json" {
+		t.Errorf("expected settings.json, got %s", filepath.Base(path))
+	}
+}

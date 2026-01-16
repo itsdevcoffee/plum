@@ -331,3 +331,103 @@ func TestAllMarketplaces(t *testing.T) {
 		t.Errorf("expected repo team/plugins, got %s", mp.Source.Repo)
 	}
 }
+
+func TestLoadSettingsFromPath_InvalidPluginKeyFormat(t *testing.T) {
+	tmpDir := t.TempDir()
+	settingsPath := filepath.Join(tmpDir, "settings.json")
+
+	// Plugin key missing @ symbol should fail validation
+	content := `{
+		"enabledPlugins": {
+			"invalid-plugin-key": true
+		}
+	}`
+
+	if err := os.WriteFile(settingsPath, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := LoadSettingsFromPath(settingsPath)
+	if err == nil {
+		t.Error("expected error for invalid plugin key format")
+	}
+}
+
+func TestLoadSettingsFromPath_ValidPluginKeyFormat(t *testing.T) {
+	tmpDir := t.TempDir()
+	settingsPath := filepath.Join(tmpDir, "settings.json")
+
+	// Valid plugin keys with @ symbol
+	content := `{
+		"enabledPlugins": {
+			"plugin@marketplace": true,
+			"another-plugin@another-market": false
+		}
+	}`
+
+	if err := os.WriteFile(settingsPath, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	settings, err := LoadSettingsFromPath(settingsPath)
+	if err != nil {
+		t.Fatalf("expected no error for valid plugin keys, got %v", err)
+	}
+	if len(settings.EnabledPlugins) != 2 {
+		t.Errorf("expected 2 plugins, got %d", len(settings.EnabledPlugins))
+	}
+}
+
+func TestValidateSettings(t *testing.T) {
+	tests := []struct {
+		name      string
+		settings  *Settings
+		wantError bool
+	}{
+		{
+			name: "valid settings",
+			settings: &Settings{
+				EnabledPlugins:         map[string]bool{"plugin@market": true},
+				ExtraKnownMarketplaces: map[string]ExtraMarketplace{},
+			},
+			wantError: false,
+		},
+		{
+			name: "empty settings",
+			settings: &Settings{
+				EnabledPlugins:         map[string]bool{},
+				ExtraKnownMarketplaces: map[string]ExtraMarketplace{},
+			},
+			wantError: false,
+		},
+		{
+			name: "invalid plugin key - missing @",
+			settings: &Settings{
+				EnabledPlugins:         map[string]bool{"invalid-key": true},
+				ExtraKnownMarketplaces: map[string]ExtraMarketplace{},
+			},
+			wantError: true,
+		},
+		{
+			name: "multiple valid keys",
+			settings: &Settings{
+				EnabledPlugins: map[string]bool{
+					"plugin1@market1": true,
+					"plugin2@market2": false,
+					"plugin3@market1": true,
+				},
+				ExtraKnownMarketplaces: map[string]ExtraMarketplace{},
+			},
+			wantError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateSettings(tt.settings)
+			if (err != nil) != tt.wantError {
+				t.Errorf("validateSettings() error = %v, wantError %v", err, tt.wantError)
+			}
+		})
+	}
+}
