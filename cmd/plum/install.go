@@ -17,6 +17,58 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// validatePathComponent checks if a path component is safe (no path traversal)
+func validatePathComponent(name, componentType string) error {
+	if name == "" {
+		return fmt.Errorf("%s cannot be empty", componentType)
+	}
+	if strings.Contains(name, "..") {
+		return fmt.Errorf("%s contains invalid path traversal: %s", componentType, name)
+	}
+	if strings.ContainsAny(name, "/\\") {
+		return fmt.Errorf("%s contains invalid path separator: %s", componentType, name)
+	}
+	if name == "." {
+		return fmt.Errorf("%s cannot be current directory", componentType)
+	}
+	return nil
+}
+
+// validatePluginFilePath validates a file path from plugin manifest is safe
+// Returns cleaned path relative to cacheDir, or error if path escapes
+func validatePluginFilePath(filePath, cacheDir string) (string, error) {
+	// Reject absolute paths
+	if filepath.IsAbs(filePath) {
+		return "", fmt.Errorf("absolute paths not allowed: %s", filePath)
+	}
+
+	// Reject path traversal attempts
+	if strings.Contains(filePath, "..") {
+		return "", fmt.Errorf("path traversal not allowed: %s", filePath)
+	}
+
+	// Clean the path
+	cleanPath := filepath.Clean(filePath)
+
+	// Construct full path and verify it's under cacheDir
+	fullPath := filepath.Join(cacheDir, cleanPath)
+	absCache, err := filepath.Abs(cacheDir)
+	if err != nil {
+		return "", err
+	}
+	absPath, err := filepath.Abs(fullPath)
+	if err != nil {
+		return "", err
+	}
+
+	// Ensure the path is under the cache directory
+	if !strings.HasPrefix(absPath, absCache+string(filepath.Separator)) && absPath != absCache {
+		return "", fmt.Errorf("path escapes cache directory: %s", filePath)
+	}
+
+	return fullPath, nil
+}
+
 var installCmd = &cobra.Command{
 	Use:   "install <plugin>",
 	Short: "Install a plugin",
@@ -167,12 +219,20 @@ func findPluginInMarketplaces(pluginName, marketplaceFilter string) (*pluginSear
 
 // pluginCacheDir returns the path to cache a plugin
 // Path: ~/.claude/plugins/cache/<marketplace>/<plugin>/
-func pluginCacheDir(marketplace, pluginName string) (string, error) {
+func pluginCacheDir(marketplaceName, pluginName string) (string, error) {
+	// Validate marketplace and plugin names to prevent path traversal
+	if err := validatePathComponent(marketplaceName, "marketplace name"); err != nil {
+		return "", err
+	}
+	if err := validatePathComponent(pluginName, "plugin name"); err != nil {
+		return "", err
+	}
+
 	pluginsDir, err := config.ClaudePluginsDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(pluginsDir, "cache", marketplace, pluginName), nil
+	return filepath.Join(pluginsDir, "cache", marketplaceName, pluginName), nil
 }
 
 // maxTotalDownloadSize is the maximum total download size per plugin (50 MB)
@@ -252,6 +312,13 @@ func downloadPluginToCache(plugin *pluginSearchResult, cacheDir string) error {
 
 	// Download commands if any
 	for _, cmdFile := range pluginManifest.Commands {
+		// Validate path to prevent path traversal attacks
+		cmdPath, err := validatePluginFilePath(cmdFile, cacheDir)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: skipping invalid command path %s: %v\n", cmdFile, err)
+			continue
+		}
+
 		cmdURL := fmt.Sprintf("%s/%s/%s/%s/%s",
 			marketplace.GitHubRawBase, source, marketplace.DefaultBranch, sourcePath, cmdFile)
 
@@ -261,7 +328,6 @@ func downloadPluginToCache(plugin *pluginSearchResult, cacheDir string) error {
 			continue
 		}
 
-		cmdPath := filepath.Join(cacheDir, cmdFile)
 		cmdDir := filepath.Dir(cmdPath)
 		// #nosec G301 -- Plugin directory needs to be readable by Claude Code
 		if err := os.MkdirAll(cmdDir, 0755); err != nil {
@@ -277,6 +343,13 @@ func downloadPluginToCache(plugin *pluginSearchResult, cacheDir string) error {
 
 	// Download hooks if any
 	for _, hookFile := range pluginManifest.Hooks {
+		// Validate path to prevent path traversal attacks
+		hookPath, err := validatePluginFilePath(hookFile, cacheDir)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: skipping invalid hook path %s: %v\n", hookFile, err)
+			continue
+		}
+
 		hookURL := fmt.Sprintf("%s/%s/%s/%s/%s",
 			marketplace.GitHubRawBase, source, marketplace.DefaultBranch, sourcePath, hookFile)
 
@@ -286,7 +359,6 @@ func downloadPluginToCache(plugin *pluginSearchResult, cacheDir string) error {
 			continue
 		}
 
-		hookPath := filepath.Join(cacheDir, hookFile)
 		hookDir := filepath.Dir(hookPath)
 		// #nosec G301 -- Plugin directory needs to be readable by Claude Code
 		if err := os.MkdirAll(hookDir, 0755); err != nil {
@@ -332,56 +404,65 @@ func downloadFile(url string) ([]byte, error) {
 
 // registerInstalledPlugin adds the plugin to installed_plugins_v2.json
 func registerInstalledPlugin(fullName, installPath, version string, scope settings.Scope, projectPath string) error {
-	installed, err := config.LoadInstalledPlugins()
+	// Get registry path for locking
+	registryPath, err := config.InstalledPluginsPath()
 	if err != nil {
 		return err
 	}
 
-	// Create install entry
-	install := config.PluginInstall{
-		Scope:        scope.String(),
-		InstallPath:  installPath,
-		Version:      version,
-		InstalledAt:  time.Now().UTC().Format(time.RFC3339),
-		LastUpdated:  time.Now().UTC().Format(time.RFC3339),
-		GitCommitSha: "", // We don't track commit SHA for now
-		IsLocal:      false,
-	}
+	// Use file locking to prevent race conditions
+	return settings.WithLock(registryPath, func() error {
+		installed, err := config.LoadInstalledPlugins()
+		if err != nil {
+			return err
+		}
 
-	// Add project path for project/local scopes
-	if scope == settings.ScopeProject || scope == settings.ScopeLocal {
-		if projectPath == "" {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return err
+		// Create install entry
+		install := config.PluginInstall{
+			Scope:        scope.String(),
+			InstallPath:  installPath,
+			Version:      version,
+			InstalledAt:  time.Now().UTC().Format(time.RFC3339),
+			LastUpdated:  time.Now().UTC().Format(time.RFC3339),
+			GitCommitSha: "", // We don't track commit SHA for now
+			IsLocal:      false,
+		}
+
+		// Add project path for project/local scopes
+		if scope == settings.ScopeProject || scope == settings.ScopeLocal {
+			if projectPath == "" {
+				cwd, err := os.Getwd()
+				if err != nil {
+					return err
+				}
+				projectPath = cwd
 			}
-			projectPath = cwd
+			install.ProjectPath = projectPath
 		}
-		install.ProjectPath = projectPath
-	}
 
-	// Check if already installed
-	existing, ok := installed.Plugins[fullName]
-	if ok {
-		// Update existing entry for this scope
-		found := false
-		for i, e := range existing {
-			if e.Scope == scope.String() {
-				existing[i] = install
-				found = true
-				break
+		// Check if already installed
+		existing, ok := installed.Plugins[fullName]
+		if ok {
+			// Update existing entry for this scope
+			found := false
+			for i, e := range existing {
+				if e.Scope == scope.String() {
+					existing[i] = install
+					found = true
+					break
+				}
 			}
+			if !found {
+				existing = append(existing, install)
+			}
+			installed.Plugins[fullName] = existing
+		} else {
+			installed.Plugins[fullName] = []config.PluginInstall{install}
 		}
-		if !found {
-			existing = append(existing, install)
-		}
-		installed.Plugins[fullName] = existing
-	} else {
-		installed.Plugins[fullName] = []config.PluginInstall{install}
-	}
 
-	// Write back to file
-	return saveInstalledPlugins(installed)
+		// Write back to file
+		return saveInstalledPlugins(installed)
+	})
 }
 
 // saveInstalledPlugins writes the installed plugins registry

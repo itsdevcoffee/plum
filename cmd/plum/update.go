@@ -166,7 +166,10 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 
 	fmt.Println()
 
-	// Perform updates
+	// Perform updates, tracking failures
+	var failedUpdates []string
+	var successCount int
+
 	for _, u := range updates {
 		fmt.Printf("Updating %s...\n", u.FullName)
 
@@ -174,14 +177,23 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		parts := strings.SplitN(u.FullName, "@", 2)
 		if len(parts) != 2 {
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Error: invalid plugin name format: %s\n", u.FullName)
+			failedUpdates = append(failedUpdates, u.FullName)
 			continue
 		}
 
 		// Reinstall the plugin to update it
 		if err := installPlugin(u.FullName, u.Scope, updateProject); err != nil {
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Error updating %s: %v\n", u.FullName, err)
+			failedUpdates = append(failedUpdates, u.FullName)
 			continue
 		}
+		successCount++
+	}
+
+	// Report results
+	if len(failedUpdates) > 0 {
+		fmt.Printf("\nUpdate completed with errors: %d succeeded, %d failed\n", successCount, len(failedUpdates))
+		return fmt.Errorf("failed to update %d plugin(s): %s", len(failedUpdates), strings.Join(failedUpdates, ", "))
 	}
 
 	fmt.Println("\nUpdate complete")

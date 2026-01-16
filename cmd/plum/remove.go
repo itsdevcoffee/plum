@@ -111,14 +111,26 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Removed %s from %s scope\n", fullName, scope)
 	}
 
-	// Check if plugin is still in any scope
+	// Check if plugin is still in any scope (check both settings and registry)
 	stillInstalled := false
+
+	// Check settings across all scopes
 	states, err := settings.MergedPluginStates(removeProject)
 	if err == nil {
 		for _, state := range states {
 			if state.FullName == fullName {
 				stillInstalled = true
 				break
+			}
+		}
+	}
+
+	// Also check the installed plugins registry
+	if !stillInstalled {
+		installed, err := config.LoadInstalledPlugins()
+		if err == nil {
+			if installs, ok := installed.Plugins[fullName]; ok && len(installs) > 0 {
+				stillInstalled = true
 			}
 		}
 	}
@@ -173,56 +185,65 @@ func deletePluginCache(fullName string) error {
 
 // unregisterInstalledPlugin removes the plugin from installed_plugins_v2.json
 func unregisterInstalledPlugin(fullName string) error {
-	installed, err := config.LoadInstalledPlugins()
+	// Get registry path for locking
+	registryPath, err := config.InstalledPluginsPath()
 	if err != nil {
 		return err
 	}
 
-	// Remove the plugin entry
-	delete(installed.Plugins, fullName)
+	// Use file locking to prevent race conditions
+	return settings.WithLock(registryPath, func() error {
+		installed, err := config.LoadInstalledPlugins()
+		if err != nil {
+			return err
+		}
 
-	// Write back to file
-	path, err := config.InstalledPluginsPath()
-	if err != nil {
-		return err
-	}
+		// Remove the plugin entry
+		delete(installed.Plugins, fullName)
 
-	// Ensure directory exists
-	dir := filepath.Dir(path)
-	// #nosec G301 -- Plugin directory needs to be readable by Claude Code
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
+		// Write back to file
+		path, err := config.InstalledPluginsPath()
+		if err != nil {
+			return err
+		}
 
-	data, err := json.MarshalIndent(installed, "", "  ")
-	if err != nil {
-		return err
-	}
+		// Ensure directory exists
+		dir := filepath.Dir(path)
+		// #nosec G301 -- Plugin directory needs to be readable by Claude Code
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return err
+		}
 
-	// Write atomically
-	tmpFile, err := os.CreateTemp(dir, ".installed-*.json")
-	if err != nil {
-		return err
-	}
-	tmpPath := tmpFile.Name()
-	defer func() { _ = os.Remove(tmpPath) }()
+		data, err := json.MarshalIndent(installed, "", "  ")
+		if err != nil {
+			return err
+		}
 
-	if _, err := tmpFile.Write(data); err != nil {
-		_ = tmpFile.Close()
-		return err
-	}
-	if _, err := tmpFile.WriteString("\n"); err != nil {
-		_ = tmpFile.Close()
-		return err
-	}
-	if err := tmpFile.Close(); err != nil {
-		return err
-	}
+		// Write atomically
+		tmpFile, err := os.CreateTemp(dir, ".installed-*.json")
+		if err != nil {
+			return err
+		}
+		tmpPath := tmpFile.Name()
+		defer func() { _ = os.Remove(tmpPath) }()
 
-	// #nosec G302 -- Config files need to be readable by Claude Code
-	if err := os.Chmod(tmpPath, 0644); err != nil {
-		return err
-	}
+		if _, err := tmpFile.Write(data); err != nil {
+			_ = tmpFile.Close()
+			return err
+		}
+		if _, err := tmpFile.WriteString("\n"); err != nil {
+			_ = tmpFile.Close()
+			return err
+		}
+		if err := tmpFile.Close(); err != nil {
+			return err
+		}
 
-	return settings.AtomicRename(tmpPath, path)
+		// #nosec G302 -- Config files need to be readable by Claude Code
+		if err := os.Chmod(tmpPath, 0644); err != nil {
+			return err
+		}
+
+		return settings.AtomicRename(tmpPath, path)
+	})
 }

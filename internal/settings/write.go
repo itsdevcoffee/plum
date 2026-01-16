@@ -98,16 +98,19 @@ func SetPluginEnabled(fullName string, enabled bool, scope Scope, projectPath st
 		return err
 	}
 
-	settings, err := LoadSettingsFromPath(path)
-	if err != nil {
-		return fmt.Errorf("failed to load settings: %w", err)
-	}
+	// Use file locking to prevent race conditions
+	return WithLock(path, func() error {
+		settings, err := LoadSettingsFromPath(path)
+		if err != nil {
+			return fmt.Errorf("failed to load settings: %w", err)
+		}
 
-	// Update the plugin state
-	settings.EnabledPlugins[fullName] = enabled
+		// Update the plugin state
+		settings.EnabledPlugins[fullName] = enabled
 
-	// Save settings
-	return saveSettingsDirect(settings, path)
+		// Save settings
+		return saveSettingsDirect(settings, path)
+	})
 }
 
 // RemovePluginFromScope removes a plugin entry from a specific scope
@@ -123,16 +126,19 @@ func RemovePluginFromScope(fullName string, scope Scope, projectPath string) err
 		return err
 	}
 
-	settings, err := LoadSettingsFromPath(path)
-	if err != nil {
-		return fmt.Errorf("failed to load settings: %w", err)
-	}
+	// Use file locking to prevent race conditions
+	return WithLock(path, func() error {
+		settings, err := LoadSettingsFromPath(path)
+		if err != nil {
+			return fmt.Errorf("failed to load settings: %w", err)
+		}
 
-	// Remove the plugin entry
-	delete(settings.EnabledPlugins, fullName)
+		// Remove the plugin entry
+		delete(settings.EnabledPlugins, fullName)
 
-	// Save settings
-	return saveSettingsDirect(settings, path)
+		// Save settings
+		return saveSettingsDirect(settings, path)
+	})
 }
 
 // AddMarketplace adds a marketplace to the specified scope
@@ -148,18 +154,21 @@ func AddMarketplace(name string, source MarketplaceSource, scope Scope, projectP
 		return err
 	}
 
-	settings, err := LoadSettingsFromPath(path)
-	if err != nil {
-		return fmt.Errorf("failed to load settings: %w", err)
-	}
+	// Use file locking to prevent race conditions
+	return WithLock(path, func() error {
+		settings, err := LoadSettingsFromPath(path)
+		if err != nil {
+			return fmt.Errorf("failed to load settings: %w", err)
+		}
 
-	// Add the marketplace
-	settings.ExtraKnownMarketplaces[name] = ExtraMarketplace{
-		Source: source,
-	}
+		// Add the marketplace
+		settings.ExtraKnownMarketplaces[name] = ExtraMarketplace{
+			Source: source,
+		}
 
-	// Save settings
-	return saveSettingsDirect(settings, path)
+		// Save settings
+		return saveSettingsDirect(settings, path)
+	})
 }
 
 // RemoveMarketplace removes a marketplace from the specified scope
@@ -175,16 +184,19 @@ func RemoveMarketplace(name string, scope Scope, projectPath string) error {
 		return err
 	}
 
-	settings, err := LoadSettingsFromPath(path)
-	if err != nil {
-		return fmt.Errorf("failed to load settings: %w", err)
-	}
+	// Use file locking to prevent race conditions
+	return WithLock(path, func() error {
+		settings, err := LoadSettingsFromPath(path)
+		if err != nil {
+			return fmt.Errorf("failed to load settings: %w", err)
+		}
 
-	// Remove the marketplace entry
-	delete(settings.ExtraKnownMarketplaces, name)
+		// Remove the marketplace entry
+		delete(settings.ExtraKnownMarketplaces, name)
 
-	// Save settings
-	return saveSettingsDirect(settings, path)
+		// Save settings
+		return saveSettingsDirect(settings, path)
+	})
 }
 
 // saveSettingsDirect saves settings directly to a path without merging

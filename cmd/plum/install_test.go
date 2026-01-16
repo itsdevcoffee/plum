@@ -84,3 +84,55 @@ func TestInstallCommandHelp(t *testing.T) {
 		}
 	}
 }
+
+func TestValidatePathComponent(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		wantError bool
+	}{
+		{"valid name", "my-plugin", false},
+		{"valid with numbers", "plugin123", false},
+		{"empty", "", true},
+		{"path traversal", "..", true},
+		{"path traversal in name", "foo/../bar", true},
+		{"forward slash", "foo/bar", true},
+		{"backslash", "foo\\bar", true},
+		{"current dir", ".", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validatePathComponent(tt.input, "test")
+			if (err != nil) != tt.wantError {
+				t.Errorf("validatePathComponent(%q) error = %v, wantError %v", tt.input, err, tt.wantError)
+			}
+		})
+	}
+}
+
+func TestValidatePluginFilePath(t *testing.T) {
+	cacheDir := "/tmp/plum-test-cache"
+
+	tests := []struct {
+		name      string
+		filePath  string
+		wantError bool
+	}{
+		{"valid simple", "script.js", false},
+		{"valid nested", "src/main.js", false},
+		{"path traversal", "../escape.js", true},
+		{"path traversal nested", "src/../../escape.js", true},
+		{"absolute path", "/etc/passwd", true},
+		{"double dot", "..hidden", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := validatePluginFilePath(tt.filePath, cacheDir)
+			if (err != nil) != tt.wantError {
+				t.Errorf("validatePluginFilePath(%q) error = %v, wantError %v", tt.filePath, err, tt.wantError)
+			}
+		})
+	}
+}
