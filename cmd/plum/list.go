@@ -23,6 +23,7 @@ Examples:
   plum list                  # List all plugins
   plum list --scope=user     # List only user-scoped plugins
   plum list --enabled        # List only enabled plugins
+  plum list --updates        # Show available updates inline
   plum list --json           # Output as JSON`,
 	RunE: runList,
 }
@@ -31,6 +32,7 @@ var (
 	listScope    string
 	listEnabled  bool
 	listDisabled bool
+	listUpdates  bool
 	listJSON     bool
 	listProject  string
 )
@@ -41,18 +43,21 @@ func init() {
 	listCmd.Flags().StringVarP(&listScope, "scope", "s", "", "Filter by scope (user, project, local)")
 	listCmd.Flags().BoolVar(&listEnabled, "enabled", false, "Show only enabled plugins")
 	listCmd.Flags().BoolVar(&listDisabled, "disabled", false, "Show only disabled plugins")
+	listCmd.Flags().BoolVar(&listUpdates, "updates", false, "Show available updates inline")
 	listCmd.Flags().BoolVar(&listJSON, "json", false, "Output as JSON")
 	listCmd.Flags().StringVar(&listProject, "project", "", "Project path (default: current directory)")
 }
 
 // PluginListItem represents a plugin in the list output
 type PluginListItem struct {
-	Name        string `json:"name"`
-	Marketplace string `json:"marketplace"`
-	Scope       string `json:"scope"`
-	Status      string `json:"status"`
-	Version     string `json:"version"`
-	Installed   bool   `json:"installed"`
+	Name          string `json:"name"`
+	Marketplace   string `json:"marketplace"`
+	Scope         string `json:"scope"`
+	Status        string `json:"status"`
+	Version       string `json:"version"`
+	LatestVersion string `json:"latestVersion,omitempty"`
+	UpdateAvail   bool   `json:"updateAvailable,omitempty"`
+	Installed     bool   `json:"installed"`
 }
 
 func runList(cmd *cobra.Command, args []string) error {
@@ -84,6 +89,18 @@ func runList(cmd *cobra.Command, args []string) error {
 		states = settings.FilterDisabled(states)
 	}
 
+	// Build lookup for latest versions if --updates flag is set
+	latestVersions := make(map[string]string)
+	if listUpdates {
+		allPlugins, err := config.LoadAllPlugins()
+		if err == nil {
+			for _, p := range allPlugins {
+				fullName := p.Name + "@" + p.Marketplace
+				latestVersions[fullName] = p.Version
+			}
+		}
+	}
+
 	// Build list items
 	items := make([]PluginListItem, 0, len(states))
 	for _, state := range states {
@@ -108,14 +125,26 @@ func runList(cmd *cobra.Command, args []string) error {
 			status = "enabled"
 		}
 
-		items = append(items, PluginListItem{
+		item := PluginListItem{
 			Name:        name,
 			Marketplace: marketplace,
 			Scope:       state.Scope.String(),
 			Status:      status,
 			Version:     version,
 			Installed:   isInstalled,
-		})
+		}
+
+		// Check for updates if --updates flag is set
+		if listUpdates && version != "" {
+			if latest, ok := latestVersions[state.FullName]; ok && latest != "" {
+				if isNewerVersion(latest, version) {
+					item.LatestVersion = latest
+					item.UpdateAvail = true
+				}
+			}
+		}
+
+		items = append(items, item)
 	}
 
 	// Output
@@ -147,6 +176,10 @@ func outputTable(items []PluginListItem) error {
 		version := item.Version
 		if version == "" {
 			version = "-"
+		}
+		// Show update info inline if available
+		if item.UpdateAvail && item.LatestVersion != "" {
+			version = fmt.Sprintf("%s → %s available", version, item.LatestVersion)
 		}
 		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 			item.Name,
