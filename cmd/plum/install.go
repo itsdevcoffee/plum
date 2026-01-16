@@ -1,0 +1,432 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/itsdevcoffee/plum/internal/config"
+	"github.com/itsdevcoffee/plum/internal/marketplace"
+	"github.com/itsdevcoffee/plum/internal/settings"
+	"github.com/spf13/cobra"
+)
+
+var installCmd = &cobra.Command{
+	Use:   "install <plugin>",
+	Short: "Install a plugin",
+	Long: `Install a plugin from a marketplace.
+
+The plugin can be specified as:
+  - plugin-name (searches all known marketplaces)
+  - plugin-name@marketplace (specific marketplace)
+
+Installation downloads plugin files to the Claude Code cache and enables
+the plugin in the specified scope.
+
+Examples:
+  plum install ralph-wiggum
+  plum install ralph-wiggum@claude-code-plugins
+  plum install memory --scope=project`,
+	Args: cobra.MinimumNArgs(1),
+	RunE: runInstall,
+}
+
+var (
+	installScope   string
+	installProject string
+)
+
+func init() {
+	rootCmd.AddCommand(installCmd)
+
+	installCmd.Flags().StringVarP(&installScope, "scope", "s", "user", "Installation scope (user, project, local)")
+	installCmd.Flags().StringVar(&installProject, "project", "", "Project path (default: current directory)")
+}
+
+func runInstall(cmd *cobra.Command, args []string) error {
+	// Parse scope
+	scope, err := settings.ParseScope(installScope)
+	if err != nil {
+		return err
+	}
+
+	// Validate scope is writable
+	if !scope.IsWritable() {
+		return fmt.Errorf("cannot write to %s scope (read-only)", scope)
+	}
+
+	// Install each plugin
+	for _, pluginArg := range args {
+		if err := installPlugin(pluginArg, scope, installProject); err != nil {
+			return fmt.Errorf("failed to install %s: %w", pluginArg, err)
+		}
+	}
+
+	return nil
+}
+
+func installPlugin(pluginArg string, scope settings.Scope, projectPath string) error {
+	// Parse plugin name and marketplace filter
+	pluginName := pluginArg
+	marketplaceFilter := ""
+	if idx := strings.LastIndex(pluginArg, "@"); idx > 0 {
+		pluginName = pluginArg[:idx]
+		marketplaceFilter = pluginArg[idx+1:]
+	}
+
+	// Find the plugin in marketplaces
+	pluginInfo, err := findPluginInMarketplaces(pluginName, marketplaceFilter)
+	if err != nil {
+		return err
+	}
+
+	fullName := pluginInfo.Name + "@" + pluginInfo.Marketplace
+
+	fmt.Printf("Installing %s...\n", fullName)
+
+	// Get cache directory
+	cacheDir, err := pluginCacheDir(pluginInfo.Marketplace, pluginInfo.Name)
+	if err != nil {
+		return fmt.Errorf("failed to get cache directory: %w", err)
+	}
+
+	// Download plugin files to cache
+	if err := downloadPluginToCache(pluginInfo, cacheDir); err != nil {
+		return fmt.Errorf("failed to download plugin: %w", err)
+	}
+
+	// Register in installed_plugins_v2.json
+	if err := registerInstalledPlugin(fullName, cacheDir, pluginInfo.Version, scope, projectPath); err != nil {
+		return fmt.Errorf("failed to register plugin: %w", err)
+	}
+
+	// Enable in settings.json
+	if err := settings.SetPluginEnabled(fullName, true, scope, projectPath); err != nil {
+		return fmt.Errorf("failed to enable plugin: %w", err)
+	}
+
+	fmt.Printf("Installed %s (v%s) in %s scope\n", fullName, pluginInfo.Version, scope)
+	return nil
+}
+
+// pluginSearchResult holds plugin info needed for installation
+type pluginSearchResult struct {
+	Name            string
+	Marketplace     string
+	MarketplaceRepo string
+	Version         string
+	Source          string // Path within marketplace
+}
+
+// findPluginInMarketplaces searches for a plugin across all known marketplaces
+func findPluginInMarketplaces(pluginName, marketplaceFilter string) (*pluginSearchResult, error) {
+	// Load all plugins
+	plugins, err := config.LoadAllPlugins()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load plugins: %w", err)
+	}
+
+	var matches []*pluginSearchResult
+	for _, p := range plugins {
+		if p.Name == pluginName {
+			// If marketplace filter specified, must match
+			if marketplaceFilter != "" && p.Marketplace != marketplaceFilter {
+				continue
+			}
+			matches = append(matches, &pluginSearchResult{
+				Name:            p.Name,
+				Marketplace:     p.Marketplace,
+				MarketplaceRepo: p.MarketplaceRepo,
+				Version:         p.Version,
+				Source:          p.Source,
+			})
+		}
+	}
+
+	if len(matches) == 0 {
+		return nil, fmt.Errorf("plugin '%s' not found in any marketplace", pluginName)
+	}
+
+	if len(matches) > 1 && marketplaceFilter == "" {
+		var names []string
+		for _, m := range matches {
+			names = append(names, m.Name+"@"+m.Marketplace)
+		}
+		return nil, fmt.Errorf("plugin '%s' found in multiple marketplaces:\n  %s\nSpecify with: plum install %s@<marketplace>",
+			pluginName, strings.Join(names, "\n  "), pluginName)
+	}
+
+	return matches[0], nil
+}
+
+// pluginCacheDir returns the path to cache a plugin
+// Path: ~/.claude/plugins/cache/<marketplace>/<plugin>/
+func pluginCacheDir(marketplace, pluginName string) (string, error) {
+	pluginsDir, err := config.ClaudePluginsDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(pluginsDir, "cache", marketplace, pluginName), nil
+}
+
+// maxTotalDownloadSize is the maximum total download size per plugin (50 MB)
+const maxTotalDownloadSize = 50 << 20
+
+// downloadPluginToCache downloads plugin files from GitHub to the cache directory
+func downloadPluginToCache(plugin *pluginSearchResult, cacheDir string) error {
+	// Extract owner/repo from marketplace repo URL
+	source, err := marketplace.DeriveSource(plugin.MarketplaceRepo)
+	if err != nil {
+		return fmt.Errorf("failed to derive source from repo: %w", err)
+	}
+
+	// Normalize source path (remove leading ./ if present)
+	sourcePath := strings.TrimPrefix(plugin.Source, "./")
+	if sourcePath == "" || sourcePath == "." {
+		sourcePath = "plugins/" + plugin.Name
+	}
+
+	// Create cache directory
+	// #nosec G301 -- Plugin cache needs to be readable by Claude Code
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return fmt.Errorf("failed to create cache directory: %w", err)
+	}
+
+	// Track total download size to prevent DoS
+	var totalDownloaded int64
+
+	// downloadWithLimit downloads a file and tracks total size
+	downloadWithLimit := func(url string) ([]byte, error) {
+		data, err := downloadFile(url)
+		if err != nil {
+			return nil, err
+		}
+		totalDownloaded += int64(len(data))
+		if totalDownloaded > maxTotalDownloadSize {
+			return nil, fmt.Errorf("plugin download size exceeded limit (%d MB)", maxTotalDownloadSize>>20)
+		}
+		return data, nil
+	}
+
+	// Download plugin.json to verify the plugin structure
+	pluginJSONURL := fmt.Sprintf("%s/%s/%s/%s/.claude-plugin/plugin.json",
+		marketplace.GitHubRawBase, source, marketplace.DefaultBranch, sourcePath)
+
+	pluginJSON, err := downloadWithLimit(pluginJSONURL)
+	if err != nil {
+		return fmt.Errorf("failed to download plugin.json: %w", err)
+	}
+
+	// Create .claude-plugin directory in cache
+	claudePluginDir := filepath.Join(cacheDir, ".claude-plugin")
+	// #nosec G301 -- Plugin directory needs to be readable by Claude Code
+	if err := os.MkdirAll(claudePluginDir, 0755); err != nil {
+		return fmt.Errorf("failed to create .claude-plugin directory: %w", err)
+	}
+
+	// Write plugin.json
+	pluginJSONPath := filepath.Join(claudePluginDir, "plugin.json")
+	// #nosec G306 -- Plugin files need to be readable by Claude Code
+	if err := os.WriteFile(pluginJSONPath, pluginJSON, 0644); err != nil {
+		return fmt.Errorf("failed to write plugin.json: %w", err)
+	}
+
+	// Parse plugin.json to get file list
+	var pluginManifest struct {
+		Name        string   `json:"name"`
+		Version     string   `json:"version"`
+		Description string   `json:"description"`
+		Commands    []string `json:"commands"`
+		Hooks       []string `json:"hooks"`
+	}
+	if err := json.Unmarshal(pluginJSON, &pluginManifest); err != nil {
+		// Not a fatal error - we have the plugin.json at least
+		fmt.Fprintf(os.Stderr, "Warning: failed to parse plugin.json: %v\n", err)
+	}
+
+	// Download commands if any
+	for _, cmdFile := range pluginManifest.Commands {
+		cmdURL := fmt.Sprintf("%s/%s/%s/%s/%s",
+			marketplace.GitHubRawBase, source, marketplace.DefaultBranch, sourcePath, cmdFile)
+
+		content, err := downloadWithLimit(cmdURL)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to download command %s: %v\n", cmdFile, err)
+			continue
+		}
+
+		cmdPath := filepath.Join(cacheDir, cmdFile)
+		cmdDir := filepath.Dir(cmdPath)
+		// #nosec G301 -- Plugin directory needs to be readable by Claude Code
+		if err := os.MkdirAll(cmdDir, 0755); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to create directory for %s: %v\n", cmdFile, err)
+			continue
+		}
+
+		// #nosec G306 -- Plugin files need to be readable by Claude Code
+		if err := os.WriteFile(cmdPath, content, 0644); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to write %s: %v\n", cmdFile, err)
+		}
+	}
+
+	// Download hooks if any
+	for _, hookFile := range pluginManifest.Hooks {
+		hookURL := fmt.Sprintf("%s/%s/%s/%s/%s",
+			marketplace.GitHubRawBase, source, marketplace.DefaultBranch, sourcePath, hookFile)
+
+		content, err := downloadWithLimit(hookURL)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to download hook %s: %v\n", hookFile, err)
+			continue
+		}
+
+		hookPath := filepath.Join(cacheDir, hookFile)
+		hookDir := filepath.Dir(hookPath)
+		// #nosec G301 -- Plugin directory needs to be readable by Claude Code
+		if err := os.MkdirAll(hookDir, 0755); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to create directory for %s: %v\n", hookFile, err)
+			continue
+		}
+
+		// Make hook executable
+		// #nosec G306 -- Hook files need to be executable by Claude Code
+		if err := os.WriteFile(hookPath, content, 0755); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to write %s: %v\n", hookFile, err)
+		}
+	}
+
+	return nil
+}
+
+// downloadFile downloads a file from a URL
+func downloadFile(url string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "plum/0.4.0")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, url)
+	}
+
+	// Limit response size
+	limitedBody := io.LimitReader(resp.Body, 10<<20) // 10 MB limit
+	return io.ReadAll(limitedBody)
+}
+
+// registerInstalledPlugin adds the plugin to installed_plugins_v2.json
+func registerInstalledPlugin(fullName, installPath, version string, scope settings.Scope, projectPath string) error {
+	installed, err := config.LoadInstalledPlugins()
+	if err != nil {
+		return err
+	}
+
+	// Create install entry
+	install := config.PluginInstall{
+		Scope:        scope.String(),
+		InstallPath:  installPath,
+		Version:      version,
+		InstalledAt:  time.Now().UTC().Format(time.RFC3339),
+		LastUpdated:  time.Now().UTC().Format(time.RFC3339),
+		GitCommitSha: "", // We don't track commit SHA for now
+		IsLocal:      false,
+	}
+
+	// Add project path for project/local scopes
+	if scope == settings.ScopeProject || scope == settings.ScopeLocal {
+		if projectPath == "" {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			projectPath = cwd
+		}
+		install.ProjectPath = projectPath
+	}
+
+	// Check if already installed
+	existing, ok := installed.Plugins[fullName]
+	if ok {
+		// Update existing entry for this scope
+		found := false
+		for i, e := range existing {
+			if e.Scope == scope.String() {
+				existing[i] = install
+				found = true
+				break
+			}
+		}
+		if !found {
+			existing = append(existing, install)
+		}
+		installed.Plugins[fullName] = existing
+	} else {
+		installed.Plugins[fullName] = []config.PluginInstall{install}
+	}
+
+	// Write back to file
+	return saveInstalledPlugins(installed)
+}
+
+// saveInstalledPlugins writes the installed plugins registry
+func saveInstalledPlugins(installed *config.InstalledPluginsV2) error {
+	path, err := config.InstalledPluginsPath()
+	if err != nil {
+		return err
+	}
+
+	// Ensure directory exists
+	dir := filepath.Dir(path)
+	// #nosec G301 -- Plugin directory needs to be readable by Claude Code
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(installed, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	// Write atomically
+	tmpFile, err := os.CreateTemp(dir, ".installed-*.json")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmpFile.Name()
+	defer func() { _ = os.Remove(tmpPath) }()
+
+	if _, err := tmpFile.Write(data); err != nil {
+		_ = tmpFile.Close()
+		return err
+	}
+	if _, err := tmpFile.WriteString("\n"); err != nil {
+		_ = tmpFile.Close()
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+
+	// #nosec G302 -- Config files need to be readable by Claude Code
+	if err := os.Chmod(tmpPath, 0644); err != nil {
+		return err
+	}
+
+	return settings.AtomicRename(tmpPath, path)
+}
