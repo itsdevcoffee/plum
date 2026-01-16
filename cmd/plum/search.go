@@ -1,0 +1,159 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"text/tabwriter"
+
+	"github.com/itsdevcoffee/plum/internal/config"
+	"github.com/itsdevcoffee/plum/internal/plugin"
+	"github.com/itsdevcoffee/plum/internal/search"
+	"github.com/spf13/cobra"
+)
+
+var searchCmd = &cobra.Command{
+	Use:   "search <query>",
+	Short: "Search for plugins across marketplaces",
+	Long: `Search for plugins across all registered and discoverable marketplaces.
+
+Uses fuzzy matching on plugin names, descriptions, and keywords.
+Results are ranked by relevance.
+
+Examples:
+  plum search memory
+  plum search "code review"
+  plum search formatting --marketplace=claude-code-plugins
+  plum search --json memory`,
+	Args: cobra.ExactArgs(1),
+	RunE: runSearch,
+}
+
+var (
+	searchJSON        bool
+	searchMarketplace string
+	searchCategory    string
+	searchLimit       int
+)
+
+func init() {
+	rootCmd.AddCommand(searchCmd)
+
+	searchCmd.Flags().BoolVar(&searchJSON, "json", false, "Output as JSON")
+	searchCmd.Flags().StringVarP(&searchMarketplace, "marketplace", "m", "", "Filter by marketplace")
+	searchCmd.Flags().StringVarP(&searchCategory, "category", "c", "", "Filter by category")
+	searchCmd.Flags().IntVarP(&searchLimit, "limit", "n", 20, "Maximum number of results")
+}
+
+// SearchResult represents a search result
+type SearchResult struct {
+	Name        string `json:"name"`
+	Marketplace string `json:"marketplace"`
+	Description string `json:"description"`
+	Version     string `json:"version"`
+	Category    string `json:"category,omitempty"`
+	Installed   bool   `json:"installed"`
+	Score       int    `json:"score,omitempty"`
+}
+
+func runSearch(cmd *cobra.Command, args []string) error {
+	query := args[0]
+
+	// Load all plugins
+	plugins, err := config.LoadAllPlugins()
+	if err != nil {
+		return fmt.Errorf("failed to load plugins: %w", err)
+	}
+
+	// Apply marketplace filter before search
+	if searchMarketplace != "" {
+		var filtered []plugin.Plugin
+		for _, p := range plugins {
+			if p.Marketplace == searchMarketplace {
+				filtered = append(filtered, p)
+			}
+		}
+		plugins = filtered
+	}
+
+	// Apply category filter
+	if searchCategory != "" {
+		var filtered []plugin.Plugin
+		for _, p := range plugins {
+			if p.Category == searchCategory {
+				filtered = append(filtered, p)
+			}
+		}
+		plugins = filtered
+	}
+
+	// Perform search
+	ranked := search.Search(query, plugins)
+
+	// Apply limit
+	if searchLimit > 0 && len(ranked) > searchLimit {
+		ranked = ranked[:searchLimit]
+	}
+
+	// Build results
+	results := make([]SearchResult, len(ranked))
+	for i, r := range ranked {
+		results[i] = SearchResult{
+			Name:        r.Plugin.Name,
+			Marketplace: r.Plugin.Marketplace,
+			Description: r.Plugin.Description,
+			Version:     r.Plugin.Version,
+			Category:    r.Plugin.Category,
+			Installed:   r.Plugin.Installed,
+			Score:       r.Score,
+		}
+	}
+
+	// Output
+	if searchJSON {
+		return outputSearchJSON(results)
+	}
+	return outputSearchTable(results, query)
+}
+
+func outputSearchJSON(results []SearchResult) error {
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(results)
+}
+
+func outputSearchTable(results []SearchResult, query string) error {
+	if len(results) == 0 {
+		fmt.Printf("No plugins found matching '%s'\n", query)
+		return nil
+	}
+
+	fmt.Printf("Found %d plugin(s) matching '%s':\n\n", len(results), query)
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+
+	// Header
+	_, _ = fmt.Fprintln(w, "NAME\tMARKETPLACE\tDESCRIPTION")
+
+	// Rows
+	for _, r := range results {
+		desc := r.Description
+		// Truncate long descriptions
+		if len(desc) > 50 {
+			desc = desc[:47] + "..."
+		}
+
+		// Add installed indicator
+		name := r.Name
+		if r.Installed {
+			name += " *"
+		}
+
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", name, r.Marketplace, desc)
+	}
+
+	_, _ = fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w, "* = installed")
+
+	return w.Flush()
+}

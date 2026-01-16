@@ -2,7 +2,7 @@
 
 **Date:** 2026-01-15
 **Branch:** v0.4.0
-**Status:** Phase 1 Complete, Ready for Phase 2
+**Status:** Phase 2 Complete, Ready for Phase 3
 
 ---
 
@@ -21,9 +21,9 @@ Plum is a plugin manager for Claude Code. We're adding CLI subcommands to comple
 
 ---
 
-## What's Done (Phase 1)
+## What's Done (Phase 1 + Phase 2)
 
-### Files Created
+### Phase 1: Foundation (Cobra Migration)
 
 ```
 cmd/plum/
@@ -35,108 +35,138 @@ cmd/plum/
 └── browse.go        # Browse subcommand (explicit TUI launch)
 ```
 
+### Phase 2: Read Operations (NEW)
+
+```
+cmd/plum/
+├── list.go             # List installed plugins (scope/status/version)
+├── list_test.go        # Tests for list command
+├── info.go             # Detailed plugin info
+├── info_test.go        # Tests for info command
+├── search.go           # Search plugins across marketplaces
+├── search_test.go      # Tests for search command
+├── marketplace.go      # Parent marketplace command + list subcommand
+└── marketplace_test.go # Tests for marketplace commands
+
+internal/settings/      # NEW package for 4-scope settings
+├── scopes.go           # Scope types, paths, precedence
+├── scopes_test.go      # Scope tests
+├── settings.go         # Read/merge settings.json files
+├── settings_test.go    # Settings tests
+└── errors.go           # Package errors
+```
+
 ### Working Commands
 
 ```bash
+# Phase 1 (Foundation)
 plum              # Launches TUI
 plum browse       # Launches TUI
 plum --version    # Shows version info
 plum --help       # Shows help with subcommands
-plum completion   # Shell completions (auto-added by Cobra)
+plum completion   # Shell completions
+
+# Phase 2 (Read Operations)
+plum list                        # List all plugins
+plum list --scope=user           # Filter by scope
+plum list --enabled              # Only enabled plugins
+plum list --json                 # JSON output
+
+plum info <plugin>               # Show plugin details
+plum info memory --json          # JSON output
+
+plum search <query>              # Search plugins
+plum search memory --limit=10    # Limit results
+plum search -m claude-code       # Filter by marketplace
+
+plum marketplace list            # List all marketplaces
+plum marketplace list --json     # JSON output
 ```
 
-### Dependencies Added
+### Dependencies
 
 - `github.com/spf13/cobra v1.10.2`
 
-### Tests
+### Tests & Linting
 
 All pass: `go test ./...`
 Linter clean: `golangci-lint run --timeout=5m`
 
 ---
 
-## What's Next (Phase 2: Read Operations)
+## What's Next (Phase 3: Write Operations)
 
 ### Tasks
 
-1. Create config package for reading scoped `settings.json` files
-2. Implement 4-scope merge logic (Managed > Local > Project > User)
-3. `plum list` — show installed plugins with scope/status/version
-4. `plum list --json` — machine-readable output
-5. `plum info <plugin>` — detailed plugin metadata
-6. `plum search <query>` — search across marketplaces
-7. `plum marketplace list` — show registered marketplaces
+1. `plum install <plugin>` — install and enable plugin
+2. `plum remove <plugin>` — disable and remove plugin cache
+3. `plum enable <plugin>` / `plum disable <plugin>` — toggle state
+4. `plum marketplace add <source>` — add marketplace
+5. `plum marketplace remove <name>` — remove marketplace
 
 ### Key Implementation Details
 
-**4-tier scope system:**
-```
-Managed: /etc/claude-code/settings.json (read-only)
-User:    ~/.claude/settings.json
-Project: .claude/settings.json
-Local:   .claude/settings.local.json
-```
+**Install flow:**
+1. Resolve plugin from marketplace
+2. Download to `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>`
+3. Add entry to `installed_plugins_v2.json`
+4. Add `enabledPlugins` entry to appropriate `settings.json`
 
-**Precedence:** Managed > Local > Project > User
+**Scope handling for writes:**
+- Default: user scope (`~/.claude/settings.json`)
+- `--scope=project`: `.claude/settings.json`
+- `--scope=local`: `.claude/settings.local.json`
+- `--scope=managed`: error (read-only)
 
-**Settings.json structure:**
-```json
-{
-  "enabledPlugins": {
-    "plugin@marketplace": true
-  },
-  "extraKnownMarketplaces": {
-    "name": {
-      "source": { "source": "github", "repo": "owner/repo" }
-    }
-  }
-}
+**Settings write pattern:**
+```go
+// internal/settings/write.go
+func SetPluginEnabled(fullName string, enabled bool, scope Scope, projectPath string) error
+func SaveSettings(settings *Settings, scope Scope, projectPath string) error
 ```
 
-**Plugin cache location:** `~/.claude/plugins/cache/`
-
-### Suggested File Structure for Phase 2
+### Suggested File Structure for Phase 3
 
 ```
 cmd/plum/
-├── list.go
-├── list_test.go
-├── info.go
-├── info_test.go
-├── search.go
-├── search_test.go
-└── marketplace/
-    ├── marketplace.go
-    ├── list.go
-    └── list_test.go
+├── install.go
+├── install_test.go
+├── remove.go
+├── remove_test.go
+├── enable.go
+├── enable_test.go
+├── disable.go
+├── disable_test.go
+└── marketplace_add.go     # marketplace add/remove subcommands
+    marketplace_remove.go
 
-internal/
-├── settings/           # NEW - read/write settings.json
-│   ├── settings.go
-│   ├── settings_test.go
-│   ├── scopes.go       # 4-tier merge logic
-│   └── scopes_test.go
-└── config/             # Existing - may need updates
+internal/settings/
+└── write.go               # NEW - write operations
+    write_test.go
 ```
 
 ---
 
 ## Important Patterns
 
-### Test Organization
+### 4-Scope System
 
-Each command file gets a corresponding test file:
-- `list.go` → `list_test.go`
-- Use table-driven tests for edge cases
-- Test command structure + output format
+```
+Managed: /etc/claude-code/settings.json (read-only, IT-deployed)
+User:    ~/.claude/settings.json (personal)
+Project: .claude/settings.json (team, git-tracked)
+Local:   .claude/settings.local.json (machine-specific, gitignored)
+```
+
+**Precedence:** Managed > Local > Project > User
 
 ### Cobra Pattern
 
 ```go
-var listCmd = &cobra.Command{
-    Use:   "list",
-    Short: "List installed plugins",
+var installCmd = &cobra.Command{
+    Use:   "install <plugin>",
+    Short: "Install a plugin",
+    Args:  cobra.ExactArgs(1),
     RunE: func(cmd *cobra.Command, args []string) error {
         // Implementation
         return nil
@@ -144,17 +174,16 @@ var listCmd = &cobra.Command{
 }
 
 func init() {
-    rootCmd.AddCommand(listCmd)
-    listCmd.Flags().StringP("scope", "s", "", "Filter by scope")
-    listCmd.Flags().Bool("json", false, "Output as JSON")
+    rootCmd.AddCommand(installCmd)
+    installCmd.Flags().StringP("scope", "s", "user", "Installation scope")
 }
 ```
 
 ### Error Handling
 
-- Use `RunE` (returns error) instead of `Run` for commands that can fail
+- Use `RunE` (returns error) instead of `Run`
 - Cobra handles printing errors to stderr
-- Just return the error, don't os.Exit in command handlers
+- Return errors, don't `os.Exit` in handlers
 
 ---
 
@@ -169,16 +198,16 @@ go build -o ./plum ./cmd/plum
 
 ---
 
-## Open Decisions
+## Decisions Made (Phase 2)
 
-1. Should `internal/settings/` be new package or extend `internal/config/`?
-2. How to handle missing settings.json files (create empty or error)?
-3. JSON output format for `plum list --json`
+1. **New `internal/settings/` package** — Cleaner separation from existing config
+2. **Missing settings.json** — Returns empty settings (no error)
+3. **JSON output** — Array of objects with all fields
 
 ---
 
 ## Git Status
 
 - Branch: `v0.4.0`
-- Last commit: Phase 1 Cobra migration (not yet committed - working tree dirty)
-- Recommend committing Phase 1 before starting Phase 2
+- Phase 1 + Phase 2 complete
+- Ready for commit
