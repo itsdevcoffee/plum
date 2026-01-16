@@ -1,6 +1,6 @@
 # Plum CLI Commands Feature Plan
 
-**Status:** Ready for Implementation
+**Status:** Complete (v0.4.0)
 
 ---
 
@@ -306,31 +306,31 @@ plum marketplace refresh --update        # Refresh + update all plugins
 
 ## Implementation Phases
 
-### Phase 1: Foundation (Cobra Migration)
-- [ ] Add Cobra dependency
-- [ ] Refactor `main.go` to use Cobra root command
-- [ ] `plum` (no args) → launches TUI
-- [ ] `plum browse` → launches TUI
-- [ ] `plum --version` / `plum --help`
+### Phase 1: Foundation (Cobra Migration) ✅
+- [x] Add Cobra dependency
+- [x] Refactor `main.go` to use Cobra root command
+- [x] `plum` (no args) → launches TUI
+- [x] `plum browse` → launches TUI
+- [x] `plum --version` / `plum --help`
 
-### Phase 2: Read Operations
-- [ ] `plum list` — merge 4 scopes, show status
-- [ ] `plum info <plugin>` — detailed plugin info
-- [ ] `plum search <query>` — search across marketplaces
-- [ ] `plum marketplace list` — show registered marketplaces
-- [ ] `--json` flag support for all read commands
+### Phase 2: Read Operations ✅
+- [x] `plum list` — merge 4 scopes, show status
+- [x] `plum info <plugin>` — detailed plugin info
+- [x] `plum search <query>` — search across marketplaces
+- [x] `plum marketplace list` — show registered marketplaces
+- [x] `--json` flag support for all read commands
 
-### Phase 3: Write Operations
-- [ ] `plum install <marketplace>:<plugin>` — cache + enable
-- [ ] `plum remove <plugin>` — disable + delete cache
-- [ ] `plum enable <plugin>` / `plum disable <plugin>`
-- [ ] `plum marketplace add/remove`
+### Phase 3: Write Operations ✅
+- [x] `plum install <plugin>` — cache + enable
+- [x] `plum remove <plugin>` — disable + delete cache
+- [x] `plum enable <plugin>` / `plum disable <plugin>`
+- [x] `plum update` — semver comparison + re-fetch
 
-### Phase 4: Advanced
-- [ ] `plum update` — semver comparison + re-fetch
-- [ ] `plum list --updates` — show available updates
-- [ ] Shell completions (Cobra auto-generation)
-- [ ] `plum doctor` — validate plugin structure, check for issues
+### Phase 4: Advanced ✅
+- [x] `plum marketplace add/remove` — custom marketplaces with #ref pinning
+- [x] `plum list --updates` — show available updates
+- [x] Shell completions (Cobra auto-generation)
+- [x] `plum doctor` — validate plugin structure, check for issues
 
 ---
 
@@ -432,3 +432,4 @@ See [CLI Commands Research](../research/2026-01-14-cli-commands-research.md) for
 | 2026-01-14 | Updated with research findings: 4-tier scopes, Cobra, settings.json, cache paths |
 | 2026-01-14 | Added edge case recommendations |
 | 2026-01-14 | Added marketplace-level version pinning (#ref syntax), clarified refresh vs update |
+| 2026-01-16 | **All phases complete** — marked status as Complete (v0.4.0) |

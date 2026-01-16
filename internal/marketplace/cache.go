@@ -24,6 +24,13 @@ type CacheEntry struct {
 	Source    string               `json:"source"`
 }
 
+// windowsReservedNames are device names that cause issues on Windows filesystems
+var windowsReservedNames = []string{
+	"CON", "PRN", "AUX", "NUL",
+	"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+	"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+}
+
 // validateMarketplaceName ensures marketplace name is safe for filesystem use
 // Prevents path traversal and injection attacks
 func validateMarketplaceName(name string) error {
@@ -39,6 +46,24 @@ func validateMarketplaceName(name string) error {
 	// Reject path separators (both Unix and Windows)
 	if strings.ContainsAny(name, "/\\") {
 		return fmt.Errorf("marketplace name contains path separator: %q", name)
+	}
+
+	// Reject leading dots (hidden files on Unix)
+	if strings.HasPrefix(name, ".") {
+		return fmt.Errorf("marketplace name cannot start with dot: %q", name)
+	}
+
+	// Reject trailing dots or spaces (Windows filesystem issues)
+	if strings.HasSuffix(name, ".") || strings.HasSuffix(name, " ") {
+		return fmt.Errorf("marketplace name cannot end with dot or space: %q", name)
+	}
+
+	// Reject Windows reserved names (case-insensitive)
+	nameUpper := strings.ToUpper(name)
+	for _, reserved := range windowsReservedNames {
+		if nameUpper == reserved || strings.HasPrefix(nameUpper, reserved+".") {
+			return fmt.Errorf("marketplace name uses Windows reserved name: %q", name)
+		}
 	}
 
 	// Only allow safe characters: alphanumeric, dash, underscore, dot
@@ -206,4 +231,24 @@ func atomicRename(tmpPath, finalPath string) error {
 
 	// Original error wasn't due to destination existing
 	return err
+}
+
+// ClearCacheEntry removes a specific marketplace from cache
+func ClearCacheEntry(marketplaceName string) error {
+	if err := validateMarketplaceName(marketplaceName); err != nil {
+		return err
+	}
+
+	cacheDir, err := PlumCacheDir()
+	if err != nil {
+		return err
+	}
+
+	cachePath := filepath.Join(cacheDir, marketplaceName+".json")
+
+	if err := os.Remove(cachePath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	return nil
 }

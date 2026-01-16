@@ -19,7 +19,12 @@ func ClearCache() error {
 
 	// Remove entire cache directory
 	if err := os.RemoveAll(cacheDir); err != nil {
-		return fmt.Errorf("failed to clear cache: %w", err)
+		return fmt.Errorf("failed to clear cache at %s: %w\nYou may need to manually delete this directory", cacheDir, err)
+	}
+
+	// Verify removal succeeded (handles partial removal edge cases)
+	if _, err := os.Stat(cacheDir); !os.IsNotExist(err) {
+		return fmt.Errorf("cache directory still exists after removal: %s\nYou may need to manually delete this directory", cacheDir)
 	}
 
 	return nil

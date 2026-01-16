@@ -315,6 +315,40 @@ func init() {
 	marketplaceRemoveCmd.Flags().StringVar(&marketplaceRemoveProject, "project", "", "Project path (default: current directory)")
 }
 
+// marketplace refresh command
+var marketplaceRefreshCmd = &cobra.Command{
+	Use:   "refresh",
+	Short: "Refresh marketplace catalog",
+	Long: `Fetch fresh marketplace data from GitHub.
+
+This clears the local marketplace cache and fetches the latest plugin listings
+from all known marketplaces. Use this to see newly added plugins or updated
+versions.
+
+By default, this only refreshes the catalog (plugin listings). Use --update
+to also update all installed plugins to their latest versions.
+
+Note: 'plum update' compares against cached marketplace data. Run 'plum marketplace
+refresh' first to ensure you have the latest version information.
+
+Examples:
+  plum marketplace refresh              # Refresh catalog only
+  plum marketplace refresh --update     # Refresh catalog and update all plugins`,
+	RunE: runMarketplaceRefresh,
+}
+
+var (
+	marketplaceRefreshUpdate  bool
+	marketplaceRefreshProject string
+)
+
+func init() {
+	marketplaceCmd.AddCommand(marketplaceRefreshCmd)
+
+	marketplaceRefreshCmd.Flags().BoolVar(&marketplaceRefreshUpdate, "update", false, "Also update all installed plugins after refresh")
+	marketplaceRefreshCmd.Flags().StringVar(&marketplaceRefreshProject, "project", "", "Project path for --update (default: current directory)")
+}
+
 func runMarketplaceRemove(cmd *cobra.Command, args []string) error {
 	name := args[0]
 
@@ -344,6 +378,45 @@ func runMarketplaceRemove(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("Removed marketplace '%s' from %s scope\n", name, scope)
+
+	return nil
+}
+
+func runMarketplaceRefresh(cmd *cobra.Command, args []string) error {
+	fmt.Println("Refreshing marketplace catalog...")
+
+	// Use RefreshAll from marketplace package
+	if err := marketplace.RefreshAll(); err != nil {
+		return fmt.Errorf("failed to refresh marketplaces: %w", err)
+	}
+
+	// Count how many marketplaces were refreshed
+	discovered, _ := marketplace.DiscoverPopularMarketplaces()
+	fmt.Printf("Refreshed %d marketplace(s)\n", len(discovered))
+
+	// If --update flag, also update plugins
+	if marketplaceRefreshUpdate {
+		fmt.Println("\nUpdating installed plugins...")
+
+		// Get list of installed plugins
+		states, err := settings.MergedPluginStates(marketplaceRefreshProject)
+		if err != nil {
+			return fmt.Errorf("failed to load plugin states: %w", err)
+		}
+
+		if len(states) == 0 {
+			fmt.Println("No plugins installed")
+			return nil
+		}
+
+		// Run update for all plugins using explicit options (no shared state)
+		opts := updateOptions{
+			Scope:   "",
+			Project: marketplaceRefreshProject,
+			DryRun:  false,
+		}
+		return performUpdate(cmd, []string{}, opts)
+	}
 
 	return nil
 }

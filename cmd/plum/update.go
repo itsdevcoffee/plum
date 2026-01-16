@@ -44,6 +44,14 @@ func init() {
 	updateCmd.Flags().BoolVar(&updateDryRun, "dry-run", false, "Check for updates without installing")
 }
 
+// updateOptions contains parameters for the update operation
+// This avoids using package-level variables which can cause race conditions
+type updateOptions struct {
+	Scope   string // Filter by scope (empty = all)
+	Project string // Project path
+	DryRun  bool   // Check only, don't install
+}
+
 // updateInfo holds information about an available update
 type updateInfo struct {
 	FullName       string
@@ -53,13 +61,24 @@ type updateInfo struct {
 }
 
 func runUpdate(cmd *cobra.Command, args []string) error {
+	opts := updateOptions{
+		Scope:   updateScope,
+		Project: updateProject,
+		DryRun:  updateDryRun,
+	}
+	return performUpdate(cmd, args, opts)
+}
+
+// performUpdate executes the update logic with explicit options
+// This function is safe to call from other commands without shared state issues
+func performUpdate(cmd *cobra.Command, args []string, opts updateOptions) error {
 	// Get list of plugins to update
 	var pluginsToCheck []string
 
 	if len(args) > 0 {
 		// Specific plugins
 		for _, arg := range args {
-			fullName, err := resolvePluginFullName(arg, updateProject)
+			fullName, err := resolvePluginFullName(arg, opts.Project)
 			if err != nil {
 				return err
 			}
@@ -67,14 +86,14 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		// All installed plugins
-		states, err := settings.MergedPluginStates(updateProject)
+		states, err := settings.MergedPluginStates(opts.Project)
 		if err != nil {
 			return fmt.Errorf("failed to load plugin states: %w", err)
 		}
 
 		// Apply scope filter if specified
-		if updateScope != "" {
-			scope, err := settings.ParseScope(updateScope)
+		if opts.Scope != "" {
+			scope, err := settings.ParseScope(opts.Scope)
 			if err != nil {
 				return err
 			}
@@ -159,7 +178,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if updateDryRun {
+	if opts.DryRun {
 		fmt.Println("\nRun without --dry-run to install updates")
 		return nil
 	}
@@ -182,7 +201,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		}
 
 		// Reinstall the plugin to update it
-		if err := installPlugin(u.FullName, u.Scope, updateProject); err != nil {
+		if err := installPlugin(u.FullName, u.Scope, opts.Project); err != nil {
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Error updating %s: %v\n", u.FullName, err)
 			failedUpdates = append(failedUpdates, u.FullName)
 			continue
