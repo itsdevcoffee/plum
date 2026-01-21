@@ -10,7 +10,7 @@
 
 **A better way to discover Claude Code marketplace plugins.**
 
-Plum is a fast, fuzzy-search TUI that lets you discover and install plugins from 12 popular marketplaces - even ones you haven't installed yet. Browse 750+ plugins instantly, no setup required.
+Plum is a fast, fuzzy-search TUI that lets you discover and install plugins from 12 popular marketplaces - even ones you haven't installed yet. Browse 680+ plugins instantly, no setup required.
 
 ![Plum Demo](assets/videos/plum-demo-hq.gif)
 
@@ -25,11 +25,11 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 </tr>
 <tr>
 <td><a href="https://github.com/jeremylongshore/claude-code-plugins-plus-skills">claude-code-plugins-plus</a></td>
-<td>The largest collection with <strong>280 plugins</strong> and 185 Agent Skills, focusing on production-ready automation tools across DevOps, security, testing, and AI/ML workflows.</td>
+<td>The largest collection with <strong>282 plugins</strong> and 185 Agent Skills, focusing on production-ready automation tools across DevOps, security, testing, and AI/ML workflows.</td>
 </tr>
 <tr>
 <td><a href="https://github.com/ananddtyagi/cc-marketplace">claude-code-marketplace</a></td>
-<td>Community-driven marketplace with <strong>117 plugins</strong> featuring curated commands and agents with granular installation and auto-sync from a live database. Browse by category and install only what you need.</td>
+<td>Community-driven marketplace with <strong>119 plugins</strong> featuring curated commands and agents with granular installation and auto-sync from a live database. Browse by category and install only what you need.</td>
 </tr>
 <tr>
 <td><a href="https://github.com/anthropics/claude-code">claude-code-plugins</a></td>
@@ -37,7 +37,7 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 </tr>
 <tr>
 <td><a href="https://github.com/MadAppGang/claude-code">mag-claude-plugins</a></td>
-<td>Battle-tested workflows from top developers with <strong>10 specialized plugins</strong> for frontend development, code analysis, Bun backend, and orchestration patterns.</td>
+<td>Battle-tested workflows from top developers with <strong>8 specialized plugins</strong> for frontend development, code analysis, Bun backend, and orchestration patterns.</td>
 </tr>
 <tr>
 <td><a href="https://github.com/Dev-GOM/claude-code-marketplace">dev-gom-plugins</a></td>
@@ -49,7 +49,7 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 </tr>
 <tr>
 <td><a href="https://github.com/anthropics/claude-plugins-official">claude-plugins-official</a></td>
-<td>Official Anthropic marketplace with <strong>44 plugins</strong> for Claude Code. High-quality, production-ready plugins maintained by the Anthropic team.</td>
+<td>Official Anthropic marketplace with <strong>48 plugins</strong> for Claude Code. High-quality, production-ready plugins maintained by the Anthropic team.</td>
 </tr>
 <tr>
 <td><a href="https://github.com/anthropics/skills">anthropic-agent-skills</a></td>
@@ -57,7 +57,7 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 </tr>
 <tr>
 <td><a href="https://github.com/wshobson/agents">wshobson-agents</a></td>
-<td>Comprehensive production system with <strong>68 plugins</strong>, 91 specialized AI agents, 47 agent skills, and 15 multi-agent workflow orchestrators across 23 categories.</td>
+<td>Comprehensive production system with <strong>71 plugins</strong>, 91 specialized AI agents, 47 agent skills, and 15 multi-agent workflow orchestrators across 23 categories.</td>
 </tr>
 <tr>
 <td><a href="https://github.com/docker/claude-plugins">docker-plugins</a></td>
@@ -119,7 +119,7 @@ export PATH="$PATH:$HOME/go/bin"  # Add to ~/.zshrc or ~/.bashrc
 
 ## Key Features
 
-- **Discover 750+ plugins** from 12 popular marketplaces - even ones you haven't installed yet
+- **Discover 680+ plugins** from 12 popular marketplaces - even ones you haven't installed yet
 - **Marketplace browser** - View all marketplaces with GitHub stats (stars, forks, last updated)
 - **Auto-updating registry** - notifies when new marketplaces are available
 - **Instant fuzzy search** across all plugins (installed + discoverable)
