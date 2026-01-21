@@ -389,3 +389,310 @@ func TestSaveSettingsCreatesDirectory(t *testing.T) {
 		t.Error("Settings file was not created")
 	}
 }
+
+func TestSaveSettingsPreservesUnknownTopLevelFields(t *testing.T) {
+	// This is a CRITICAL test - it verifies that plum doesn't destroy user settings
+	// that it doesn't manage (e.g., permissions, hooks, attribution, model, etc.)
+	tmpDir := t.TempDir()
+
+	// Override CLAUDE_CONFIG_DIR for testing
+	cleanup := setEnvForTest(t, "CLAUDE_CONFIG_DIR", tmpDir)
+	defer cleanup()
+
+	// Create a settings.json with many fields that plum doesn't manage
+	// This simulates a real user's settings.json with various configurations
+	initialJSON := `{
+  "permissions": {
+    "allow": ["Bash(git:*)", "Read", "WebSearch", "Write"],
+    "deny": ["Bash(rm -rf:*)"]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {"type": "command", "command": "echo Starting session"}
+        ]
+      }
+    ]
+  },
+  "attribution": {
+    "commit": "abc123",
+    "pr": "https://github.com/example/repo/pull/1"
+  },
+  "includeCoAuthoredBy": false,
+  "model": "claude-opus-4",
+  "enabledPlugins": {
+    "existing-plugin@market": true,
+    "another-plugin@market": false
+  }
+}`
+
+	// Write the initial settings file
+	path, _ := ScopePath(ScopeUser, tmpDir)
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0750); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(initialJSON), 0600); err != nil {
+		t.Fatalf("Failed to write initial settings: %v", err)
+	}
+
+	// Now use SetPluginEnabled to modify a plugin (this is what plum install does)
+	err := SetPluginEnabled("new-plugin@market", true, ScopeUser, tmpDir)
+	if err != nil {
+		t.Fatalf("SetPluginEnabled failed: %v", err)
+	}
+
+	// Read the raw file and verify ALL fields are preserved
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("Failed to read settings file: %v", err)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(data, &result); err != nil {
+		t.Fatalf("Failed to parse settings JSON: %v", err)
+	}
+
+	// Verify permissions field is preserved with correct structure
+	permissions, ok := result["permissions"].(map[string]any)
+	if !ok {
+		t.Fatal("permissions field was lost or corrupted")
+	}
+	allowList, ok := permissions["allow"].([]any)
+	if !ok || len(allowList) != 4 {
+		t.Errorf("permissions.allow was corrupted: %v", permissions["allow"])
+	}
+
+	// Verify hooks field is preserved
+	hooks, ok := result["hooks"].(map[string]any)
+	if !ok {
+		t.Fatal("hooks field was lost")
+	}
+	if _, ok := hooks["SessionStart"]; !ok {
+		t.Error("hooks.SessionStart was lost")
+	}
+
+	// Verify attribution field is preserved
+	attribution, ok := result["attribution"].(map[string]any)
+	if !ok {
+		t.Fatal("attribution field was lost")
+	}
+	if attribution["commit"] != "abc123" {
+		t.Errorf("attribution.commit was corrupted: %v", attribution["commit"])
+	}
+	if attribution["pr"] != "https://github.com/example/repo/pull/1" {
+		t.Errorf("attribution.pr was corrupted: %v", attribution["pr"])
+	}
+
+	// Verify includeCoAuthoredBy field is preserved
+	includeCoAuthoredBy, ok := result["includeCoAuthoredBy"].(bool)
+	if !ok {
+		t.Fatal("includeCoAuthoredBy field was lost")
+	}
+	if includeCoAuthoredBy != false {
+		t.Error("includeCoAuthoredBy value was corrupted")
+	}
+
+	// Verify model field is preserved
+	model, ok := result["model"].(string)
+	if !ok {
+		t.Fatal("model field was lost")
+	}
+	if model != "claude-opus-4" {
+		t.Errorf("model was corrupted: %v", model)
+	}
+
+	// Verify enabledPlugins contains both old and new plugins
+	plugins, ok := result["enabledPlugins"].(map[string]any)
+	if !ok {
+		t.Fatal("enabledPlugins field was lost")
+	}
+	if plugins["existing-plugin@market"] != true {
+		t.Error("existing-plugin@market was lost or changed")
+	}
+	if plugins["another-plugin@market"] != false {
+		t.Error("another-plugin@market was lost or changed")
+	}
+	if plugins["new-plugin@market"] != true {
+		t.Error("new-plugin@market was not added")
+	}
+
+	// Count total top-level fields - should be 6
+	expectedFields := []string{"permissions", "hooks", "attribution", "includeCoAuthoredBy", "model", "enabledPlugins"}
+	for _, field := range expectedFields {
+		if _, ok := result[field]; !ok {
+			t.Errorf("Field %q was lost", field)
+		}
+	}
+}
+
+func TestSetPluginEnabledPreservesUnknownFields(t *testing.T) {
+	// Test SetPluginEnabled specifically as it's the most common operation
+	tmpDir := t.TempDir()
+
+	cleanup := setEnvForTest(t, "CLAUDE_CONFIG_DIR", tmpDir)
+	defer cleanup()
+
+	// Create settings with unknown fields
+	initialJSON := `{
+  "customField": "custom value",
+  "nestedObject": {"key": "value", "number": 42},
+  "arrayField": [1, 2, 3],
+  "enabledPlugins": {"old@market": true}
+}`
+
+	path, _ := ScopePath(ScopeUser, tmpDir)
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0750); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(initialJSON), 0600); err != nil {
+		t.Fatalf("Failed to write initial settings: %v", err)
+	}
+
+	// Enable a new plugin
+	if err := SetPluginEnabled("new@market", true, ScopeUser, tmpDir); err != nil {
+		t.Fatalf("SetPluginEnabled failed: %v", err)
+	}
+
+	// Read and verify
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("Failed to read settings: %v", err)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(data, &result); err != nil {
+		t.Fatalf("Failed to parse JSON: %v", err)
+	}
+
+	// Verify all fields are preserved
+	if result["customField"] != "custom value" {
+		t.Errorf("customField lost: %v", result["customField"])
+	}
+	nested, ok := result["nestedObject"].(map[string]any)
+	if !ok || nested["key"] != "value" || nested["number"] != float64(42) {
+		t.Errorf("nestedObject corrupted: %v", result["nestedObject"])
+	}
+	arr, ok := result["arrayField"].([]any)
+	if !ok || len(arr) != 3 {
+		t.Errorf("arrayField corrupted: %v", result["arrayField"])
+	}
+
+	plugins := result["enabledPlugins"].(map[string]any)
+	if plugins["old@market"] != true {
+		t.Error("old plugin was lost")
+	}
+	if plugins["new@market"] != true {
+		t.Error("new plugin was not added")
+	}
+}
+
+func TestRemovePluginFromScopePreservesUnknownFields(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	cleanup := setEnvForTest(t, "CLAUDE_CONFIG_DIR", tmpDir)
+	defer cleanup()
+
+	initialJSON := `{
+  "permissions": {"allow": ["Read"]},
+  "enabledPlugins": {"plugin-to-remove@market": true, "keep-this@market": false}
+}`
+
+	path, _ := ScopePath(ScopeUser, tmpDir)
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0750); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(initialJSON), 0600); err != nil {
+		t.Fatalf("Failed to write initial settings: %v", err)
+	}
+
+	// Remove a plugin
+	if err := RemovePluginFromScope("plugin-to-remove@market", ScopeUser, tmpDir); err != nil {
+		t.Fatalf("RemovePluginFromScope failed: %v", err)
+	}
+
+	// Read and verify
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("Failed to read settings: %v", err)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(data, &result); err != nil {
+		t.Fatalf("Failed to parse JSON: %v", err)
+	}
+
+	// Verify permissions field is preserved
+	if _, ok := result["permissions"]; !ok {
+		t.Fatal("permissions field was lost")
+	}
+
+	plugins := result["enabledPlugins"].(map[string]any)
+	if _, ok := plugins["plugin-to-remove@market"]; ok {
+		t.Error("plugin-to-remove@market should have been removed")
+	}
+	if plugins["keep-this@market"] != false {
+		t.Error("keep-this@market was corrupted")
+	}
+}
+
+func TestAddMarketplacePreservesUnknownFields(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	cleanup := setEnvForTest(t, "CLAUDE_CONFIG_DIR", tmpDir)
+	defer cleanup()
+
+	initialJSON := `{
+  "model": "claude-sonnet-4",
+  "enabledPlugins": {"existing@market": true}
+}`
+
+	path, _ := ScopePath(ScopeUser, tmpDir)
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0750); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(initialJSON), 0600); err != nil {
+		t.Fatalf("Failed to write initial settings: %v", err)
+	}
+
+	// Add a marketplace
+	source := MarketplaceSource{Source: "github", Repo: "owner/repo"}
+	if err := AddMarketplace("new-marketplace", source, ScopeUser, tmpDir); err != nil {
+		t.Fatalf("AddMarketplace failed: %v", err)
+	}
+
+	// Read and verify
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("Failed to read settings: %v", err)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(data, &result); err != nil {
+		t.Fatalf("Failed to parse JSON: %v", err)
+	}
+
+	// Verify model field is preserved
+	if result["model"] != "claude-sonnet-4" {
+		t.Errorf("model field was corrupted: %v", result["model"])
+	}
+
+	// Verify plugins are preserved
+	plugins := result["enabledPlugins"].(map[string]any)
+	if plugins["existing@market"] != true {
+		t.Error("existing plugin was lost")
+	}
+
+	// Verify marketplace was added
+	marketplaces, ok := result["extraKnownMarketplaces"].(map[string]any)
+	if !ok {
+		t.Fatal("extraKnownMarketplaces not found")
+	}
+	if _, ok := marketplaces["new-marketplace"]; !ok {
+		t.Error("new marketplace was not added")
+	}
+}

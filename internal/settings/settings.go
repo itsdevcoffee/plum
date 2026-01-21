@@ -20,12 +20,75 @@ const (
 )
 
 // Settings represents the Claude Code settings.json structure
+// It preserves all unknown fields when reading/writing to avoid destroying
+// user configuration that plum doesn't manage (e.g., permissions, hooks, model)
 type Settings struct {
 	// EnabledPlugins maps plugin@marketplace to enabled/disabled state
 	EnabledPlugins map[string]bool `json:"enabledPlugins,omitempty"`
 
 	// ExtraKnownMarketplaces stores additional marketplaces configured in this scope
 	ExtraKnownMarketplaces map[string]ExtraMarketplace `json:"extraKnownMarketplaces,omitempty"`
+
+	// otherFields preserves all unknown top-level fields from the JSON file
+	// This ensures plum doesn't destroy user settings it doesn't manage
+	otherFields map[string]json.RawMessage
+}
+
+// UnmarshalJSON implements custom JSON unmarshaling to preserve unknown fields
+func (s *Settings) UnmarshalJSON(data []byte) error {
+	// First, unmarshal all fields into a raw map
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	// Extract known fields
+	if rawPlugins, ok := raw["enabledPlugins"]; ok {
+		if err := json.Unmarshal(rawPlugins, &s.EnabledPlugins); err != nil {
+			return err
+		}
+		delete(raw, "enabledPlugins")
+	}
+
+	if rawMarketplaces, ok := raw["extraKnownMarketplaces"]; ok {
+		if err := json.Unmarshal(rawMarketplaces, &s.ExtraKnownMarketplaces); err != nil {
+			return err
+		}
+		delete(raw, "extraKnownMarketplaces")
+	}
+
+	// Store all remaining unknown fields
+	if len(raw) > 0 {
+		s.otherFields = raw
+	}
+
+	return nil
+}
+
+// MarshalJSON implements custom JSON marshaling to preserve unknown fields
+func (s *Settings) MarshalJSON() ([]byte, error) {
+	// Build the output map
+	result := make(map[string]any)
+
+	// First, add all preserved unknown fields
+	for key, value := range s.otherFields {
+		// Unmarshal to any to avoid double-encoding
+		var v any
+		if err := json.Unmarshal(value, &v); err != nil {
+			return nil, err
+		}
+		result[key] = v
+	}
+
+	// Then add known fields (these take precedence over any preserved fields with same name)
+	if len(s.EnabledPlugins) > 0 {
+		result["enabledPlugins"] = s.EnabledPlugins
+	}
+	if len(s.ExtraKnownMarketplaces) > 0 {
+		result["extraKnownMarketplaces"] = s.ExtraKnownMarketplaces
+	}
+
+	return json.Marshal(result)
 }
 
 // ExtraMarketplace represents a marketplace entry in settings
@@ -51,6 +114,7 @@ func NewSettings() *Settings {
 	return &Settings{
 		EnabledPlugins:         make(map[string]bool),
 		ExtraKnownMarketplaces: make(map[string]ExtraMarketplace),
+		otherFields:            make(map[string]json.RawMessage),
 	}
 }
 
@@ -97,6 +161,9 @@ func LoadSettingsFromPath(path string) (*Settings, error) {
 	}
 	if settings.ExtraKnownMarketplaces == nil {
 		settings.ExtraKnownMarketplaces = make(map[string]ExtraMarketplace)
+	}
+	if settings.otherFields == nil {
+		settings.otherFields = make(map[string]json.RawMessage)
 	}
 
 	// Validate structure to prevent resource exhaustion
