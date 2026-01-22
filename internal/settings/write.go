@@ -208,6 +208,12 @@ func saveSettingsDirect(s *Settings, path string) error {
 		return fmt.Errorf("failed to create directory %s: %w", dir, err)
 	}
 
+	// Create backup before first modification (best-effort, don't block on failure)
+	if err := ensureBackup(path); err != nil {
+		// Note: plum doesn't have logging infrastructure yet, so we silently continue
+		_ = err
+	}
+
 	// Marshal to JSON with indentation
 	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {

@@ -130,6 +130,39 @@ export PATH="$PATH:$HOME/go/bin"  # Add to ~/.zshrc or ~/.bashrc
 - **Manual refresh** with `Shift+U` to fetch latest marketplaces
 - **Responsive design** that adapts to your terminal size
 
+## Settings Safety
+
+Plum **preserves all fields** in your `settings.json` files. Your custom configuration is safe:
+
+- ✅ `permissions.allow` arrays (bash command permissions)
+- ✅ `hooks` (SessionStart, UserPromptSubmit, PreToolUse, etc.)
+- ✅ `attribution` (commit/PR attribution settings)
+- ✅ `model` preferences
+- ✅ `includeCoAuthoredBy` flags
+- ✅ Any other custom fields
+
+### Automatic Backups
+
+Before modifying settings for the first time, plum creates a backup:
+
+```
+~/.claude/settings.json.backup-plum   # User scope backup
+.claude/settings.json.backup-plum     # Project scope backup
+```
+
+To restore from backup:
+```bash
+cp ~/.claude/settings.json.backup-plum ~/.claude/settings.json
+```
+
+### What Plum Manages
+
+Plum only modifies these two fields:
+- `enabledPlugins` - Plugin enable/disable states
+- `extraKnownMarketplaces` - Custom marketplace sources
+
+**Everything else in your settings.json remains untouched.**
+
 ## Keyboard Shortcuts
 
 | Key | Action |
