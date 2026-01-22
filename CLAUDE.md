@@ -13,6 +13,9 @@ go test ./...
 
 # 3. Verify build succeeds
 go build -o ./plum ./cmd/plum
+
+# 4. Run integration tests (optional but recommended for settings changes)
+go test -tags=integration ./internal/integration/... -v
 ```
 
 **If linter is not installed:**

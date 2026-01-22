@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-01-22
+
+### Added
+
+- **Full CLI Interface** - Complete command-line interface for plugin management
+  - `plum search <query>` - Search plugins across all marketplaces
+  - `plum info <plugin>` - Show detailed plugin information
+  - `plum install <plugin>` - Install plugins to user/project/local scope
+  - `plum remove <plugin>` - Remove plugins (aliases: `uninstall`, `rm`)
+  - `plum list` - List installed plugins with filters (`--enabled`, `--disabled`, `--scope`)
+  - `plum enable/disable <plugin>` - Toggle plugin state
+  - `plum update [plugin]` - Update plugins to latest versions
+  - `plum doctor` - Health check for plugin installations
+  - `plum marketplace list` - List available marketplaces
+  - `plum marketplace add/remove` - Manage custom marketplaces
+  - `plum marketplace refresh` - Fetch fresh data from GitHub
+  - All commands support `--json` output for scripting
+  - Scope support: `--scope=user|project|local`
+
+- **Automatic Settings Backup** - Safety net for user configuration
+  - Creates `settings.json.backup-plum` before first modification
+  - One-time backup per settings file (idempotent)
+  - Covers user and project scopes
+  - Easy restore: `cp ~/.claude/settings.json.backup-plum ~/.claude/settings.json`
+
+- **Settings Safety Documentation** - New README section explaining field preservation
+  - Documents what plum manages vs preserves
+  - Shows backup locations and restore instructions
+  - Builds user confidence in plum safety
+
+- **Integration Tests** - End-to-end testing with real plum binary
+  - Verifies settings preservation in realistic scenarios
+  - Tests multiple operations in sequence
+  - Run with: `go test -tags=integration ./internal/integration/... -v`
+
+### Fixed
+
+- **CRITICAL: Settings.json Data Loss** - Fixed bug that destroyed user configuration
+  - **Previous behavior**: Installing/removing plugins deleted `permissions`, `hooks`, `attribution`, `model`, and other custom fields
+  - **New behavior**: All fields are preserved - plum only modifies `enabledPlugins` and `extraKnownMarketplaces`
+  - Implemented custom JSON marshaling to preserve unknown fields
+  - Added 4 comprehensive unit tests for field preservation
+  - This was a production blocker that affected all users
+
+### Security
+
+- Addressed code review security issues in CLI commands
+- Added input validation for plugin names and marketplace sources
+- Atomic file writes with temp file + rename pattern
+- Secure file permissions (0600) for settings and backups
+
+### Changed
+
+- Updated marketplace stats and plugin counts (2026-01-21 snapshot)
+
 ## [0.3.6] - 2026-01-11
 
 ### Changed
