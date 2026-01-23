@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-01-23
+
+### Added
+
+- **Installability Detection** - Clear feedback for plugins that can't be installed via plum
+  - LSP plugins (e.g., gopls-lsp, typescript-lsp) marked as `[built-in]` - handled by Claude Code
+  - External URL plugins (e.g., atlassian, figma) marked as `[external]` - require manual installation
+  - Search results show tags with explanatory legend
+  - Install command shows helpful error with guidance instead of cryptic 404
+  - TUI shows badges in list view and detail view
+
+### Changed
+
+- Refactored installability code with helper functions for maintainability
+- Converted if-else chains to switch statements for consistency
+- Added `InstallabilityTag()` method to `MarketplacePlugin` for API parity
+
+### Fixed
+
+- LSP detection no longer triggers on empty `lspServers: {}` or `lspServers: []`
+
 ## [0.4.0] - 2026-01-22
 
 ### Added
