@@ -175,7 +175,7 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 			}
 			seenPluginNames[mp.Name] = marketplaceName
 
-			p := convertMarketplacePlugin(mp, marketplaceName, marketplaceRepo, marketplaceSource, false, installedSet)
+			p := convertMarketplacePlugin(mp, marketplaceName, marketplaceRepo, marketplaceSource, false, installedSet, entry.InstallLocation)
 			plugins = append(plugins, p)
 		}
 	}
@@ -204,7 +204,8 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 			}
 			seenPluginNames[mp.Name] = marketplaceName
 
-			p := convertMarketplacePlugin(mp, marketplaceName, disc.Repo, disc.Source, true, installedSet)
+			// Discovered marketplaces don't have local paths - pass empty string
+			p := convertMarketplacePlugin(mp, marketplaceName, disc.Repo, disc.Source, true, installedSet, "")
 			plugins = append(plugins, p)
 		}
 	}
@@ -213,6 +214,7 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 }
 
 // convertMarketplacePlugin converts a MarketplacePlugin to a Plugin.
+// marketplacePath is the local path to the marketplace directory (empty for discovered marketplaces).
 func convertMarketplacePlugin(
 	mp marketplace.MarketplacePlugin,
 	marketplaceName string,
@@ -220,9 +222,27 @@ func convertMarketplacePlugin(
 	marketplaceSource string,
 	isDiscoverable bool,
 	installedSet map[string]PluginInstall,
+	marketplacePath string,
 ) plugin.Plugin {
 	fullName := mp.Name + "@" + marketplaceName
 	install, isInstalled := installedSet[fullName]
+
+	// Check if plugin is incomplete (missing .claude-plugin/plugin.json)
+	// Only check for locally installed marketplaces, not discovered ones
+	isIncomplete := mp.IsIncomplete
+	if !isIncomplete && marketplacePath != "" && !mp.HasLSPServers && !mp.IsExternalURL {
+		// Construct path to plugin.json based on source
+		sourcePath := mp.Source
+		if sourcePath == "" {
+			sourcePath = "plugins/" + mp.Name
+		} else if len(sourcePath) > 2 && sourcePath[:2] == "./" {
+			sourcePath = sourcePath[2:]
+		}
+		pluginJSONPath := filepath.Join(marketplacePath, sourcePath, ".claude-plugin", "plugin.json")
+		if _, err := os.Stat(pluginJSONPath); os.IsNotExist(err) {
+			isIncomplete = true
+		}
+	}
 
 	p := plugin.Plugin{
 		Name:        mp.Name,
@@ -248,6 +268,7 @@ func convertMarketplacePlugin(
 		Tags:              mp.Tags,
 		HasLSPServers:     mp.HasLSPServers,
 		IsExternalURL:     mp.IsExternalURL,
+		IsIncomplete:      isIncomplete,
 	}
 
 	if isInstalled {

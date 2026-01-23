@@ -196,6 +196,26 @@ func TestMarketplacePlugin_UnmarshalJSON_NullLSPServers(t *testing.T) {
 	}
 }
 
+func TestMarketplacePlugin_IncompletePlugin(t *testing.T) {
+	// IsIncomplete is set externally during plugin loading, not unmarshaling
+	plugin := MarketplacePlugin{
+		Name:         "incomplete-plugin",
+		Source:       "./plugins/incomplete",
+		Description:  "An incomplete plugin",
+		IsIncomplete: true, // Set manually (normally done during loading)
+	}
+
+	if plugin.Installable() {
+		t.Error("expected plugin to NOT be installable (incomplete)")
+	}
+	if plugin.InstallabilityReason() != "incomplete plugin (missing .claude-plugin/plugin.json)" {
+		t.Errorf("unexpected installability reason: %q", plugin.InstallabilityReason())
+	}
+	if plugin.InstallabilityTag() != "[incomplete]" {
+		t.Errorf("unexpected installability tag: %q", plugin.InstallabilityTag())
+	}
+}
+
 func TestMarketplaceManifest_UnmarshalJSON(t *testing.T) {
 	jsonData := `{
 		"name": "test-marketplace",

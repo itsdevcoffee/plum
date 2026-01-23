@@ -39,15 +39,16 @@ type MarketplacePlugin struct {
 	Tags        []string `json:"tags"`
 	Strict      bool     `json:"strict"`
 
-	// Installability tracking (set during unmarshaling)
+	// Installability tracking (set during unmarshaling or validation)
 	HasLSPServers bool `json:"-"` // True if plugin has lspServers config (built into Claude Code)
 	IsExternalURL bool `json:"-"` // True if source points to external Git repo
+	IsIncomplete  bool `json:"-"` // True if plugin is missing required files (e.g., .claude-plugin/plugin.json)
 }
 
 // Installable returns true if the plugin can be installed via plum.
-// Plugins with LSP servers or external URLs require different installation methods.
+// Plugins with LSP servers, external URLs, or missing files require different installation methods.
 func (mp *MarketplacePlugin) Installable() bool {
-	return !mp.HasLSPServers && !mp.IsExternalURL
+	return !mp.HasLSPServers && !mp.IsExternalURL && !mp.IsIncomplete
 }
 
 // InstallabilityReason returns a human-readable reason why the plugin is not installable.
@@ -58,6 +59,8 @@ func (mp *MarketplacePlugin) InstallabilityReason() string {
 		return "LSP plugin (built into Claude Code)"
 	case mp.IsExternalURL:
 		return "external repository (requires manual installation)"
+	case mp.IsIncomplete:
+		return "incomplete plugin (missing .claude-plugin/plugin.json)"
 	default:
 		return ""
 	}
@@ -71,6 +74,8 @@ func (mp *MarketplacePlugin) InstallabilityTag() string {
 		return "[built-in]"
 	case mp.IsExternalURL:
 		return "[external]"
+	case mp.IsIncomplete:
+		return "[incomplete]"
 	default:
 		return ""
 	}

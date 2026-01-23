@@ -30,12 +30,13 @@ type Plugin struct {
 	// Installability tracking
 	HasLSPServers bool `json:"-"` // True if plugin has lspServers config (built into Claude Code)
 	IsExternalURL bool `json:"-"` // True if source points to external Git repo
+	IsIncomplete  bool `json:"-"` // True if plugin is missing required files (e.g., .claude-plugin/plugin.json)
 }
 
 // Installable returns true if the plugin can be installed via plum.
-// Plugins with LSP servers or external URLs require different installation methods.
+// Plugins with LSP servers, external URLs, or missing files require different installation methods.
 func (p Plugin) Installable() bool {
-	return !p.HasLSPServers && !p.IsExternalURL
+	return !p.HasLSPServers && !p.IsExternalURL && !p.IsIncomplete
 }
 
 // InstallabilityReason returns a human-readable reason why the plugin is not installable.
@@ -46,6 +47,8 @@ func (p Plugin) InstallabilityReason() string {
 		return "LSP plugin (built into Claude Code)"
 	case p.IsExternalURL:
 		return "external repository (requires manual installation)"
+	case p.IsIncomplete:
+		return "incomplete plugin (missing .claude-plugin/plugin.json)"
 	default:
 		return ""
 	}
@@ -59,6 +62,8 @@ func (p Plugin) InstallabilityTag() string {
 		return "[built-in]"
 	case p.IsExternalURL:
 		return "[external]"
+	case p.IsIncomplete:
+		return "[incomplete]"
 	default:
 		return ""
 	}

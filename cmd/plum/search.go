@@ -124,6 +124,7 @@ func outputSearchTable(results []SearchResult, query string) error {
 	hasInstalled := false
 	hasBuiltIn := false
 	hasExternal := false
+	hasIncomplete := false
 
 	// Rows
 	for _, r := range results {
@@ -146,6 +147,9 @@ func outputSearchTable(results []SearchResult, query string) error {
 		case "[external]":
 			name += " " + r.InstallabilityTag
 			hasExternal = true
+		case "[incomplete]":
+			name += " " + r.InstallabilityTag
+			hasIncomplete = true
 		}
 
 		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", name, r.Marketplace, desc)
@@ -161,6 +165,9 @@ func outputSearchTable(results []SearchResult, query string) error {
 	}
 	if hasExternal {
 		_, _ = fmt.Fprintln(w, "[external] = external repo (install manually)")
+	}
+	if hasIncomplete {
+		_, _ = fmt.Fprintln(w, "[incomplete] = missing plugin.json (not installable)")
 	}
 
 	return w.Flush()

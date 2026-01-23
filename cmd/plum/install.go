@@ -143,9 +143,28 @@ func installPlugin(pluginArg string, scope settings.Scope, projectPath string) e
 	// Check if plugin is installable via plum
 	if !pluginInfo.Installable {
 		fmt.Printf("Cannot install %s: %s\n\n", fullName, pluginInfo.InstallabilityReason)
-		fmt.Println("This plugin requires a different installation method.")
-		fmt.Println("Check the plugin's homepage for installation instructions.")
+		if pluginInfo.IsIncomplete {
+			fmt.Println("This plugin doesn't have a standard plugin manifest. You can try:")
+			fmt.Println()
+			fmt.Println("  1. Refresh your marketplace in case it was recently updated:")
+			fmt.Println("     plum marketplace refresh")
+			fmt.Println()
+			fmt.Println("  2. Use the plugin directly from the marketplace directory")
+			fmt.Println("     (Claude Code can access skills/commands without installation)")
+		} else {
+			fmt.Println("This plugin requires a different installation method.")
+			fmt.Println("Check the plugin's homepage for installation instructions.")
+		}
 		return fmt.Errorf("plugin not installable via plum")
+	}
+
+	// Check if already installed in the requested scope
+	scopeSettings, err := settings.LoadSettings(scope, projectPath)
+	if err == nil {
+		if _, exists := scopeSettings.EnabledPlugins[fullName]; exists {
+			fmt.Printf("%s is already installed in %s scope\n", fullName, scope)
+			return nil
+		}
 	}
 
 	fmt.Printf("Installing %s...\n", fullName)
@@ -156,9 +175,17 @@ func installPlugin(pluginArg string, scope settings.Scope, projectPath string) e
 		return fmt.Errorf("failed to get cache directory: %w", err)
 	}
 
-	// Download plugin files to cache
-	if err := downloadPluginToCache(pluginInfo, cacheDir); err != nil {
-		return fmt.Errorf("failed to download plugin: %w", err)
+	// Check if cache already exists with valid plugin.json
+	// This allows installation to succeed even if remote download fails
+	cacheValid := isValidPluginCache(cacheDir)
+
+	// Try to download plugin files to cache (skip if cache is valid)
+	if !cacheValid {
+		if err := downloadPluginToCache(pluginInfo, cacheDir); err != nil {
+			return fmt.Errorf("failed to download plugin: %w", err)
+		}
+	} else {
+		fmt.Println("Using cached plugin files")
 	}
 
 	// Register in installed_plugins_v2.json
@@ -184,6 +211,7 @@ type pluginSearchResult struct {
 	Source               string // Path within marketplace
 	Installable          bool   // Whether plum can install this plugin
 	InstallabilityReason string // Human-readable reason if not installable
+	IsIncomplete         bool   // True if plugin is missing required files
 }
 
 // findPluginInMarketplaces searches for a plugin across all known marketplaces
@@ -209,6 +237,7 @@ func findPluginInMarketplaces(pluginName, marketplaceFilter string) (*pluginSear
 				Source:               p.Source,
 				Installable:          p.Installable(),
 				InstallabilityReason: p.InstallabilityReason(),
+				IsIncomplete:         p.IsIncomplete,
 			})
 		}
 	}
@@ -227,6 +256,17 @@ func findPluginInMarketplaces(pluginName, marketplaceFilter string) (*pluginSear
 	}
 
 	return matches[0], nil
+}
+
+// isValidPluginCache checks if a cache directory contains a valid plugin.json
+func isValidPluginCache(cacheDir string) bool {
+	pluginJSONPath := filepath.Join(cacheDir, ".claude-plugin", "plugin.json")
+	info, err := os.Stat(pluginJSONPath)
+	if err != nil {
+		return false
+	}
+	// Ensure it's a file with non-zero size
+	return !info.IsDir() && info.Size() > 0
 }
 
 // pluginCacheDir returns the path to cache a plugin
