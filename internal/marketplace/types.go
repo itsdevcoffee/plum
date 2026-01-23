@@ -38,24 +38,57 @@ type MarketplacePlugin struct {
 	Keywords    []string `json:"keywords"`
 	Tags        []string `json:"tags"`
 	Strict      bool     `json:"strict"`
+
+	// Installability tracking (set during unmarshaling)
+	HasLSPServers bool `json:"-"` // True if plugin has lspServers config (built into Claude Code)
+	IsExternalURL bool `json:"-"` // True if source points to external Git repo
+}
+
+// Installable returns true if the plugin can be installed via plum
+// Plugins with LSP servers or external URLs require different installation methods
+func (mp *MarketplacePlugin) Installable() bool {
+	return !mp.HasLSPServers && !mp.IsExternalURL
+}
+
+// InstallabilityReason returns a human-readable reason why the plugin isn't installable
+// Returns empty string if the plugin is installable
+func (mp *MarketplacePlugin) InstallabilityReason() string {
+	if mp.HasLSPServers {
+		return "LSP plugin (built into Claude Code)"
+	}
+	if mp.IsExternalURL {
+		return "external repository (requires manual installation)"
+	}
+	return ""
 }
 
 // UnmarshalJSON implements custom JSON unmarshaling for MarketplacePlugin to handle
 // the "source" field which can be either a string or an object with Git URL.
+// Also detects LSP plugins and external URL sources for installability tracking.
 // Required for claude-plugins-official compatibility (Atlassian, Figma, Vercel, etc.)
 func (mp *MarketplacePlugin) UnmarshalJSON(data []byte) error {
 	// Create alias type to avoid infinite recursion
 	type MarketplacePluginAlias MarketplacePlugin
 
-	// Use a temporary struct with source as RawMessage
+	// Use a temporary struct with source as RawMessage and lspServers detection
 	var temp struct {
 		*MarketplacePluginAlias
-		SourceRaw json.RawMessage `json:"source"`
+		SourceRaw  json.RawMessage `json:"source"`
+		LSPServers json.RawMessage `json:"lspServers"` // Detect LSP plugins
 	}
 	temp.MarketplacePluginAlias = (*MarketplacePluginAlias)(mp)
 
 	if err := json.Unmarshal(data, &temp); err != nil {
 		return err
+	}
+
+	// Check for LSP servers (indicates built-in Claude Code plugin)
+	// Only mark as LSP if lspServers contains actual configuration (not null, {}, or [])
+	if len(temp.LSPServers) > 0 {
+		s := string(temp.LSPServers)
+		if s != "null" && s != "{}" && s != "[]" {
+			mp.HasLSPServers = true
+		}
 	}
 
 	// Parse source field which can be string or object
@@ -74,6 +107,7 @@ func (mp *MarketplacePlugin) UnmarshalJSON(data []byte) error {
 				// Use the Git URL as the source
 				if sourceObj.URL != "" {
 					mp.Source = sourceObj.URL
+					mp.IsExternalURL = true // Mark as external URL source
 				}
 			}
 		}

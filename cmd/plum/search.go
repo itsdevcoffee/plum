@@ -47,13 +47,15 @@ func init() {
 
 // SearchResult represents a search result
 type SearchResult struct {
-	Name        string `json:"name"`
-	Marketplace string `json:"marketplace"`
-	Description string `json:"description"`
-	Version     string `json:"version"`
-	Category    string `json:"category,omitempty"`
-	Installed   bool   `json:"installed"`
-	Score       int    `json:"score,omitempty"`
+	Name              string `json:"name"`
+	Marketplace       string `json:"marketplace"`
+	Description       string `json:"description"`
+	Version           string `json:"version"`
+	Category          string `json:"category,omitempty"`
+	Installed         bool   `json:"installed"`
+	Score             int    `json:"score,omitempty"`
+	Installable       bool   `json:"installable"`
+	InstallabilityTag string `json:"installabilityTag,omitempty"`
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {
@@ -99,13 +101,15 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	results := make([]SearchResult, len(ranked))
 	for i, r := range ranked {
 		results[i] = SearchResult{
-			Name:        r.Plugin.Name,
-			Marketplace: r.Plugin.Marketplace,
-			Description: r.Plugin.Description,
-			Version:     r.Plugin.Version,
-			Category:    r.Plugin.Category,
-			Installed:   r.Plugin.Installed,
-			Score:       r.Score,
+			Name:              r.Plugin.Name,
+			Marketplace:       r.Plugin.Marketplace,
+			Description:       r.Plugin.Description,
+			Version:           r.Plugin.Version,
+			Category:          r.Plugin.Category,
+			Installed:         r.Plugin.Installed,
+			Score:             r.Score,
+			Installable:       r.Plugin.Installable(),
+			InstallabilityTag: r.Plugin.InstallabilityTag(),
 		}
 	}
 
@@ -135,6 +139,11 @@ func outputSearchTable(results []SearchResult, query string) error {
 	// Header
 	_, _ = fmt.Fprintln(w, "NAME\tMARKETPLACE\tDESCRIPTION")
 
+	// Track if we have any special indicators to explain in legend
+	hasInstalled := false
+	hasBuiltIn := false
+	hasExternal := false
+
 	// Rows
 	for _, r := range results {
 		desc := r.Description
@@ -143,17 +152,36 @@ func outputSearchTable(results []SearchResult, query string) error {
 			desc = desc[:47] + "..."
 		}
 
-		// Add installed indicator
+		// Add indicators to name
 		name := r.Name
 		if r.Installed {
 			name += " *"
+			hasInstalled = true
+		}
+		if r.InstallabilityTag != "" {
+			name += " " + r.InstallabilityTag
+			switch r.InstallabilityTag {
+			case "[built-in]":
+				hasBuiltIn = true
+			case "[external]":
+				hasExternal = true
+			}
 		}
 
 		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", name, r.Marketplace, desc)
 	}
 
+	// Print legend
 	_, _ = fmt.Fprintln(w)
-	_, _ = fmt.Fprintln(w, "* = installed")
+	if hasInstalled {
+		_, _ = fmt.Fprintln(w, "* = installed")
+	}
+	if hasBuiltIn {
+		_, _ = fmt.Fprintln(w, "[built-in] = LSP plugin handled by Claude Code")
+	}
+	if hasExternal {
+		_, _ = fmt.Fprintln(w, "[external] = external repo (install manually)")
+	}
 
 	return w.Flush()
 }

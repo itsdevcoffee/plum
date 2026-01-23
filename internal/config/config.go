@@ -203,6 +203,8 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 				Repository:        mp.Repository,
 				License:           mp.License,
 				Tags:              mp.Tags,
+				HasLSPServers:     mp.HasLSPServers,
+				IsExternalURL:     mp.IsExternalURL,
 			}
 
 			if isInstalled {
@@ -262,6 +264,8 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 				Repository:        mp.Repository,
 				License:           mp.License,
 				Tags:              mp.Tags,
+				HasLSPServers:     mp.HasLSPServers,
+				IsExternalURL:     mp.IsExternalURL,
 			}
 
 			if isInstalled {

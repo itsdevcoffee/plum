@@ -164,6 +164,11 @@ var (
 			Foreground(TextTertiary).
 			SetString("[Available]")
 
+	// Not installable badge (for LSP/external plugins)
+	NotInstallableBadge = lipgloss.NewStyle().
+				Foreground(TextMuted).
+				Italic(true)
+
 	// Help view styles
 	HelpSectionStyle = lipgloss.NewStyle().
 				Foreground(PeachSoft).

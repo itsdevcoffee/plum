@@ -140,6 +140,14 @@ func installPlugin(pluginArg string, scope settings.Scope, projectPath string) e
 
 	fullName := pluginInfo.Name + "@" + pluginInfo.Marketplace
 
+	// Check if plugin is installable via plum
+	if !pluginInfo.Installable {
+		fmt.Printf("Cannot install %s: %s\n\n", fullName, pluginInfo.InstallabilityReason)
+		fmt.Println("This plugin requires a different installation method.")
+		fmt.Println("Check the plugin's homepage for installation instructions.")
+		return fmt.Errorf("plugin not installable via plum")
+	}
+
 	fmt.Printf("Installing %s...\n", fullName)
 
 	// Get cache directory
@@ -169,11 +177,13 @@ func installPlugin(pluginArg string, scope settings.Scope, projectPath string) e
 
 // pluginSearchResult holds plugin info needed for installation
 type pluginSearchResult struct {
-	Name            string
-	Marketplace     string
-	MarketplaceRepo string
-	Version         string
-	Source          string // Path within marketplace
+	Name                 string
+	Marketplace          string
+	MarketplaceRepo      string
+	Version              string
+	Source               string // Path within marketplace
+	Installable          bool   // Whether plum can install this plugin
+	InstallabilityReason string // Human-readable reason if not installable
 }
 
 // findPluginInMarketplaces searches for a plugin across all known marketplaces
@@ -192,11 +202,13 @@ func findPluginInMarketplaces(pluginName, marketplaceFilter string) (*pluginSear
 				continue
 			}
 			matches = append(matches, &pluginSearchResult{
-				Name:            p.Name,
-				Marketplace:     p.Marketplace,
-				MarketplaceRepo: p.MarketplaceRepo,
-				Version:         p.Version,
-				Source:          p.Source,
+				Name:                 p.Name,
+				Marketplace:          p.Marketplace,
+				MarketplaceRepo:      p.MarketplaceRepo,
+				Version:              p.Version,
+				Source:               p.Source,
+				Installable:          p.Installable(),
+				InstallabilityReason: p.InstallabilityReason(),
 			})
 		}
 	}

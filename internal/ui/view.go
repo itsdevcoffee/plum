@@ -287,11 +287,17 @@ func (m Model) renderPluginItemSlim(p plugin.Plugin, selected bool) string {
 		prefix = "  "
 	}
 
-	// Format: [prefix][indicator] name v[version]
+	// Format: [prefix][indicator] name v[version] [installability-tag]
 	name := nameStyle.Render(p.Name)
 	version := VersionStyle.Render("v" + p.Version)
 
-	return fmt.Sprintf("%s%s %s %s", prefix, indicator, name, version)
+	// Add installability tag if not installable
+	installTag := ""
+	if !p.Installable() {
+		installTag = " " + NotInstallableBadge.Render(p.InstallabilityTag())
+	}
+
+	return fmt.Sprintf("%s%s %s %s%s", prefix, indicator, name, version, installTag)
 }
 
 // renderPluginItemCard renders a plugin item as a card with border
@@ -323,12 +329,18 @@ func (m Model) renderPluginItemCard(p plugin.Plugin, selected bool) string {
 		nameStyle = PluginNameStyle
 	}
 
-	// Row 1: [indicator] Name v[version]                    @marketplace
+	// Row 1: [indicator] Name v[version] [installability-tag]    @marketplace
 	name := nameStyle.Render(p.Name)
 	version := VersionStyle.Render("v" + p.Version)
 	marketplace := MarketplaceStyle.Render("@" + p.Marketplace)
 
-	leftPart := fmt.Sprintf("%s %s %s", indicator, name, version)
+	// Add installability tag if not installable
+	installTag := ""
+	if !p.Installable() {
+		installTag = " " + NotInstallableBadge.Render(p.InstallabilityTag())
+	}
+
+	leftPart := fmt.Sprintf("%s %s %s%s", indicator, name, version, installTag)
 	leftLen := lipgloss.Width(leftPart)
 	rightLen := lipgloss.Width(marketplace)
 
@@ -436,6 +448,12 @@ func (m Model) generateDetailHeader(p *plugin.Plugin, contentWidth int) string {
 	} else {
 		badge = AvailableBadge.String()
 	}
+
+	// Add installability badge if not installable
+	if !p.Installable() {
+		badge += " " + NotInstallableBadge.Render(p.InstallabilityTag())
+	}
+
 	header := DetailTitleStyle.Render(p.Name) + "  " + badge
 	b.WriteString(header)
 	b.WriteString("\n")
@@ -494,7 +512,19 @@ func (m Model) generateDetailContent(p *plugin.Plugin, contentWidth int) string 
 		b.WriteString(strings.Repeat("─", contentWidth))
 		b.WriteString("\n")
 
-		if p.IsDiscoverable {
+		// Check if plugin is installable via plum
+		if !p.Installable() {
+			// Show message explaining why plugin can't be installed via plum
+			notInstallableStyle := lipgloss.NewStyle().Foreground(TextMuted).Italic(true)
+			b.WriteString(notInstallableStyle.Render("ℹ " + p.InstallabilityReason()))
+			b.WriteString("\n\n")
+			if p.HasLSPServers {
+				b.WriteString(HelpStyle.Render("LSP plugins are handled by Claude Code automatically."))
+			} else if p.IsExternalURL {
+				b.WriteString(HelpStyle.Render("Visit the plugin's homepage for installation instructions."))
+			}
+			b.WriteString("\n")
+		} else if p.IsDiscoverable {
 			// Marketplace not installed - show 2-step instructions
 			b.WriteString(DiscoverMessageStyle.Render("⚠ This marketplace is not installed yet"))
 			b.WriteString("\n\n")
@@ -538,7 +568,8 @@ func (m Model) generateDetailFooter(p *plugin.Plugin, contentWidth int) string {
 	footerParts = append(footerParts, KeyStyle.Render("esc")+" back")
 
 	// Show install commands for non-installed plugins (or flash message)
-	if !p.Installed {
+	// Skip for non-installable plugins (LSP, external URL)
+	if !p.Installed && p.Installable() {
 		if m.copiedFlash {
 			footerParts = append(footerParts, successStyle.Render("✓ Copied!"))
 		} else if m.clipboardErrorFlash {

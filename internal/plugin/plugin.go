@@ -26,6 +26,40 @@ type Plugin struct {
 	Repository        string   `json:"repository"` // Source repository URL
 	License           string   `json:"license"`    // License identifier (e.g., "MIT")
 	Tags              []string `json:"tags"`       // Categorization tags
+
+	// Installability tracking
+	HasLSPServers bool `json:"-"` // True if plugin has lspServers config (built into Claude Code)
+	IsExternalURL bool `json:"-"` // True if source points to external Git repo
+}
+
+// Installable returns true if the plugin can be installed via plum
+// Plugins with LSP servers or external URLs require different installation methods
+func (p Plugin) Installable() bool {
+	return !p.HasLSPServers && !p.IsExternalURL
+}
+
+// InstallabilityReason returns a human-readable reason why the plugin isn't installable
+// Returns empty string if the plugin is installable
+func (p Plugin) InstallabilityReason() string {
+	if p.HasLSPServers {
+		return "LSP plugin (built into Claude Code)"
+	}
+	if p.IsExternalURL {
+		return "external repository (requires manual installation)"
+	}
+	return ""
+}
+
+// InstallabilityTag returns a short tag for display purposes
+// Returns empty string if the plugin is installable
+func (p Plugin) InstallabilityTag() string {
+	if p.HasLSPServers {
+		return "[built-in]"
+	}
+	if p.IsExternalURL {
+		return "[external]"
+	}
+	return ""
 }
 
 // Author represents plugin author information
