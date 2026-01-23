@@ -44,22 +44,36 @@ type MarketplacePlugin struct {
 	IsExternalURL bool `json:"-"` // True if source points to external Git repo
 }
 
-// Installable returns true if the plugin can be installed via plum
-// Plugins with LSP servers or external URLs require different installation methods
+// Installable returns true if the plugin can be installed via plum.
+// Plugins with LSP servers or external URLs require different installation methods.
 func (mp *MarketplacePlugin) Installable() bool {
 	return !mp.HasLSPServers && !mp.IsExternalURL
 }
 
-// InstallabilityReason returns a human-readable reason why the plugin isn't installable
-// Returns empty string if the plugin is installable
+// InstallabilityReason returns a human-readable reason why the plugin is not installable.
+// Returns empty string if the plugin is installable.
 func (mp *MarketplacePlugin) InstallabilityReason() string {
-	if mp.HasLSPServers {
+	switch {
+	case mp.HasLSPServers:
 		return "LSP plugin (built into Claude Code)"
-	}
-	if mp.IsExternalURL {
+	case mp.IsExternalURL:
 		return "external repository (requires manual installation)"
+	default:
+		return ""
 	}
-	return ""
+}
+
+// InstallabilityTag returns a short tag for display purposes.
+// Returns empty string if the plugin is installable.
+func (mp *MarketplacePlugin) InstallabilityTag() string {
+	switch {
+	case mp.HasLSPServers:
+		return "[built-in]"
+	case mp.IsExternalURL:
+		return "[external]"
+	default:
+		return ""
+	}
 }
 
 // UnmarshalJSON implements custom JSON unmarshaling for MarketplacePlugin to handle

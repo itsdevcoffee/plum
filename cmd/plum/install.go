@@ -322,70 +322,56 @@ func downloadPluginToCache(plugin *pluginSearchResult, cacheDir string) error {
 		fmt.Fprintf(os.Stderr, "Warning: failed to parse plugin.json: %v\n", err)
 	}
 
-	// Download commands if any
-	for _, cmdFile := range pluginManifest.Commands {
-		// Validate path to prevent path traversal attacks
-		cmdPath, err := validatePluginFilePath(cmdFile, cacheDir)
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Warning: skipping invalid command path %s: %v\n", cmdFile, err)
-			continue
-		}
+	// Download commands (non-executable)
+	downloadPluginFiles(pluginManifest.Commands, "command", cacheDir, source, sourcePath, downloadWithLimit, 0644)
 
-		cmdURL := fmt.Sprintf("%s/%s/%s/%s/%s",
-			marketplace.GitHubRawBase, source, marketplace.DefaultBranch, sourcePath, cmdFile)
-
-		content, err := downloadWithLimit(cmdURL)
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to download command %s: %v\n", cmdFile, err)
-			continue
-		}
-
-		cmdDir := filepath.Dir(cmdPath)
-		// #nosec G301 -- Plugin directory needs to be readable by Claude Code
-		if err := os.MkdirAll(cmdDir, 0755); err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to create directory for %s: %v\n", cmdFile, err)
-			continue
-		}
-
-		// #nosec G306 -- Plugin files need to be readable by Claude Code
-		if err := os.WriteFile(cmdPath, content, 0644); err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to write %s: %v\n", cmdFile, err)
-		}
-	}
-
-	// Download hooks if any
-	for _, hookFile := range pluginManifest.Hooks {
-		// Validate path to prevent path traversal attacks
-		hookPath, err := validatePluginFilePath(hookFile, cacheDir)
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Warning: skipping invalid hook path %s: %v\n", hookFile, err)
-			continue
-		}
-
-		hookURL := fmt.Sprintf("%s/%s/%s/%s/%s",
-			marketplace.GitHubRawBase, source, marketplace.DefaultBranch, sourcePath, hookFile)
-
-		content, err := downloadWithLimit(hookURL)
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to download hook %s: %v\n", hookFile, err)
-			continue
-		}
-
-		hookDir := filepath.Dir(hookPath)
-		// #nosec G301 -- Plugin directory needs to be readable by Claude Code
-		if err := os.MkdirAll(hookDir, 0755); err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to create directory for %s: %v\n", hookFile, err)
-			continue
-		}
-
-		// Make hook executable
-		// #nosec G306 -- Hook files need to be executable by Claude Code
-		if err := os.WriteFile(hookPath, content, 0755); err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to write %s: %v\n", hookFile, err)
-		}
-	}
+	// Download hooks (executable)
+	downloadPluginFiles(pluginManifest.Hooks, "hook", cacheDir, source, sourcePath, downloadWithLimit, 0755)
 
 	return nil
+}
+
+// downloadPluginFiles downloads a list of plugin files to the cache directory.
+// fileType is used for warning messages (e.g., "command" or "hook").
+// perm specifies the file permissions (e.g., 0644 for commands, 0755 for hooks).
+func downloadPluginFiles(
+	files []string,
+	fileType string,
+	cacheDir string,
+	source string,
+	sourcePath string,
+	downloadWithLimit func(string) ([]byte, error),
+	perm os.FileMode,
+) {
+	for _, file := range files {
+		// Validate path to prevent path traversal attacks
+		filePath, err := validatePluginFilePath(file, cacheDir)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: skipping invalid %s path %s: %v\n", fileType, file, err)
+			continue
+		}
+
+		fileURL := fmt.Sprintf("%s/%s/%s/%s/%s",
+			marketplace.GitHubRawBase, source, marketplace.DefaultBranch, sourcePath, file)
+
+		content, err := downloadWithLimit(fileURL)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to download %s %s: %v\n", fileType, file, err)
+			continue
+		}
+
+		fileDir := filepath.Dir(filePath)
+		// #nosec G301 -- Plugin directory needs to be readable by Claude Code
+		if err := os.MkdirAll(fileDir, 0755); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to create directory for %s: %v\n", file, err)
+			continue
+		}
+
+		// #nosec G306 -- Plugin files need appropriate permissions
+		if err := os.WriteFile(filePath, content, perm); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to write %s: %v\n", file, err)
+		}
+	}
 }
 
 // downloadFile downloads a file from a URL

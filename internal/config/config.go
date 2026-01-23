@@ -163,54 +163,19 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 		seenInThisMarketplace := make(map[string]bool)
 
 		for _, mp := range manifest.Plugins {
-			// Skip if we've already seen this plugin name in THIS marketplace (within-marketplace dedup)
+			// Skip duplicates within this marketplace
 			if seenInThisMarketplace[mp.Name] {
 				continue
 			}
 			seenInThisMarketplace[mp.Name] = true
 
-			// Skip if we've already seen this plugin name from ANY marketplace (cross-marketplace dedup)
-			if existingMarket, exists := seenPluginNames[mp.Name]; exists {
-				// Only skip if from a different marketplace (same marketplace duplicates already handled above)
-				if existingMarket != marketplaceName {
-					continue
-				}
+			// Skip if seen from a different marketplace
+			if existingMarket, exists := seenPluginNames[mp.Name]; exists && existingMarket != marketplaceName {
+				continue
 			}
 			seenPluginNames[mp.Name] = marketplaceName
 
-			fullName := mp.Name + "@" + marketplaceName
-			install, isInstalled := installedSet[fullName]
-
-			p := plugin.Plugin{
-				Name:        mp.Name,
-				Description: mp.Description,
-				Version:     mp.Version,
-				Keywords:    mp.Keywords,
-				Category:    mp.Category,
-				Author: plugin.Author{
-					Name:    mp.Author.Name,
-					Email:   mp.Author.Email,
-					URL:     mp.Author.URL,
-					Company: mp.Author.Company,
-				},
-				Marketplace:       marketplaceName,
-				MarketplaceRepo:   marketplaceRepo,
-				MarketplaceSource: marketplaceSource,
-				Installed:         isInstalled,
-				IsDiscoverable:    false, // From installed marketplace
-				Source:            mp.Source,
-				Homepage:          mp.Homepage,
-				Repository:        mp.Repository,
-				License:           mp.License,
-				Tags:              mp.Tags,
-				HasLSPServers:     mp.HasLSPServers,
-				IsExternalURL:     mp.IsExternalURL,
-			}
-
-			if isInstalled {
-				p.InstallPath = install.InstallPath
-			}
-
+			p := convertMarketplacePlugin(mp, marketplaceName, marketplaceRepo, marketplaceSource, false, installedSet)
 			plugins = append(plugins, p)
 		}
 	}
@@ -227,54 +192,67 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 		seenInThisMarketplace := make(map[string]bool)
 
 		for _, mp := range disc.Manifest.Plugins {
-			// Skip if we've already seen this plugin name in THIS marketplace
+			// Skip duplicates within this marketplace
 			if seenInThisMarketplace[mp.Name] {
 				continue
 			}
 			seenInThisMarketplace[mp.Name] = true
 
-			// Skip if we've already seen this plugin name from ANY source
+			// Skip if seen from any previous source
 			if _, exists := seenPluginNames[mp.Name]; exists {
 				continue
 			}
 			seenPluginNames[mp.Name] = marketplaceName
 
-			fullName := mp.Name + "@" + marketplaceName
-			install, isInstalled := installedSet[fullName]
-
-			p := plugin.Plugin{
-				Name:        mp.Name,
-				Description: mp.Description,
-				Version:     mp.Version,
-				Keywords:    mp.Keywords,
-				Category:    mp.Category,
-				Author: plugin.Author{
-					Name:    mp.Author.Name,
-					Email:   mp.Author.Email,
-					URL:     mp.Author.URL,
-					Company: mp.Author.Company,
-				},
-				Marketplace:       marketplaceName,
-				MarketplaceRepo:   disc.Repo,
-				MarketplaceSource: disc.Source,
-				Installed:         isInstalled,
-				IsDiscoverable:    true, // From discovered marketplace
-				Source:            mp.Source,
-				Homepage:          mp.Homepage,
-				Repository:        mp.Repository,
-				License:           mp.License,
-				Tags:              mp.Tags,
-				HasLSPServers:     mp.HasLSPServers,
-				IsExternalURL:     mp.IsExternalURL,
-			}
-
-			if isInstalled {
-				p.InstallPath = install.InstallPath
-			}
-
+			p := convertMarketplacePlugin(mp, marketplaceName, disc.Repo, disc.Source, true, installedSet)
 			plugins = append(plugins, p)
 		}
 	}
 
 	return plugins, nil
+}
+
+// convertMarketplacePlugin converts a MarketplacePlugin to a Plugin.
+func convertMarketplacePlugin(
+	mp marketplace.MarketplacePlugin,
+	marketplaceName string,
+	marketplaceRepo string,
+	marketplaceSource string,
+	isDiscoverable bool,
+	installedSet map[string]PluginInstall,
+) plugin.Plugin {
+	fullName := mp.Name + "@" + marketplaceName
+	install, isInstalled := installedSet[fullName]
+
+	p := plugin.Plugin{
+		Name:        mp.Name,
+		Description: mp.Description,
+		Version:     mp.Version,
+		Keywords:    mp.Keywords,
+		Category:    mp.Category,
+		Author: plugin.Author{
+			Name:    mp.Author.Name,
+			Email:   mp.Author.Email,
+			URL:     mp.Author.URL,
+			Company: mp.Author.Company,
+		},
+		Marketplace:       marketplaceName,
+		MarketplaceRepo:   marketplaceRepo,
+		MarketplaceSource: marketplaceSource,
+		Installed:         isInstalled,
+		IsDiscoverable:    isDiscoverable,
+		Source:            mp.Source,
+		Homepage:          mp.Homepage,
+		Repository:        mp.Repository,
+		License:           mp.License,
+		Tags:              mp.Tags,
+		HasLSPServers:     mp.HasLSPServers,
+		IsExternalURL:     mp.IsExternalURL,
+	}
+
+	if isInstalled {
+		p.InstallPath = install.InstallPath
+	}
+
+	return p
 }

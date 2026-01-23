@@ -64,6 +64,9 @@ func TestMarketplacePlugin_UnmarshalJSON_ExternalURLSource(t *testing.T) {
 	if plugin.InstallabilityReason() != "external repository (requires manual installation)" {
 		t.Errorf("unexpected installability reason: %q", plugin.InstallabilityReason())
 	}
+	if plugin.InstallabilityTag() != "[external]" {
+		t.Errorf("unexpected installability tag: %q", plugin.InstallabilityTag())
+	}
 }
 
 func TestMarketplacePlugin_UnmarshalJSON_LSPPlugin(t *testing.T) {
@@ -98,6 +101,9 @@ func TestMarketplacePlugin_UnmarshalJSON_LSPPlugin(t *testing.T) {
 	if plugin.InstallabilityReason() != "LSP plugin (built into Claude Code)" {
 		t.Errorf("unexpected installability reason: %q", plugin.InstallabilityReason())
 	}
+	if plugin.InstallabilityTag() != "[built-in]" {
+		t.Errorf("unexpected installability tag: %q", plugin.InstallabilityTag())
+	}
 }
 
 func TestMarketplacePlugin_UnmarshalJSON_RegularPlugin(t *testing.T) {
@@ -118,6 +124,9 @@ func TestMarketplacePlugin_UnmarshalJSON_RegularPlugin(t *testing.T) {
 	}
 	if plugin.InstallabilityReason() != "" {
 		t.Errorf("expected empty installability reason, got %q", plugin.InstallabilityReason())
+	}
+	if plugin.InstallabilityTag() != "" {
+		t.Errorf("expected empty installability tag, got %q", plugin.InstallabilityTag())
 	}
 }
 

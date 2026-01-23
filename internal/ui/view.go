@@ -512,19 +512,20 @@ func (m Model) generateDetailContent(p *plugin.Plugin, contentWidth int) string 
 		b.WriteString(strings.Repeat("─", contentWidth))
 		b.WriteString("\n")
 
-		// Check if plugin is installable via plum
-		if !p.Installable() {
-			// Show message explaining why plugin can't be installed via plum
+		switch {
+		case !p.Installable():
+			// Plugin requires different installation method
 			notInstallableStyle := lipgloss.NewStyle().Foreground(TextMuted).Italic(true)
 			b.WriteString(notInstallableStyle.Render("ℹ " + p.InstallabilityReason()))
 			b.WriteString("\n\n")
 			if p.HasLSPServers {
 				b.WriteString(HelpStyle.Render("LSP plugins are handled by Claude Code automatically."))
-			} else if p.IsExternalURL {
+			} else {
 				b.WriteString(HelpStyle.Render("Visit the plugin's homepage for installation instructions."))
 			}
 			b.WriteString("\n")
-		} else if p.IsDiscoverable {
+
+		case p.IsDiscoverable:
 			// Marketplace not installed - show 2-step instructions
 			b.WriteString(DiscoverMessageStyle.Render("⚠ This marketplace is not installed yet"))
 			b.WriteString("\n\n")
@@ -541,7 +542,8 @@ func (m Model) generateDetailContent(p *plugin.Plugin, contentWidth int) string 
 			b.WriteString("  " + InstallCommandStyle.Render(p.InstallCommand()))
 			b.WriteString("  " + HelpStyle.Render("press 'y' to copy"))
 			b.WriteString("\n")
-		} else {
+
+		default:
 			// Marketplace installed - show normal install command
 			b.WriteString(DetailLabelStyle.Render("Install:") + " " + InstallCommandStyle.Render(p.InstallCommand()))
 			b.WriteString("\n")

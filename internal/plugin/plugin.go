@@ -32,34 +32,36 @@ type Plugin struct {
 	IsExternalURL bool `json:"-"` // True if source points to external Git repo
 }
 
-// Installable returns true if the plugin can be installed via plum
-// Plugins with LSP servers or external URLs require different installation methods
+// Installable returns true if the plugin can be installed via plum.
+// Plugins with LSP servers or external URLs require different installation methods.
 func (p Plugin) Installable() bool {
 	return !p.HasLSPServers && !p.IsExternalURL
 }
 
-// InstallabilityReason returns a human-readable reason why the plugin isn't installable
-// Returns empty string if the plugin is installable
+// InstallabilityReason returns a human-readable reason why the plugin is not installable.
+// Returns empty string if the plugin is installable.
 func (p Plugin) InstallabilityReason() string {
-	if p.HasLSPServers {
+	switch {
+	case p.HasLSPServers:
 		return "LSP plugin (built into Claude Code)"
-	}
-	if p.IsExternalURL {
+	case p.IsExternalURL:
 		return "external repository (requires manual installation)"
+	default:
+		return ""
 	}
-	return ""
 }
 
-// InstallabilityTag returns a short tag for display purposes
-// Returns empty string if the plugin is installable
+// InstallabilityTag returns a short tag for display purposes.
+// Returns empty string if the plugin is installable.
 func (p Plugin) InstallabilityTag() string {
-	if p.HasLSPServers {
+	switch {
+	case p.HasLSPServers:
 		return "[built-in]"
-	}
-	if p.IsExternalURL {
+	case p.IsExternalURL:
 		return "[external]"
+	default:
+		return ""
 	}
-	return ""
 }
 
 // Author represents plugin author information

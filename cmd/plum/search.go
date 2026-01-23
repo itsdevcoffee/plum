@@ -67,27 +67,8 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load plugins: %w", err)
 	}
 
-	// Apply marketplace filter before search
-	if searchMarketplace != "" {
-		var filtered []plugin.Plugin
-		for _, p := range plugins {
-			if p.Marketplace == searchMarketplace {
-				filtered = append(filtered, p)
-			}
-		}
-		plugins = filtered
-	}
-
-	// Apply category filter
-	if searchCategory != "" {
-		var filtered []plugin.Plugin
-		for _, p := range plugins {
-			if p.Category == searchCategory {
-				filtered = append(filtered, p)
-			}
-		}
-		plugins = filtered
-	}
+	// Apply filters before search
+	plugins = filterPlugins(plugins, searchMarketplace, searchCategory)
 
 	// Perform search
 	ranked := search.Search(query, plugins)
@@ -158,14 +139,13 @@ func outputSearchTable(results []SearchResult, query string) error {
 			name += " *"
 			hasInstalled = true
 		}
-		if r.InstallabilityTag != "" {
+		switch r.InstallabilityTag {
+		case "[built-in]":
 			name += " " + r.InstallabilityTag
-			switch r.InstallabilityTag {
-			case "[built-in]":
-				hasBuiltIn = true
-			case "[external]":
-				hasExternal = true
-			}
+			hasBuiltIn = true
+		case "[external]":
+			name += " " + r.InstallabilityTag
+			hasExternal = true
 		}
 
 		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", name, r.Marketplace, desc)
@@ -184,4 +164,23 @@ func outputSearchTable(results []SearchResult, query string) error {
 	}
 
 	return w.Flush()
+}
+
+// filterPlugins applies marketplace and category filters to a plugin list.
+func filterPlugins(plugins []plugin.Plugin, marketplace, category string) []plugin.Plugin {
+	if marketplace == "" && category == "" {
+		return plugins
+	}
+
+	var filtered []plugin.Plugin
+	for _, p := range plugins {
+		if marketplace != "" && p.Marketplace != marketplace {
+			continue
+		}
+		if category != "" && p.Category != category {
+			continue
+		}
+		filtered = append(filtered, p)
+	}
+	return filtered
 }
