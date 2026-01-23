@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-01-23
+
+### Added
+
+- **Incomplete Plugin Detection** - Detects plugins missing `.claude-plugin/plugin.json`
+  - Shows `[incomplete]` tag in search results with explanatory legend
+  - Checks local marketplace directory for plugin structure during loading
+  - Provides actionable error messages with two options:
+    1. Refresh marketplace in case plugin was recently updated
+    2. Use plugin directly from marketplace directory (Claude Code can access skills/commands without installation)
+
+- **Install Optimizations**
+  - Skip download when valid cache exists ("Using cached plugin files")
+  - Check if plugin already installed in target scope before attempting install
+
+### Changed
+
+- Improved error messages for non-installable plugins with context-specific guidance
+
 ## [0.4.1] - 2026-01-23
 
 ### Added
