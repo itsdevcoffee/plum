@@ -791,8 +791,9 @@ func (m *Model) UpdateMarketplaceAutocomplete(query string) {
 	parts := strings.SplitN(query[1:], " ", 2)
 	marketplaceFilter := parts[0]
 
-	// If there's a space and search terms after, exit autocomplete mode
-	if len(parts) > 1 && parts[1] != "" {
+	// If there's a space (even if empty search after), exit autocomplete mode
+	// This handles both "@marketplace search" and "@marketplace " (trailing space)
+	if len(parts) > 1 {
 		m.marketplaceAutocompleteActive = false
 		return
 	}
