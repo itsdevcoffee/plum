@@ -797,6 +797,11 @@ func (m *Model) UpdateMarketplaceAutocomplete(query string) {
 		return
 	}
 
+	// Lazy-load marketplace items if not already loaded
+	if len(m.marketplaceItems) == 0 {
+		_ = m.LoadMarketplaceItems()
+	}
+
 	// We're in autocomplete mode - filter marketplaces
 	m.marketplaceAutocompleteActive = true
 	m.marketplaceAutocompleteList = []MarketplaceItem{}
