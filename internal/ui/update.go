@@ -310,6 +310,8 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleMarketplaceListKeys(msg)
 	case ViewMarketplaceDetail:
 		return m.handleMarketplaceDetailKeys(msg)
+	case ViewQuickMenu:
+		return m.handleQuickMenuKeys(msg)
 	}
 
 	return m, nil
@@ -464,11 +466,11 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, animationTick()
 
 	case "tab", "right":
-		m.NextFilter()
+		m.NextFacet()
 		return m, nil
 
 	case "shift+tab", "left":
-		m.PrevFilter()
+		m.PrevFacet()
 		return m, nil
 
 	case "shift+v", "V":
@@ -491,6 +493,23 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.previousViewBeforeMarketplace = ViewList
 		m.StartViewTransition(ViewMarketplaceList, 1)
 		return m, animationTick()
+
+	case "shift+f", "F":
+		// Open marketplace picker for filtering
+		// Lazy-load marketplace items if not already loaded
+		if len(m.marketplaceItems) == 0 {
+			_ = m.LoadMarketplaceItems()
+		}
+		// Set to autocomplete mode with @ prefix
+		m.textInput.SetValue("@")
+		m.textInput.SetCursor(1)
+		m.UpdateMarketplaceAutocomplete("@")
+		return m, nil
+
+	case " ":
+		// Open quick action menu
+		m.OpenQuickMenu()
+		return m, nil
 
 	// Clear search, cancel refresh, or quit
 	case "esc", "ctrl+g":
@@ -589,6 +608,20 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case "i":
+		// Copy 2-step install for discoverable plugins
+		if p := m.SelectedPlugin(); p != nil && !p.Installed && p.IsDiscoverable {
+			twoStepInstall := fmt.Sprintf("# Step 1: Install marketplace\n/plugin marketplace add %s\n\n# Step 2: Install plugin\n%s",
+				p.MarketplaceSource, p.InstallCommand())
+			if err := clipboard.WriteAll(twoStepInstall); err == nil {
+				m.copiedFlash = true
+				return m, clearCopiedFlash()
+			}
+			m.clipboardErrorFlash = true
+			return m, clearClipboardError()
+		}
+		return m, nil
+
 	case "g":
 		if p := m.SelectedPlugin(); p != nil {
 			url := p.GitHubURL()
@@ -643,6 +676,11 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.previousViewBeforeMarketplace = ViewDetail
 		m.StartViewTransition(ViewMarketplaceList, 1)
 		return m, animationTick()
+
+	case " ":
+		// Open quick action menu
+		m.OpenQuickMenu()
+		return m, nil
 
 	case "?":
 		m.StartViewTransition(ViewHelp, 1) // Forward transition
@@ -710,11 +748,11 @@ func (m Model) handleMarketplaceListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "tab", "right":
-		m.NextMarketplaceSort()
+		m.NextMarketplaceFacet()
 		return m, nil
 
 	case "shift+tab", "left":
-		m.PrevMarketplaceSort()
+		m.PrevMarketplaceFacet()
 		return m, nil
 
 	case "esc", "ctrl+g":
@@ -725,6 +763,11 @@ func (m Model) handleMarketplaceListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "?":
 		m.StartViewTransition(ViewHelp, 1)
 		return m, animationTick()
+
+	case " ":
+		// Open quick action menu
+		m.OpenQuickMenu()
+		return m, nil
 
 	case "q":
 		return m, tea.Quit
@@ -822,4 +865,43 @@ func openPath(path string) {
 
 	// #nosec G204 -- cmd is determined by runtime.GOOS (trusted), args is install path from config
 	_ = exec.Command(cmd, args...).Start()
+}
+
+// handleQuickMenuKeys handles keys in the quick menu overlay
+func (m Model) handleQuickMenuKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "up", "ctrl+k", "ctrl+p":
+		m.PrevQuickMenuAction()
+		return m, nil
+
+	case "down", "ctrl+j", "ctrl+n":
+		m.NextQuickMenuAction()
+		return m, nil
+
+	case "enter":
+		// Execute selected action and close menu
+		cmd := m.ExecuteQuickMenuAction()
+		// Return to previous view and execute action
+		return m, cmd
+
+	case "esc", "q":
+		// Close menu without action
+		m.CloseQuickMenu()
+		return m, nil
+
+	default:
+		// Check if key matches any action shortcut
+		actions := m.GetQuickActionsForView()
+		keyStr := msg.String()
+		for i, action := range actions {
+			if action.Key == keyStr && action.Enabled {
+				// Select this action and execute it
+				m.quickMenuCursor = i
+				cmd := m.ExecuteQuickMenuAction()
+				return m, cmd
+			}
+		}
+	}
+
+	return m, nil
 }

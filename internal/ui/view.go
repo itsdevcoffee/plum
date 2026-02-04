@@ -25,6 +25,18 @@ func (m Model) View() string {
 		content = m.marketplaceListView()
 	case ViewMarketplaceDetail:
 		content = m.marketplaceDetailView()
+	case ViewQuickMenu:
+		// Render the previous view as base, then overlay quick menu
+		var baseView string
+		switch m.quickMenuPreviousView {
+		case ViewDetail:
+			baseView = m.detailView()
+		case ViewMarketplaceList:
+			baseView = m.marketplaceListView()
+		default:
+			baseView = m.listView()
+		}
+		content = m.renderQuickMenuOverlay(baseView)
 	default:
 		content = m.listView()
 	}
@@ -140,7 +152,7 @@ func (m Model) applySlideVTransition(content string) string {
 	return result.String()
 }
 
-// renderFilterTabs renders the filter tab bar
+// renderFilterTabs renders the unified facet bar (filters + sorts)
 func (m Model) renderFilterTabs() string {
 	// Tab styles
 	activeTab := lipgloss.NewStyle().
@@ -152,32 +164,48 @@ func (m Model) renderFilterTabs() string {
 		Foreground(TextTertiary).
 		Padding(0, 1)
 
-	// Build tabs with dynamic counts based on current search
+	// Get unified facets
+	facets := m.GetPluginFacets()
+
+	// Build tabs with dynamic counts for filters only
 	query := m.textInput.Value()
 	counts := m.getDynamicFilterCounts(query)
 
-	tabs := []struct {
-		name   string
-		count  int
-		active bool
-	}{
-		{"All", counts[FilterAll], m.filterMode == FilterAll},
-		{"Discover", counts[FilterDiscover], m.filterMode == FilterDiscover},
-		{"Ready", counts[FilterReady], m.filterMode == FilterReady},
-		{"Installed", counts[FilterInstalled], m.filterMode == FilterInstalled},
-	}
+	var filterParts []string
+	var sortParts []string
 
-	var parts []string
-	for _, tab := range tabs {
-		label := fmt.Sprintf("%s (%d)", tab.name, tab.count)
-		if tab.active {
-			parts = append(parts, activeTab.Render(label))
+	for _, facet := range facets {
+		var label string
+		if facet.Type == FacetFilter {
+			// Filters show counts
+			label = fmt.Sprintf("%s (%d)", facet.DisplayName, counts[facet.FilterMode])
 		} else {
-			parts = append(parts, inactiveTab.Render(label))
+			// Sorts show just the name with arrow
+			label = facet.DisplayName
+		}
+
+		var renderedTab string
+		if facet.IsActive {
+			renderedTab = activeTab.Render(label)
+		} else {
+			renderedTab = inactiveTab.Render(label)
+		}
+
+		// Separate filters from sorts
+		if facet.Type == FacetFilter {
+			filterParts = append(filterParts, renderedTab)
+		} else {
+			sortParts = append(sortParts, renderedTab)
 		}
 	}
 
-	return strings.Join(parts, DimSeparator.Render("│"))
+	// Join filters and sorts with visual separator
+	filters := strings.Join(filterParts, DimSeparator.Render("│"))
+	sorts := strings.Join(sortParts, DimSeparator.Render("│"))
+
+	// Use double separator to distinguish filter section from sort section
+	separator := DimSeparator.Render(" ║ ")
+	return filters + separator + sorts
 }
 
 // listView renders the main list view

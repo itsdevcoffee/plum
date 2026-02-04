@@ -116,7 +116,7 @@ func formatGitHubStats(stats *marketplace.GitHubStats, loading bool, err error) 
 	return ""
 }
 
-// renderMarketplaceSortTabs renders sort mode tabs
+// renderMarketplaceSortTabs renders unified facets for marketplace view
 func (m Model) renderMarketplaceSortTabs() string {
 	// Tab styles (inline like renderFilterTabs)
 	activeTab := lipgloss.NewStyle().
@@ -128,32 +128,24 @@ func (m Model) renderMarketplaceSortTabs() string {
 		Foreground(TextTertiary).
 		Padding(0, 1)
 
-	var b strings.Builder
+	// Get unified facets for marketplace
+	facets := m.GetMarketplaceFacets()
 
-	tabs := []struct {
-		name   string
-		active bool
-	}{
-		{MarketplaceSortModeNames[SortByPluginCount], m.marketplaceSortMode == SortByPluginCount},
-		{MarketplaceSortModeNames[SortByStars], m.marketplaceSortMode == SortByStars},
-		{MarketplaceSortModeNames[SortByName], m.marketplaceSortMode == SortByName},
-		{MarketplaceSortModeNames[SortByLastUpdated], m.marketplaceSortMode == SortByLastUpdated},
-	}
-
-	for i, tab := range tabs {
-		if i > 0 {
-			b.WriteString("  ")
-		}
-
-		if tab.active {
-			b.WriteString(activeTab.Render(tab.name))
+	var parts []string
+	for _, facet := range facets {
+		var renderedTab string
+		if facet.IsActive {
+			renderedTab = activeTab.Render(facet.DisplayName)
 		} else {
-			b.WriteString(inactiveTab.Render(tab.name))
+			renderedTab = inactiveTab.Render(facet.DisplayName)
 		}
+		parts = append(parts, renderedTab)
 	}
 
+	// Join with separator
+	tabs := strings.Join(parts, DimSeparator.Render("│"))
 	hint := HelpStyle.Render("  (Tab/← → to change order)")
-	return b.String() + hint
+	return tabs + hint
 }
 
 // marketplaceStatusBar renders the status bar for marketplace view

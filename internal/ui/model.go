@@ -26,6 +26,7 @@ const (
 	ViewHelp
 	ViewMarketplaceList   // Marketplace browser view
 	ViewMarketplaceDetail // Marketplace detail view
+	ViewQuickMenu         // Quick action menu overlay
 )
 
 // TransitionStyle represents the animation style for view transitions
@@ -57,6 +58,66 @@ const (
 
 // FilterModeNames for display
 var FilterModeNames = []string{"All", "Discover", "Ready", "Installed"}
+
+// PluginSortMode represents how to sort plugin results
+type PluginSortMode int
+
+const (
+	PluginSortRelevance PluginSortMode = iota // Default: search relevance
+	PluginSortName                            // Alphabetical by plugin name
+	PluginSortUpdated                         // Most recently updated first
+	PluginSortStars                           // Most stars first (if available)
+)
+
+// PluginSortModeNames for display
+var PluginSortModeNames = []string{"Relevance", "↑Name", "↑Updated", "↑Stars"}
+
+// FacetType distinguishes between filter and sort facets
+type FacetType int
+
+const (
+	FacetFilter FacetType = iota
+	FacetSort
+)
+
+// Facet represents a unified filter or sort option
+type Facet struct {
+	Type            FacetType
+	DisplayName     string
+	FilterMode      FilterMode
+	SortMode        PluginSortMode
+	MarketplaceSort MarketplaceSortMode
+	IsActive        bool
+}
+
+// Plugin list facets: All | Discover | Ready | Installed | ↑Name | ↑Updated | ↑Stars
+func (m Model) GetPluginFacets() []Facet {
+	facets := []Facet{
+		// Filters (mutually exclusive)
+		{Type: FacetFilter, DisplayName: "All", FilterMode: FilterAll, IsActive: m.filterMode == FilterAll},
+		{Type: FacetFilter, DisplayName: "Discover", FilterMode: FilterDiscover, IsActive: m.filterMode == FilterDiscover},
+		{Type: FacetFilter, DisplayName: "Ready", FilterMode: FilterReady, IsActive: m.filterMode == FilterReady},
+		{Type: FacetFilter, DisplayName: "Installed", FilterMode: FilterInstalled, IsActive: m.filterMode == FilterInstalled},
+		// Sorts (independently active)
+		{Type: FacetSort, DisplayName: "↑Name", SortMode: PluginSortName, IsActive: m.pluginSortMode == PluginSortName},
+		{Type: FacetSort, DisplayName: "↑Updated", SortMode: PluginSortUpdated, IsActive: m.pluginSortMode == PluginSortUpdated},
+		{Type: FacetSort, DisplayName: "↑Stars", SortMode: PluginSortStars, IsActive: m.pluginSortMode == PluginSortStars},
+	}
+	return facets
+}
+
+// Marketplace list facets: All | Installed | Cached | ↑Plugins | ↑Stars | ↑Name | ↑Updated
+func (m Model) GetMarketplaceFacets() []Facet {
+	// For marketplace view, we currently don't have filter modes, so we'll add basic status filters
+	facets := []Facet{
+		// Sorts (marketplace currently only has sorts, but we'll keep structure consistent)
+		{Type: FacetSort, DisplayName: "↑Plugins", MarketplaceSort: SortByPluginCount, IsActive: m.marketplaceSortMode == SortByPluginCount},
+		{Type: FacetSort, DisplayName: "↑Stars", MarketplaceSort: SortByStars, IsActive: m.marketplaceSortMode == SortByStars},
+		{Type: FacetSort, DisplayName: "↑Name", MarketplaceSort: SortByName, IsActive: m.marketplaceSortMode == SortByName},
+		{Type: FacetSort, DisplayName: "↑Updated", MarketplaceSort: SortByLastUpdated, IsActive: m.marketplaceSortMode == SortByLastUpdated},
+	}
+	return facets
+}
 
 // TransitionStyleNames for display
 var TransitionStyleNames = []string{"Instant", "Zoom", "Slide V"}
@@ -98,6 +159,7 @@ type Model struct {
 	viewState           ViewState
 	displayMode         ListDisplayMode
 	filterMode          FilterMode
+	pluginSortMode      PluginSortMode
 	windowWidth         int
 	windowHeight        int
 	copiedFlash         bool // Brief "Copied!" indicator (for 'c')
@@ -116,9 +178,14 @@ type Model struct {
 	previousViewBeforeMarketplace ViewState
 
 	// Marketplace autocomplete state (for @marketplace-name filtering)
-	marketplaceAutocompleteActive bool                // True when showing marketplace picker
-	marketplaceAutocompleteList   []MarketplaceItem   // Filtered marketplaces for autocomplete
-	marketplaceAutocompleteCursor int                 // Selected index in autocomplete list
+	marketplaceAutocompleteActive bool              // True when showing marketplace picker
+	marketplaceAutocompleteList   []MarketplaceItem // Filtered marketplaces for autocomplete
+	marketplaceAutocompleteCursor int               // Selected index in autocomplete list
+
+	// Quick menu state
+	quickMenuActive       bool      // True when quick menu overlay is shown
+	quickMenuCursor       int       // Selected action index in quick menu
+	quickMenuPreviousView ViewState // View to return to when closing menu
 
 	// Animation state
 	cursorY         float64 // Animated cursor position
@@ -375,6 +442,134 @@ func (m *Model) NextFilter() {
 func (m *Model) PrevFilter() {
 	m.filterMode = (m.filterMode + 3) % 4 // +3 is same as -1 mod 4
 	m.applyFilter()
+}
+
+// NextFacet cycles to the next facet (unified filter/sort)
+func (m *Model) NextFacet() {
+	facets := m.GetPluginFacets()
+
+	// Find current active facet index
+	currentIdx := -1
+	for i, f := range facets {
+		if f.IsActive {
+			// For sorts, check if it matches sort mode
+			if f.Type == FacetSort && f.SortMode == m.pluginSortMode {
+				currentIdx = i
+				break
+			}
+			// For filters, check if it matches filter mode
+			if f.Type == FacetFilter && f.FilterMode == m.filterMode {
+				currentIdx = i
+				break
+			}
+		}
+	}
+
+	// If no match found (shouldn't happen), start from beginning
+	if currentIdx == -1 {
+		currentIdx = 0
+	}
+
+	// Move to next facet
+	nextIdx := (currentIdx + 1) % len(facets)
+	nextFacet := facets[nextIdx]
+
+	// Apply the facet
+	if nextFacet.Type == FacetFilter {
+		m.filterMode = nextFacet.FilterMode
+		m.applyFilter()
+	} else {
+		m.pluginSortMode = nextFacet.SortMode
+		m.applySortAndFilter()
+	}
+}
+
+// PrevFacet cycles to the previous facet (unified filter/sort)
+func (m *Model) PrevFacet() {
+	facets := m.GetPluginFacets()
+
+	// Find current active facet index
+	currentIdx := -1
+	for i, f := range facets {
+		if f.IsActive {
+			// For sorts, check if it matches sort mode
+			if f.Type == FacetSort && f.SortMode == m.pluginSortMode {
+				currentIdx = i
+				break
+			}
+			// For filters, check if it matches filter mode
+			if f.Type == FacetFilter && f.FilterMode == m.filterMode {
+				currentIdx = i
+				break
+			}
+		}
+	}
+
+	// If no match found (shouldn't happen), start from end
+	if currentIdx == -1 {
+		currentIdx = len(facets) - 1
+	}
+
+	// Move to previous facet
+	prevIdx := (currentIdx - 1 + len(facets)) % len(facets)
+	prevFacet := facets[prevIdx]
+
+	// Apply the facet
+	if prevFacet.Type == FacetFilter {
+		m.filterMode = prevFacet.FilterMode
+		m.applyFilter()
+	} else {
+		m.pluginSortMode = prevFacet.SortMode
+		m.applySortAndFilter()
+	}
+}
+
+// applySortAndFilter applies both filter and sort to current results
+func (m *Model) applySortAndFilter() {
+	// Re-run search with current filter
+	m.results = m.filteredSearch(m.textInput.Value())
+
+	// Apply sort mode
+	m.applyPluginSort()
+
+	// Reset cursor
+	m.cursor = 0
+	m.scrollOffset = 0
+	m.SnapCursorToTarget()
+}
+
+// applyPluginSort sorts the current results based on pluginSortMode
+func (m *Model) applyPluginSort() {
+	// If relevance mode, keep search-based ranking
+	if m.pluginSortMode == PluginSortRelevance {
+		return
+	}
+
+	// Apply custom sorting
+	results := m.results
+	switch m.pluginSortMode {
+	case PluginSortName:
+		sort.Slice(results, func(i, j int) bool {
+			return results[i].Plugin.Name < results[j].Plugin.Name
+		})
+	case PluginSortUpdated:
+		// Sort by last updated (most recent first)
+		// Note: We'd need updated_at field in plugin.Plugin for this
+		// For now, maintain current order as fallback
+		sort.Slice(results, func(i, j int) bool {
+			// Fallback: sort by name if no updated timestamp available
+			return results[i].Plugin.Name < results[j].Plugin.Name
+		})
+	case PluginSortStars:
+		// Sort by GitHub stars (most first)
+		// Note: We'd need stars field in plugin.Plugin for this
+		// For now, maintain current order as fallback
+		sort.Slice(results, func(i, j int) bool {
+			// Fallback: sort by name if no stars available
+			return results[i].Plugin.Name < results[j].Plugin.Name
+		})
+	}
+	m.results = results
 }
 
 // applyFilter re-runs search with current filter and resets cursor
@@ -790,6 +985,60 @@ func (m *Model) NextMarketplaceSort() {
 // PrevMarketplaceSort cycles to previous sort mode
 func (m *Model) PrevMarketplaceSort() {
 	m.marketplaceSortMode = (m.marketplaceSortMode + 3) % 4
+	m.ApplyMarketplaceSort()
+	m.marketplaceCursor = 0
+	m.marketplaceScrollOffset = 0
+}
+
+// NextMarketplaceFacet cycles to next facet in marketplace view
+func (m *Model) NextMarketplaceFacet() {
+	facets := m.GetMarketplaceFacets()
+
+	// Find current active facet
+	currentIdx := -1
+	for i, f := range facets {
+		if f.IsActive && f.MarketplaceSort == m.marketplaceSortMode {
+			currentIdx = i
+			break
+		}
+	}
+
+	// Move to next
+	if currentIdx == -1 {
+		currentIdx = 0
+	}
+	nextIdx := (currentIdx + 1) % len(facets)
+	nextFacet := facets[nextIdx]
+
+	// Apply facet
+	m.marketplaceSortMode = nextFacet.MarketplaceSort
+	m.ApplyMarketplaceSort()
+	m.marketplaceCursor = 0
+	m.marketplaceScrollOffset = 0
+}
+
+// PrevMarketplaceFacet cycles to previous facet in marketplace view
+func (m *Model) PrevMarketplaceFacet() {
+	facets := m.GetMarketplaceFacets()
+
+	// Find current active facet
+	currentIdx := -1
+	for i, f := range facets {
+		if f.IsActive && f.MarketplaceSort == m.marketplaceSortMode {
+			currentIdx = i
+			break
+		}
+	}
+
+	// Move to previous
+	if currentIdx == -1 {
+		currentIdx = len(facets) - 1
+	}
+	prevIdx := (currentIdx - 1 + len(facets)) % len(facets)
+	prevFacet := facets[prevIdx]
+
+	// Apply facet
+	m.marketplaceSortMode = prevFacet.MarketplaceSort
 	m.ApplyMarketplaceSort()
 	m.marketplaceCursor = 0
 	m.marketplaceScrollOffset = 0
