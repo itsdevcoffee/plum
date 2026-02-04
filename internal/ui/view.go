@@ -152,21 +152,19 @@ func (m Model) renderFilterTabs() string {
 		Foreground(TextTertiary).
 		Padding(0, 1)
 
-	// Build tabs with counts
-	allCount := len(m.allPlugins)
-	discoverCount := m.DiscoverableCount()
-	readyCount := m.ReadyCount()
-	installCount := m.InstalledCount()
+	// Build tabs with dynamic counts based on current search
+	query := m.textInput.Value()
+	counts := m.getDynamicFilterCounts(query)
 
 	tabs := []struct {
 		name   string
 		count  int
 		active bool
 	}{
-		{"All", allCount, m.filterMode == FilterAll},
-		{"Discover", discoverCount, m.filterMode == FilterDiscover},
-		{"Ready", readyCount, m.filterMode == FilterReady},
-		{"Installed", installCount, m.filterMode == FilterInstalled},
+		{"All", counts[FilterAll], m.filterMode == FilterAll},
+		{"Discover", counts[FilterDiscover], m.filterMode == FilterDiscover},
+		{"Ready", counts[FilterReady], m.filterMode == FilterReady},
+		{"Installed", counts[FilterInstalled], m.filterMode == FilterInstalled},
 	}
 
 	var parts []string
@@ -200,8 +198,8 @@ func (m Model) listView() string {
 	b.WriteString(TitleStyle.Render(title))
 	b.WriteString("\n\n")
 
-	// Search input
-	b.WriteString(m.textInput.View())
+	// Search input with custom styling for @marketplace syntax
+	b.WriteString(m.renderSearchInput())
 	b.WriteString("\n")
 
 	// Filter tabs
@@ -228,6 +226,9 @@ func (m Model) listView() string {
 		}
 	} else if len(m.allPlugins) == 0 {
 		b.WriteString(DescriptionStyle.Render("No plugins found."))
+	} else if m.marketplaceAutocompleteActive {
+		// Show marketplace picker for autocomplete
+		b.WriteString(m.renderMarketplaceAutocomplete())
 	} else if len(m.results) == 0 {
 		b.WriteString(DescriptionStyle.Render("No plugins found matching your search."))
 	} else {
@@ -250,6 +251,96 @@ func (m Model) listView() string {
 }
 
 // renderPluginItem renders a single plugin item based on display mode
+// renderSearchInput renders the search input with custom styling for @marketplace syntax
+func (m Model) renderSearchInput() string {
+	value := m.textInput.Value()
+
+	// If query starts with @, style the @marketplace-name part with background
+	if strings.HasPrefix(value, "@") {
+		// Find first space to separate marketplace from search terms
+		spaceIdx := strings.Index(value, " ")
+
+		var marketplacePart, searchPart string
+		if spaceIdx == -1 {
+			marketplacePart = value
+			searchPart = ""
+		} else {
+			marketplacePart = value[:spaceIdx]
+			searchPart = value[spaceIdx:]
+		}
+
+		// Style marketplace part with contrasting background
+		marketplaceStyle := lipgloss.NewStyle().
+			Foreground(TextPrimary).
+			Background(PlumMedium).
+			Bold(true).
+			Padding(0, 1)
+
+		// Render with prompt
+		promptStyled := SearchPromptStyle.Render(m.textInput.Prompt)
+		marketplaceStyled := marketplaceStyle.Render(marketplacePart)
+
+		// Add cursor indicator at end if focused
+		cursorIndicator := ""
+		if m.textInput.Focused() {
+			cursorIndicator = lipgloss.NewStyle().Foreground(PlumBright).Render("│")
+		}
+
+		return promptStyled + marketplaceStyled + searchPart + cursorIndicator
+	}
+
+	// Normal rendering for non-@ queries
+	return m.textInput.View()
+}
+
+// renderMarketplaceAutocomplete renders the marketplace picker for autocomplete
+func (m Model) renderMarketplaceAutocomplete() string {
+	var b strings.Builder
+
+	// Header
+	headerStyle := lipgloss.NewStyle().Foreground(PeachSoft).Bold(true)
+	b.WriteString(headerStyle.Render("Select marketplace:"))
+	b.WriteString("\n\n")
+
+	// Render marketplace list
+	if len(m.marketplaceAutocompleteList) == 0 {
+		b.WriteString(DescriptionStyle.Render("No marketplaces found."))
+	} else {
+		for i, item := range m.marketplaceAutocompleteList {
+			isSelected := i == m.marketplaceAutocompleteCursor
+
+			// Selection prefix
+			var prefix string
+			if isSelected {
+				prefix = HighlightBarFull.String()
+			} else {
+				prefix = "  "
+			}
+
+			// Name style
+			var nameStyle lipgloss.Style
+			if isSelected {
+				nameStyle = PluginNameSelectedStyle
+			} else {
+				nameStyle = PluginNameStyle
+			}
+
+			name := nameStyle.Render(item.DisplayName)
+
+			// Plugin count
+			pluginCount := lipgloss.NewStyle().Foreground(TextTertiary).Render(
+				fmt.Sprintf("(%d plugins)", item.TotalPluginCount))
+
+			b.WriteString(fmt.Sprintf("%s%s  %s\n", prefix, name, pluginCount))
+		}
+	}
+
+	hint := HelpStyle.Render("\n↑↓ to navigate  •  Enter to select  •  Keep typing to filter")
+	b.WriteString(hint)
+
+	return b.String()
+}
+
 func (m Model) renderPluginItem(p plugin.Plugin, selected bool) string {
 	if m.displayMode == DisplaySlim {
 		return m.renderPluginItemSlim(p, selected)
@@ -388,6 +479,16 @@ func (m Model) statusBar() string {
 		position = "0/0"
 	}
 
+	// Check if marketplace filter is active
+	query := m.textInput.Value()
+	var marketplaceFilter string
+	if strings.HasPrefix(query, "@") {
+		marketplaceName := strings.TrimPrefix(query, "@")
+		if marketplaceName != "" {
+			marketplaceFilter = fmt.Sprintf("@%s (%d results)", marketplaceName, len(m.results))
+		}
+	}
+
 	// Opposite view mode name for the toggle hint
 	var oppositeView string
 	if m.displayMode == DisplaySlim {
@@ -404,32 +505,48 @@ func (m Model) statusBar() string {
 	switch {
 	case useVerbose:
 		// Verbose: full descriptions (only in card/verbose mode)
-		parts = append(parts, position+" "+m.FilterModeName())
+		if marketplaceFilter != "" {
+			parts = append(parts, marketplaceFilter)
+		} else {
+			parts = append(parts, position+" "+m.FilterModeName())
+		}
 		parts = append(parts, KeyStyle.Render("↑↓/ctrl+jk")+" navigate")
-		parts = append(parts, KeyStyle.Render("tab")+" filter")
+		parts = append(parts, KeyStyle.Render("tab")+" next view")
 		parts = append(parts, KeyStyle.Render("Shift+V")+" "+oppositeView)
 		parts = append(parts, KeyStyle.Render("enter")+" details")
 		parts = append(parts, KeyStyle.Render("?"))
 
 	case width >= 70:
 		// Standard: concise but complete
-		parts = append(parts, position)
+		if marketplaceFilter != "" {
+			parts = append(parts, marketplaceFilter)
+		} else {
+			parts = append(parts, position)
+		}
 		parts = append(parts, KeyStyle.Render("↑↓")+" nav")
-		parts = append(parts, KeyStyle.Render("tab")+" filter")
+		parts = append(parts, KeyStyle.Render("tab")+" next view")
 		parts = append(parts, KeyStyle.Render("Shift+M")+" marketplaces")
 		parts = append(parts, KeyStyle.Render("Shift+V")+" "+oppositeView)
 		parts = append(parts, KeyStyle.Render("?")+" help")
 
 	case width >= 50:
 		// Compact: essentials only
-		parts = append(parts, position)
+		if marketplaceFilter != "" {
+			parts = append(parts, marketplaceFilter)
+		} else {
+			parts = append(parts, position)
+		}
 		parts = append(parts, KeyStyle.Render("↑↓")+" nav")
-		parts = append(parts, KeyStyle.Render("tab")+" filter")
+		parts = append(parts, KeyStyle.Render("tab")+" next view")
 		parts = append(parts, KeyStyle.Render("?")+" help")
 
 	default:
 		// Minimal: bare minimum
-		parts = append(parts, position)
+		if marketplaceFilter != "" {
+			parts = append(parts, marketplaceFilter)
+		} else {
+			parts = append(parts, position)
+		}
 		parts = append(parts, KeyStyle.Render("?")+"=help")
 	}
 

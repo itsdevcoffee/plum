@@ -9,41 +9,25 @@ import (
 
 // helpView renders the help view with sticky header/footer
 func (m Model) helpView() string {
-	// Wrapper with only left/right margin (no top/bottom)
-	helpWrapperStyle := lipgloss.NewStyle().
-		Padding(0, 2, 0, 2)
+	helpWrapperStyle := lipgloss.NewStyle().Padding(0, 2, 0, 2)
+	helpBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(PlumBright).
+		Padding(1, 2)
 
-	// Generate sticky header
 	header := m.generateHelpHeader()
-
-	// Generate sticky footer
 	footer := m.generateHelpFooter()
 
-	// Use viewport for scrollable content
 	if m.helpViewport.Height > 0 {
 		viewportContent := m.helpViewport.View()
-
-		// Add scrollbar (aligned with viewport only)
 		scrollbar := m.renderHelpScrollbar()
 		contentWithScrollbar := lipgloss.JoinHorizontal(lipgloss.Top, viewportContent, scrollbar)
 
-		// Stack: header (sticky) + viewport (scrolls) + footer (sticky)
-		fullContent := lipgloss.JoinVertical(lipgloss.Left,
-			header,
-			contentWithScrollbar,
-			footer,
-		)
-
-		// Wrap in box
-		helpBoxStyle := lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(PlumBright).
-			Padding(1, 2)
-
+		fullContent := lipgloss.JoinVertical(lipgloss.Left, header, contentWithScrollbar, footer)
 		return helpWrapperStyle.Render(helpBoxStyle.Render(fullContent))
 	}
 
-	// Fallback: render everything together (no viewport)
+	// Fallback when viewport not initialized
 	var fullContent strings.Builder
 	fullContent.WriteString(header)
 	fullContent.WriteString("\n")
@@ -51,23 +35,16 @@ func (m Model) helpView() string {
 	fullContent.WriteString("\n")
 	fullContent.WriteString(footer)
 
-	helpBoxStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(PlumBright).
-		Padding(1, 2)
-
 	return helpWrapperStyle.Render(helpBoxStyle.Render(fullContent.String()))
 }
 
 // generateHelpHeader generates the sticky header
 func (m Model) generateHelpHeader() string {
-	var b strings.Builder
-
-	installedOnlyStyle := lipgloss.NewStyle().Foreground(Success)
-	contentWidth := 58
+	const contentWidth = 58
 
 	title := DetailTitleStyle.Render("🍑 plum Help")
 
+	installedOnlyStyle := lipgloss.NewStyle().Foreground(Success)
 	legendText := installedOnlyStyle.Render("🟢") + " = installed only"
 	legendStyle := lipgloss.NewStyle().
 		Foreground(TextMuted).
@@ -77,21 +54,19 @@ func (m Model) generateHelpHeader() string {
 
 	headerLine := lipgloss.JoinHorizontal(lipgloss.Top, title, legend)
 
+	var b strings.Builder
 	b.WriteString(headerLine)
 	b.WriteString("\n")
 	b.WriteString(strings.Repeat("─", contentWidth))
-
 	return b.String()
 }
 
 // generateHelpFooter generates the sticky footer
 func (m Model) generateHelpFooter() string {
 	var b strings.Builder
-
 	b.WriteString(strings.Repeat("─", 58))
 	b.WriteString("\n")
 	b.WriteString(HelpTextStyle.Render("  Press any key to return  (↑↓ to scroll)"))
-
 	return b.String()
 }
 
@@ -122,47 +97,84 @@ func (m Model) generateHelpSections() string {
 	// Views & Browsing section
 	b.WriteString(HelpSectionStyle.Render("  👁️  Views & Browsing"))
 	b.WriteString("\n")
-	viewKeys := []struct{ key, desc string }{
-		{"Enter", "View details"},
-		{"Shift+M", "Marketplace browser"},
-		{"?", "Toggle help"},
+	viewKeys := []struct{ key, desc, context string }{
+		{"Enter", "View details", "(plugin/marketplace list)"},
+		{"Shift+M", "Marketplace browser", "(any view)"},
+		{"?", "Toggle help", "(any view)"},
 	}
 	for _, h := range viewKeys {
-		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
-	}
-	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
-	b.WriteString("\n")
-
-	// Plugin Actions section
-	b.WriteString(HelpSectionStyle.Render("  📦 Plugin Actions ") + contextStyle.Render("(detail view)"))
-	b.WriteString("\n")
-	pluginKeys := []struct{ key, desc, suffix string }{
-		{"c", "Copy install command", ""},
-		{"g", "Open on GitHub", ""},
-		{"o", "Open local directory", " 🟢"},
-		{"p", "Copy local path", " 🟢"},
-		{"l", "Copy GitHub link", ""},
-		{"f", "Filter by marketplace", ""},
-	}
-	for _, h := range pluginKeys {
 		desc := HelpTextStyle.Render(h.desc)
-		if h.suffix != "" {
-			desc += installedOnlyStyle.Render(h.suffix)
+		if h.context != "" {
+			desc += " " + contextStyle.Render(h.context)
 		}
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), desc))
 	}
 	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
 	b.WriteString("\n")
 
+	// Plugin Actions section
+	b.WriteString(HelpSectionStyle.Render("  📦 Plugin Actions ") + contextStyle.Render("(plugin detail view)"))
+	b.WriteString("\n")
+	pluginKeys := []struct{ key, desc, suffix string }{
+		{"c", "Copy install command", ""},
+		{"y", "Copy plugin install", " (discover only)"},
+		{"g", "Open on GitHub", ""},
+		{"o", "Open local directory", " 🟢"},
+		{"p", "Copy local path", " 🟢"},
+		{"l", "Copy GitHub link", ""},
+	}
+	for _, h := range pluginKeys {
+		desc := HelpTextStyle.Render(h.desc)
+		if h.suffix != "" {
+			if strings.Contains(h.suffix, "🟢") {
+				desc += installedOnlyStyle.Render(h.suffix)
+			} else {
+				desc += contextStyle.Render(h.suffix)
+			}
+		}
+		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), desc))
+	}
+	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
+	b.WriteString("\n")
+
+	// Marketplace Actions section
+	b.WriteString(HelpSectionStyle.Render("  🏪 Marketplace Actions ") + contextStyle.Render("(marketplace detail)"))
+	b.WriteString("\n")
+	marketplaceKeys := []struct{ key, desc string }{
+		{"c", "Copy marketplace install command"},
+		{"f", "Filter plugins by this marketplace"},
+		{"g", "Open on GitHub"},
+		{"l", "Copy GitHub link"},
+	}
+	for _, h := range marketplaceKeys {
+		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
+	}
+	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
+	b.WriteString("\n")
+
 	// Display & Filters section
-	b.WriteString(HelpSectionStyle.Render("  🎨 Display & Filters"))
+	b.WriteString(HelpSectionStyle.Render("  🎨 Display & Views ") + contextStyle.Render("(plugin list)"))
 	b.WriteString("\n")
 	displayKeys := []struct{ key, desc string }{
-		{"Tab →", "Next filter"},
-		{"Shift+Tab ←", "Previous filter"},
-		{"Shift+V", "Toggle view mode"},
+		{"Tab →", "Next view (All/Discover/Ready/Installed)"},
+		{"Shift+Tab ←", "Previous view"},
+		{"Shift+V", "Toggle display mode (card/slim)"},
+		{"@marketplace", "Filter by marketplace (in search)"},
 	}
 	for _, h := range displayKeys {
+		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
+	}
+	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
+	b.WriteString("\n")
+
+	// Marketplace Sorting section
+	b.WriteString(HelpSectionStyle.Render("  🔄 Marketplace Sorting ") + contextStyle.Render("(marketplace list)"))
+	b.WriteString("\n")
+	sortKeys := []struct{ key, desc string }{
+		{"Tab →", "Next sort order (Plugins/Stars/Name/Updated)"},
+		{"Shift+Tab ←", "Previous sort order"},
+	}
+	for _, h := range sortKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
 	}
 	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
@@ -185,23 +197,14 @@ func (m Model) generateHelpSections() string {
 
 // renderHelpScrollbar renders a plum-themed scrollbar for the help viewport
 func (m Model) renderHelpScrollbar() string {
-	if m.helpViewport.Height <= 0 {
+	if m.helpViewport.Height <= 0 || (m.helpViewport.AtTop() && m.helpViewport.AtBottom()) {
 		return ""
 	}
 
-	// Check if content is scrollable
-	if m.helpViewport.AtTop() && m.helpViewport.AtBottom() {
-		return "" // Content fits, no scrollbar needed
-	}
-
-	// Get dimensions
 	visibleHeight := m.helpViewport.Height
 	scrollPercent := m.helpViewport.ScrollPercent()
-
-	// Estimate total content height (heuristic)
 	totalHeight := visibleHeight * 2
 
-	// Calculate thumb size (proportional)
 	thumbHeight := (visibleHeight * visibleHeight) / totalHeight
 	if thumbHeight < 1 {
 		thumbHeight = 1
@@ -210,16 +213,13 @@ func (m Model) renderHelpScrollbar() string {
 		thumbHeight = visibleHeight
 	}
 
-	// Calculate thumb position
 	trackHeight := visibleHeight - thumbHeight
 	thumbPos := int(float64(trackHeight) * scrollPercent)
 
-	// Render scrollbar with plum theme
+	thumbStyle := lipgloss.NewStyle().Foreground(PlumBright)
+	trackStyle := lipgloss.NewStyle().Foreground(BorderSubtle)
+
 	var scrollbar strings.Builder
-
-	thumbStyle := lipgloss.NewStyle().Foreground(PlumBright)   // Orange thumb
-	trackStyle := lipgloss.NewStyle().Foreground(BorderSubtle) // Brown track
-
 	for i := 0; i < visibleHeight; i++ {
 		if i >= thumbPos && i < thumbPos+thumbHeight {
 			scrollbar.WriteString(thumbStyle.Render("█"))

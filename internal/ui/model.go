@@ -115,6 +115,11 @@ type Model struct {
 	selectedMarketplace           *MarketplaceItem
 	previousViewBeforeMarketplace ViewState
 
+	// Marketplace autocomplete state (for @marketplace-name filtering)
+	marketplaceAutocompleteActive bool                // True when showing marketplace picker
+	marketplaceAutocompleteList   []MarketplaceItem   // Filtered marketplaces for autocomplete
+	marketplaceAutocompleteCursor int                 // Selected index in autocomplete list
+
 	// Animation state
 	cursorY         float64 // Animated cursor position
 	cursorYVelocity float64
@@ -136,7 +141,7 @@ type Model struct {
 // NewModel creates a new Model with initial state
 func NewModel() Model {
 	ti := textinput.New()
-	ti.Placeholder = "Search plugins..."
+	ti.Placeholder = "Search plugins (or @marketplace-name to filter)..."
 	ti.Focus()
 	ti.CharLimit = 100
 	ti.Width = 40
@@ -302,19 +307,21 @@ func (m *Model) UpdateScroll() {
 		return
 	}
 
-	// Cursor too close to top - scroll up
 	if m.cursor < m.scrollOffset+scrollBuffer {
 		m.scrollOffset = m.cursor - scrollBuffer
 		if m.scrollOffset < 0 {
 			m.scrollOffset = 0
 		}
+		return
 	}
 
-	// Cursor too close to bottom - scroll down
 	if m.cursor >= m.scrollOffset+maxVisible-scrollBuffer {
 		m.scrollOffset = m.cursor - maxVisible + scrollBuffer + 1
 		if m.scrollOffset > len(m.results)-maxVisible {
 			m.scrollOffset = len(m.results) - maxVisible
+		}
+		if m.scrollOffset < 0 {
+			m.scrollOffset = 0
 		}
 	}
 }
@@ -339,7 +346,6 @@ func (m *Model) ToggleDisplayMode() {
 	} else {
 		m.displayMode = DisplayCard
 	}
-	// Reset scroll to keep cursor visible with new item heights
 	m.UpdateScroll()
 }
 
@@ -383,15 +389,34 @@ func (m *Model) applyFilter() {
 func (m Model) filteredSearch(query string) []search.RankedPlugin {
 	// Check for marketplace filter (starts with @)
 	if strings.HasPrefix(query, "@") {
-		marketplaceName := strings.TrimPrefix(query, "@")
-		var filtered []search.RankedPlugin
+		// Parse: @marketplace-name [optional search terms]
+		parts := strings.SplitN(query[1:], " ", 2)
+		marketplaceName := parts[0]
+		searchTerms := ""
+		if len(parts) > 1 {
+			searchTerms = parts[1]
+		}
+
+		// Filter plugins by marketplace
+		var marketplacePlugins []plugin.Plugin
 		for _, p := range m.allPlugins {
 			if p.Marketplace == marketplaceName {
-				filtered = append(filtered, search.RankedPlugin{
-					Plugin: p,
-					Score:  1.0,
-				})
+				marketplacePlugins = append(marketplacePlugins, p)
 			}
+		}
+
+		// If there are search terms, fuzzy search within the marketplace
+		if searchTerms != "" {
+			return search.Search(searchTerms, marketplacePlugins)
+		}
+
+		// Otherwise return all plugins from this marketplace
+		var filtered []search.RankedPlugin
+		for _, p := range marketplacePlugins {
+			filtered = append(filtered, search.RankedPlugin{
+				Plugin: p,
+				Score:  1.0,
+			})
 		}
 		return filtered
 	}
@@ -438,26 +463,41 @@ func (m Model) FilterModeName() string {
 	return FilterModeNames[m.filterMode]
 }
 
-// ReadyCount returns count of ready-to-install plugins (marketplace installed, plugin not)
-func (m Model) ReadyCount() int {
-	count := 0
-	for _, p := range m.allPlugins {
-		if !p.Installed && !p.IsDiscoverable {
-			count++
-		}
+// getDynamicFilterCounts calculates counts for each filter mode based on current search query
+func (m Model) getDynamicFilterCounts(query string) map[FilterMode]int {
+	counts := make(map[FilterMode]int)
+
+	// For each filter mode, calculate how many results we'd get
+	for _, mode := range []FilterMode{FilterAll, FilterDiscover, FilterReady, FilterInstalled} {
+		// Temporarily set filter mode and get results
+		tempModel := m
+		tempModel.filterMode = mode
+		results := tempModel.filteredSearch(query)
+		counts[mode] = len(results)
 	}
-	return count
+
+	return counts
 }
 
-// DiscoverableCount returns count of discoverable plugins (from uninstalled marketplaces)
+// ReadyCount returns count of ready-to-install plugins
+func (m Model) ReadyCount() int {
+	return m.countPlugins(func(p plugin.Plugin) bool {
+		return !p.Installed && !p.IsDiscoverable
+	})
+}
+
+// DiscoverableCount returns count of discoverable plugins
 func (m Model) DiscoverableCount() int {
-	count := 0
-	for _, p := range m.allPlugins {
-		if p.IsDiscoverable {
-			count++
-		}
-	}
-	return count
+	return m.countPlugins(func(p plugin.Plugin) bool {
+		return p.IsDiscoverable
+	})
+}
+
+// InstalledCount returns count of installed plugins
+func (m Model) InstalledCount() int {
+	return m.countPlugins(func(p plugin.Plugin) bool {
+		return p.Installed
+	})
 }
 
 // TotalPlugins returns total plugin count
@@ -465,11 +505,10 @@ func (m Model) TotalPlugins() int {
 	return len(m.allPlugins)
 }
 
-// InstalledCount returns count of installed plugins
-func (m Model) InstalledCount() int {
+func (m Model) countPlugins(predicate func(plugin.Plugin) bool) int {
 	count := 0
 	for _, p := range m.allPlugins {
-		if p.Installed {
+		if predicate(p) {
 			count++
 		}
 	}
@@ -574,15 +613,7 @@ func (m *Model) LoadMarketplaceItems() error {
 	if installed != nil {
 		for fullName := range installed.Plugins {
 			// fullName format: "plugin@marketplace"
-			parts := []string{fullName}
-			if idx := len(fullName) - 1; idx >= 0 {
-				for i := len(fullName) - 1; i >= 0; i-- {
-					if fullName[i] == '@' {
-						parts = []string{fullName[:i], fullName[i+1:]}
-						break
-					}
-				}
-			}
+			parts := strings.SplitN(fullName, "@", 2)
 			if len(parts) == 2 {
 				installedByMarketplace[parts[1]]++
 			}
@@ -732,12 +763,12 @@ func (m *Model) UpdateMarketplaceScroll() {
 		return
 	}
 
-	// Keep cursor visible with buffer
 	if m.marketplaceCursor < m.marketplaceScrollOffset+scrollBuffer {
 		m.marketplaceScrollOffset = m.marketplaceCursor - scrollBuffer
 		if m.marketplaceScrollOffset < 0 {
 			m.marketplaceScrollOffset = 0
 		}
+		return
 	}
 
 	if m.marketplaceCursor >= m.marketplaceScrollOffset+maxVisible-scrollBuffer {
@@ -762,4 +793,60 @@ func (m *Model) PrevMarketplaceSort() {
 	m.ApplyMarketplaceSort()
 	m.marketplaceCursor = 0
 	m.marketplaceScrollOffset = 0
+}
+
+// UpdateMarketplaceAutocomplete updates the marketplace autocomplete list based on query
+func (m *Model) UpdateMarketplaceAutocomplete(query string) {
+	// Extract marketplace filter part (everything after @ until first space)
+	if !strings.HasPrefix(query, "@") {
+		m.marketplaceAutocompleteActive = false
+		return
+	}
+
+	// Find first space to separate marketplace name from search terms
+	parts := strings.SplitN(query[1:], " ", 2)
+	marketplaceFilter := parts[0]
+
+	// If there's a space (even if empty search after), exit autocomplete mode
+	// This handles both "@marketplace search" and "@marketplace " (trailing space)
+	if len(parts) > 1 {
+		m.marketplaceAutocompleteActive = false
+		return
+	}
+
+	// Lazy-load marketplace items if not already loaded
+	if len(m.marketplaceItems) == 0 {
+		_ = m.LoadMarketplaceItems()
+	}
+
+	// We're in autocomplete mode - filter marketplaces
+	m.marketplaceAutocompleteActive = true
+	m.marketplaceAutocompleteList = []MarketplaceItem{}
+
+	for _, item := range m.marketplaceItems {
+		// Match on marketplace name (case-insensitive)
+		if marketplaceFilter == "" || strings.Contains(strings.ToLower(item.Name), strings.ToLower(marketplaceFilter)) {
+			m.marketplaceAutocompleteList = append(m.marketplaceAutocompleteList, item)
+		}
+	}
+
+	// Reset cursor if out of bounds
+	if m.marketplaceAutocompleteCursor >= len(m.marketplaceAutocompleteList) {
+		m.marketplaceAutocompleteCursor = 0
+	}
+}
+
+// SelectMarketplaceAutocomplete completes the marketplace name in the search box
+func (m *Model) SelectMarketplaceAutocomplete() {
+	if !m.marketplaceAutocompleteActive || len(m.marketplaceAutocompleteList) == 0 {
+		return
+	}
+
+	selected := m.marketplaceAutocompleteList[m.marketplaceAutocompleteCursor]
+	m.textInput.SetValue("@" + selected.Name + " ")
+	m.marketplaceAutocompleteActive = false
+	m.marketplaceAutocompleteCursor = 0
+
+	// Move cursor to end
+	m.textInput.SetCursor(len(m.textInput.Value()))
 }
