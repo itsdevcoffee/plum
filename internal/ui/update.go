@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -54,45 +55,40 @@ type clearLocalOpenedFlashMsg struct{}
 // clearClipboardErrorMsg clears the "Clipboard error!" indicator
 type clearClipboardErrorMsg struct{}
 
-// clearCopiedFlash returns a command that clears the flash after a delay
+// clearBreadcrumbMsg clears the breadcrumb indicator
+type clearBreadcrumbMsg struct{}
+
 func clearCopiedFlash() tea.Cmd {
-	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
-		return clearCopiedFlashMsg{}
-	})
+	return clearFlashAfter(2*time.Second, clearCopiedFlashMsg{})
 }
 
-// clearLinkCopiedFlash returns a command that clears the flash after a delay
 func clearLinkCopiedFlash() tea.Cmd {
-	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
-		return clearLinkCopiedFlashMsg{}
-	})
+	return clearFlashAfter(2*time.Second, clearLinkCopiedFlashMsg{})
 }
 
-// clearPathCopiedFlash returns a command that clears the flash after a delay
 func clearPathCopiedFlash() tea.Cmd {
-	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
-		return clearPathCopiedFlashMsg{}
-	})
+	return clearFlashAfter(2*time.Second, clearPathCopiedFlashMsg{})
 }
 
-// clearGithubOpenedFlash returns a command that clears the flash after a delay
 func clearGithubOpenedFlash() tea.Cmd {
-	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
-		return clearGithubOpenedFlashMsg{}
-	})
+	return clearFlashAfter(2*time.Second, clearGithubOpenedFlashMsg{})
 }
 
-// clearLocalOpenedFlash returns a command that clears the flash after a delay
 func clearLocalOpenedFlash() tea.Cmd {
-	return tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
-		return clearLocalOpenedFlashMsg{}
-	})
+	return clearFlashAfter(2*time.Second, clearLocalOpenedFlashMsg{})
 }
 
-// clearClipboardError returns a command that clears the error flash after a delay
 func clearClipboardError() tea.Cmd {
-	return tea.Tick(time.Second*3, func(t time.Time) tea.Msg {
-		return clearClipboardErrorMsg{}
+	return clearFlashAfter(3*time.Second, clearClipboardErrorMsg{})
+}
+
+func clearBreadcrumbAfter(d time.Duration) tea.Cmd {
+	return clearFlashAfter(d, clearBreadcrumbMsg{})
+}
+
+func clearFlashAfter(duration time.Duration, msg tea.Msg) tea.Cmd {
+	return tea.Tick(duration, func(t time.Time) tea.Msg {
+		return msg
 	})
 }
 
@@ -127,83 +123,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.windowHeight = msg.Height
 		m.textInput.Width = msg.Width - 10
 
-		// Initialize/update help viewport
-		viewportWidth := 58
-
-		if m.helpViewport.Width == 0 {
-			// Initial creation
-			viewportHeight := msg.Height - 9
-			if viewportHeight < 5 {
-				viewportHeight = 5
-			}
-			m.helpViewport = viewport.New(viewportWidth, viewportHeight)
-		} else {
-			// Always update width
-			m.helpViewport.Width = viewportWidth
-
-			// If in help view, recalculate height based on content + terminal size
-			if m.viewState == ViewHelp {
-				sectionsContent := m.generateHelpSections()
-				contentHeight := lipgloss.Height(sectionsContent)
-				maxHeight := msg.Height - 9
-
-				if maxHeight < 3 {
-					maxHeight = 3
-				}
-
-				// Resize viewport to fit
-				if contentHeight < maxHeight {
-					m.helpViewport.Height = contentHeight
-				} else {
-					m.helpViewport.Height = maxHeight
-				}
-
-				// Re-set content to update wrapping
-				m.helpViewport.SetContent(sectionsContent)
-			}
-		}
-
-		// Initialize/update detail viewport
-		detailViewportWidth := m.ContentWidth() - 10
-		if detailViewportWidth < 40 {
-			detailViewportWidth = 40
-		}
-
-		if m.detailViewport.Width == 0 {
-			// Initial creation
-			// Overhead: header(2) + footer(1) + box border(2) + box padding(2) + buffer(2) = 9
-			viewportHeight := msg.Height - 9
-			if viewportHeight < 5 {
-				viewportHeight = 5
-			}
-			m.detailViewport = viewport.New(detailViewportWidth, viewportHeight)
-		} else {
-			// Always update width
-			m.detailViewport.Width = detailViewportWidth
-
-			// If in detail view, recalculate height based on content + terminal size
-			if m.viewState == ViewDetail {
-				if p := m.SelectedPlugin(); p != nil {
-					detailContent := m.generateDetailContent(p, detailViewportWidth)
-					contentHeight := lipgloss.Height(detailContent)
-					maxHeight := msg.Height - 9 // Match help menu overhead
-
-					if maxHeight < 3 {
-						maxHeight = 3
-					}
-
-					// Resize viewport to fit
-					if contentHeight < maxHeight {
-						m.detailViewport.Height = contentHeight
-					} else {
-						m.detailViewport.Height = maxHeight
-					}
-
-					// Re-set content to update wrapping
-					m.detailViewport.SetContent(detailContent)
-				}
-			}
-		}
+		(&m).initOrUpdateHelpViewport(msg.Height)
+		(&m).initOrUpdateDetailViewport(msg.Height)
 
 		return m, nil
 
@@ -292,12 +213,92 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.localOpenedFlash = false
 		return m, nil
 
+	case clearBreadcrumbMsg:
+		m.breadcrumbShown = false
+		return m, nil
+
 	case clearClipboardErrorMsg:
 		m.clipboardErrorFlash = false
 		return m, nil
 	}
 
 	return m, nil
+}
+
+func (m *Model) initOrUpdateHelpViewport(terminalHeight int) {
+	const viewportWidth = 58
+	const overhead = 9
+
+	if m.helpViewport.Width == 0 {
+		viewportHeight := terminalHeight - overhead
+		if viewportHeight < 3 {
+			viewportHeight = 3
+		}
+		if viewportHeight > terminalHeight-4 {
+			viewportHeight = terminalHeight - 4
+		}
+		m.helpViewport = viewport.New(viewportWidth, viewportHeight)
+		return
+	}
+
+	m.helpViewport.Width = viewportWidth
+
+	if m.viewState == ViewHelp {
+		sectionsContent := m.generateHelpSections()
+		contentHeight := lipgloss.Height(sectionsContent)
+		maxHeight := terminalHeight - overhead
+		if maxHeight < 3 {
+			maxHeight = 3
+		}
+
+		if contentHeight < maxHeight {
+			m.helpViewport.Height = contentHeight
+		} else {
+			m.helpViewport.Height = maxHeight
+		}
+
+		m.helpViewport.SetContent(sectionsContent)
+	}
+}
+
+func (m *Model) initOrUpdateDetailViewport(terminalHeight int) {
+	const overhead = 9
+	const minWidth = 40
+
+	detailViewportWidth := m.ContentWidth() - 10
+	if detailViewportWidth < minWidth {
+		detailViewportWidth = minWidth
+	}
+
+	if m.detailViewport.Width == 0 {
+		viewportHeight := terminalHeight - overhead
+		if viewportHeight < 5 {
+			viewportHeight = 5
+		}
+		m.detailViewport = viewport.New(detailViewportWidth, viewportHeight)
+		return
+	}
+
+	m.detailViewport.Width = detailViewportWidth
+
+	if m.viewState == ViewDetail {
+		if p := m.SelectedPlugin(); p != nil {
+			detailContent := m.generateDetailContent(p, detailViewportWidth)
+			contentHeight := lipgloss.Height(detailContent)
+			maxHeight := terminalHeight - overhead
+			if maxHeight < 3 {
+				maxHeight = 3
+			}
+
+			if contentHeight < maxHeight {
+				m.detailViewport.Height = contentHeight
+			} else {
+				m.detailViewport.Height = maxHeight
+			}
+
+			m.detailViewport.SetContent(detailContent)
+		}
+	}
 }
 
 // handleKeyMsg handles keyboard input
@@ -542,63 +543,39 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, animationTick()
 
 	case "c":
-		// Copy marketplace install command (for discoverable) or plugin install (for normal)
 		if p := m.SelectedPlugin(); p != nil && !p.Installed {
 			var copyText string
 			if p.IsDiscoverable {
-				// Copy marketplace add command for discoverable plugins
 				copyText = fmt.Sprintf("/plugin marketplace add %s", p.MarketplaceSource)
 			} else {
-				// Copy plugin install command for normal plugins
 				copyText = p.InstallCommand()
 			}
 
 			if err := clipboard.WriteAll(copyText); err == nil {
 				m.copiedFlash = true
 				return m, clearCopiedFlash()
-			} else {
-				// Show error to user instead of silently failing
-				m.clipboardErrorFlash = true
-				return m, clearClipboardError()
 			}
+			m.clipboardErrorFlash = true
+			return m, clearClipboardError()
 		}
 		return m, nil
 
 	case "y":
-		// Copy plugin install command (only for discoverable plugins)
 		if p := m.SelectedPlugin(); p != nil && !p.Installed && p.IsDiscoverable {
 			if err := clipboard.WriteAll(p.InstallCommand()); err == nil {
 				m.copiedFlash = true
 				return m, clearCopiedFlash()
-			} else {
-				// Show error to user instead of silently failing
-				m.clipboardErrorFlash = true
-				return m, clearClipboardError()
 			}
+			m.clipboardErrorFlash = true
+			return m, clearClipboardError()
 		}
 		return m, nil
 
 	case "g":
-		// Open plugin GitHub URL in browser
 		if p := m.SelectedPlugin(); p != nil {
 			url := p.GitHubURL()
-			if url != "" {
-				// Open in browser (cross-platform)
-				var cmd string
-				var args []string
-				switch runtime.GOOS {
-				case "darwin":
-					cmd = "open"
-					args = []string{url}
-				case "windows":
-					cmd = "cmd"
-					args = []string{"/c", "start", url}
-				default: // linux, bsd, etc.
-					cmd = "xdg-open"
-					args = []string{url}
-				}
-				// #nosec G204 -- cmd is determined by runtime.GOOS (trusted), args is plugin GitHub URL (validated)
-				_ = exec.Command(cmd, args...).Start()
+			if url != "" && strings.HasPrefix(url, "https://github.com/") {
+				openURL(url)
 				m.githubOpenedFlash = true
 				return m, clearGithubOpenedFlash()
 			}
@@ -622,24 +599,8 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "o":
-		// Open local install directory (only for installed plugins)
 		if p := m.SelectedPlugin(); p != nil && p.Installed && p.InstallPath != "" {
-			// Open in file manager (cross-platform)
-			var cmd string
-			var args []string
-			switch runtime.GOOS {
-			case "darwin":
-				cmd = "open"
-				args = []string{p.InstallPath}
-			case "windows":
-				cmd = "explorer"
-				args = []string{p.InstallPath}
-			default: // linux, bsd, etc.
-				cmd = "xdg-open"
-				args = []string{p.InstallPath}
-			}
-			// #nosec G204 -- cmd is determined by runtime.GOOS (trusted), args is install path from config (validated)
-			_ = exec.Command(cmd, args...).Start()
+			openPath(p.InstallPath)
 			m.localOpenedFlash = true
 			return m, clearLocalOpenedFlash()
 		}
@@ -722,7 +683,9 @@ func (m Model) handleMarketplaceListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "enter":
 		if len(m.marketplaceItems) > 0 && m.marketplaceCursor < len(m.marketplaceItems) {
-			m.selectedMarketplace = &m.marketplaceItems[m.marketplaceCursor]
+			// Create a copy to avoid holding a pointer to a slice element
+			item := m.marketplaceItems[m.marketplaceCursor]
+			m.selectedMarketplace = &item
 			m.StartViewTransition(ViewMarketplaceDetail, 1)
 			return m, animationTick()
 		}
@@ -738,8 +701,10 @@ func (m Model) handleMarketplaceListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "esc", "ctrl+g":
 		// Return to plugin list view
+		m.breadcrumbText = "← from Marketplace Browser"
+		m.breadcrumbShown = true
 		m.StartViewTransition(ViewList, -1)
-		return m, animationTick()
+		return m, tea.Batch(animationTick(), clearBreadcrumbAfter(2*time.Second))
 
 	case "?":
 		m.StartViewTransition(ViewHelp, 1)
@@ -760,26 +725,21 @@ func (m Model) handleMarketplaceDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 		return m, animationTick()
 
 	case "c":
-		// Copy marketplace install command
-		if m.selectedMarketplace != nil &&
-			m.selectedMarketplace.Status != MarketplaceInstalled {
+		if m.selectedMarketplace != nil && m.selectedMarketplace.Status != MarketplaceInstalled {
 			installCmd := fmt.Sprintf("/plugin marketplace add %s",
 				extractMarketplaceSource(m.selectedMarketplace.Repo))
 			if err := clipboard.WriteAll(installCmd); err == nil {
 				m.copiedFlash = true
 				return m, clearCopiedFlash()
-			} else {
-				m.clipboardErrorFlash = true
-				return m, clearClipboardError()
 			}
+			m.clipboardErrorFlash = true
+			return m, clearClipboardError()
 		}
 		return m, nil
 
 	case "f":
-		// Filter plugins by this marketplace
 		m.previousViewBeforeMarketplace = ViewList
 		m.StartViewTransition(ViewList, -1)
-		// Set search to filter by marketplace
 		m.textInput.SetValue("@" + m.selectedMarketplace.Name)
 		m.results = m.filteredSearch(m.textInput.Value())
 		m.cursor = 0
@@ -787,26 +747,13 @@ func (m Model) handleMarketplaceDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 		return m, animationTick()
 
 	case "g":
-		// Open GitHub repo
 		if m.selectedMarketplace != nil {
 			url := m.selectedMarketplace.Repo
-			var cmd string
-			var args []string
-			switch runtime.GOOS {
-			case "darwin":
-				cmd = "open"
-				args = []string{url}
-			case "windows":
-				cmd = "cmd"
-				args = []string{"/c", "start", url}
-			default:
-				cmd = "xdg-open"
-				args = []string{url}
+			if strings.HasPrefix(url, "https://github.com/") {
+				openURL(url)
+				m.githubOpenedFlash = true
+				return m, clearGithubOpenedFlash()
 			}
-			// #nosec G204 -- cmd is determined by runtime.GOOS (trusted), args is marketplace repo URL (from registry)
-			_ = exec.Command(cmd, args...).Start()
-			m.githubOpenedFlash = true
-			return m, clearGithubOpenedFlash()
 		}
 		return m, nil
 
@@ -819,4 +766,44 @@ func (m Model) handleMarketplaceDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 	}
 
 	return m, nil
+}
+
+func openURL(url string) {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = "open"
+		args = []string{url}
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start", url}
+	default:
+		cmd = "xdg-open"
+		args = []string{url}
+	}
+
+	// #nosec G204 -- cmd is determined by runtime.GOOS (trusted), args is validated URL
+	_ = exec.Command(cmd, args...).Start()
+}
+
+func openPath(path string) {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = "open"
+		args = []string{path}
+	case "windows":
+		cmd = "explorer"
+		args = []string{path}
+	default:
+		cmd = "xdg-open"
+		args = []string{path}
+	}
+
+	// #nosec G204 -- cmd is determined by runtime.GOOS (trusted), args is install path from config
+	_ = exec.Command(cmd, args...).Start()
 }

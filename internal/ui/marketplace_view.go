@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/itsdevcoffee/plum/internal/marketplace"
 )
 
 // marketplaceListView renders the marketplace browser view
@@ -45,74 +46,74 @@ func (m Model) marketplaceListView() string {
 
 // renderMarketplaceItem renders a single marketplace entry
 func (m Model) renderMarketplaceItem(item MarketplaceItem, selected bool) string {
-	// Status indicator
-	var indicator string
-	switch item.Status {
-	case MarketplaceInstalled:
-		indicator = InstalledIndicator.String()
-	case MarketplaceCached:
-		indicator = "◆" // Diamond for cached
-	case MarketplaceNew:
-		indicator = "★" // Star for new
-	default:
-		indicator = AvailableIndicator.String()
-	}
-
-	// Selection prefix
-	var prefix string
-	if selected {
-		prefix = HighlightBarFull.String()
-	} else {
-		prefix = "  "
-	}
-
-	// Name style
-	var nameStyle lipgloss.Style
-	if selected {
-		nameStyle = PluginNameSelectedStyle
-	} else {
-		nameStyle = PluginNameStyle
-	}
-
+	indicator := m.marketplaceIndicator(item.Status)
+	prefix := m.selectionPrefix(selected)
+	nameStyle := m.nameStyle(selected)
 	name := nameStyle.Render(item.DisplayName)
 
-	// Plugin count
-	var pluginCountStr string
-	if item.TotalPluginCount > 0 {
-		if item.InstalledPluginCount > 0 {
-			pluginCountStr = fmt.Sprintf("(%d/%d plugins)",
-				item.InstalledPluginCount, item.TotalPluginCount)
-		} else {
-			pluginCountStr = fmt.Sprintf("(%d plugins)", item.TotalPluginCount)
-		}
-	} else {
-		pluginCountStr = "(? plugins)"
-	}
+	pluginCountStr := formatPluginCount(item.InstalledPluginCount, item.TotalPluginCount)
+	statsStr := formatGitHubStats(item.GitHubStats, item.StatsLoading, item.StatsError)
 
-	// GitHub stats
-	var statsStr string
-	if item.GitHubStats != nil {
-		stats := item.GitHubStats
-		starsStr := formatNumber(stats.Stars)
-		forksStr := formatNumber(stats.Forks)
-		lastUpdated := formatRelativeTime(stats.LastPushedAt)
-		statsStr = fmt.Sprintf("⭐ %s  🍴 %s  🕒 %s",
-			starsStr, forksStr, lastUpdated)
-	} else if item.StatsLoading {
-		statsStr = "Loading stats..."
-	} else if item.StatsError != nil {
-		statsStr = "Stats unavailable"
-	}
-
-	// Create styles for text
 	tertiaryStyle := lipgloss.NewStyle().Foreground(TextTertiary)
 	mutedStyle := lipgloss.NewStyle().Foreground(TextMuted)
 
-	pluginCount := tertiaryStyle.Render(pluginCountStr)
-	stats := mutedStyle.Render(statsStr)
-
 	return fmt.Sprintf("%s%s %s  %s  %s",
-		prefix, indicator, name, pluginCount, stats)
+		prefix, indicator, name,
+		tertiaryStyle.Render(pluginCountStr),
+		mutedStyle.Render(statsStr))
+}
+
+func (m Model) marketplaceIndicator(status MarketplaceStatus) string {
+	switch status {
+	case MarketplaceInstalled:
+		return InstalledIndicator.String()
+	case MarketplaceCached:
+		return "◆"
+	case MarketplaceNew:
+		return "★"
+	default:
+		return AvailableIndicator.String()
+	}
+}
+
+func (m Model) selectionPrefix(selected bool) string {
+	if selected {
+		return HighlightBarFull.String()
+	}
+	return "  "
+}
+
+func (m Model) nameStyle(selected bool) lipgloss.Style {
+	if selected {
+		return PluginNameSelectedStyle
+	}
+	return PluginNameStyle
+}
+
+func formatPluginCount(installed, total int) string {
+	if total > 0 {
+		if installed > 0 {
+			return fmt.Sprintf("(%d/%d plugins)", installed, total)
+		}
+		return fmt.Sprintf("(%d plugins)", total)
+	}
+	return "(? plugins)"
+}
+
+func formatGitHubStats(stats *marketplace.GitHubStats, loading bool, err error) string {
+	if stats != nil {
+		return fmt.Sprintf("⭐ %s  🍴 %s  🕒 %s",
+			formatNumber(stats.Stars),
+			formatNumber(stats.Forks),
+			formatRelativeTime(stats.LastPushedAt))
+	}
+	if loading {
+		return "Loading stats..."
+	}
+	if err != nil {
+		return "Stats unavailable"
+	}
+	return ""
 }
 
 // renderMarketplaceSortTabs renders sort mode tabs
@@ -151,7 +152,7 @@ func (m Model) renderMarketplaceSortTabs() string {
 		}
 	}
 
-	hint := HelpStyle.Render("  (Tab/← → to change sort)")
+	hint := HelpStyle.Render("  (Tab/← → to change order)")
 	return b.String() + hint
 }
 
@@ -301,32 +302,35 @@ func formatRelativeTime(t time.Time) string {
 	}
 
 	duration := time.Since(t)
+	hours := duration.Hours()
 
-	switch {
-	case duration < time.Hour:
+	if hours < 1 {
 		return fmt.Sprintf("%dm ago", int(duration.Minutes()))
-	case duration < 24*time.Hour:
-		return fmt.Sprintf("%dh ago", int(duration.Hours()))
-	case duration < 7*24*time.Hour:
-		return fmt.Sprintf("%dd ago", int(duration.Hours()/24))
-	case duration < 30*24*time.Hour:
-		return fmt.Sprintf("%dw ago", int(duration.Hours()/24/7))
-	case duration < 365*24*time.Hour:
-		return fmt.Sprintf("%dmo ago", int(duration.Hours()/24/30))
-	default:
-		return fmt.Sprintf("%dy ago", int(duration.Hours()/24/365))
 	}
+	if hours < 24 {
+		return fmt.Sprintf("%dh ago", int(hours))
+	}
+	if hours < 168 {
+		return fmt.Sprintf("%dd ago", int(hours/24))
+	}
+	if hours < 720 {
+		return fmt.Sprintf("%dw ago", int(hours/24/7))
+	}
+	if hours < 8760 {
+		return fmt.Sprintf("%dmo ago", int(hours/24/30))
+	}
+	return fmt.Sprintf("%dy ago", int(hours/24/365))
 }
 
 // formatNumber formats large numbers with k/M suffix
 func formatNumber(n int) string {
 	if n < 1000 {
 		return fmt.Sprintf("%d", n)
-	} else if n < 1000000 {
-		return fmt.Sprintf("%.1fk", float64(n)/1000)
-	} else {
-		return fmt.Sprintf("%.1fM", float64(n)/1000000)
 	}
+	if n < 1000000 {
+		return fmt.Sprintf("%.1fk", float64(n)/1000)
+	}
+	return fmt.Sprintf("%.1fM", float64(n)/1000000)
 }
 
 // extractMarketplaceSource extracts owner/repo from GitHub URL

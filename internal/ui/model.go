@@ -100,12 +100,14 @@ type Model struct {
 	filterMode          FilterMode
 	windowWidth         int
 	windowHeight        int
-	copiedFlash         bool // Brief "Copied!" indicator (for 'c')
-	linkCopiedFlash     bool // Brief "Link Copied!" indicator (for 'l')
-	pathCopiedFlash     bool // Brief "Path Copied!" indicator (for 'p')
-	githubOpenedFlash   bool // Brief "Opened!" indicator (for 'g')
-	localOpenedFlash    bool // Brief "Opened!" indicator (for 'o')
-	clipboardErrorFlash bool // Brief "Clipboard error!" indicator
+	copiedFlash         bool   // Brief "Copied!" indicator (for 'c')
+	linkCopiedFlash     bool   // Brief "Link Copied!" indicator (for 'l')
+	pathCopiedFlash     bool   // Brief "Path Copied!" indicator (for 'p')
+	githubOpenedFlash   bool   // Brief "Opened!" indicator (for 'g')
+	localOpenedFlash    bool   // Brief "Opened!" indicator (for 'o')
+	clipboardErrorFlash bool   // Brief "Clipboard error!" indicator
+	breadcrumbText      string // Context breadcrumb (e.g., "← from Marketplace Browser")
+	breadcrumbShown     bool   // Whether to show breadcrumb
 
 	// Marketplace view state
 	marketplaceItems              []MarketplaceItem
@@ -136,7 +138,7 @@ type Model struct {
 // NewModel creates a new Model with initial state
 func NewModel() Model {
 	ti := textinput.New()
-	ti.Placeholder = "Search plugins..."
+	ti.Placeholder = "Search plugins (or @marketplace to filter)..."
 	ti.Focus()
 	ti.CharLimit = 100
 	ti.Width = 40
@@ -302,19 +304,21 @@ func (m *Model) UpdateScroll() {
 		return
 	}
 
-	// Cursor too close to top - scroll up
 	if m.cursor < m.scrollOffset+scrollBuffer {
 		m.scrollOffset = m.cursor - scrollBuffer
 		if m.scrollOffset < 0 {
 			m.scrollOffset = 0
 		}
+		return
 	}
 
-	// Cursor too close to bottom - scroll down
 	if m.cursor >= m.scrollOffset+maxVisible-scrollBuffer {
 		m.scrollOffset = m.cursor - maxVisible + scrollBuffer + 1
 		if m.scrollOffset > len(m.results)-maxVisible {
 			m.scrollOffset = len(m.results) - maxVisible
+		}
+		if m.scrollOffset < 0 {
+			m.scrollOffset = 0
 		}
 	}
 }
@@ -339,7 +343,6 @@ func (m *Model) ToggleDisplayMode() {
 	} else {
 		m.displayMode = DisplayCard
 	}
-	// Reset scroll to keep cursor visible with new item heights
 	m.UpdateScroll()
 }
 
@@ -438,26 +441,25 @@ func (m Model) FilterModeName() string {
 	return FilterModeNames[m.filterMode]
 }
 
-// ReadyCount returns count of ready-to-install plugins (marketplace installed, plugin not)
+// ReadyCount returns count of ready-to-install plugins
 func (m Model) ReadyCount() int {
-	count := 0
-	for _, p := range m.allPlugins {
-		if !p.Installed && !p.IsDiscoverable {
-			count++
-		}
-	}
-	return count
+	return m.countPlugins(func(p plugin.Plugin) bool {
+		return !p.Installed && !p.IsDiscoverable
+	})
 }
 
-// DiscoverableCount returns count of discoverable plugins (from uninstalled marketplaces)
+// DiscoverableCount returns count of discoverable plugins
 func (m Model) DiscoverableCount() int {
-	count := 0
-	for _, p := range m.allPlugins {
-		if p.IsDiscoverable {
-			count++
-		}
-	}
-	return count
+	return m.countPlugins(func(p plugin.Plugin) bool {
+		return p.IsDiscoverable
+	})
+}
+
+// InstalledCount returns count of installed plugins
+func (m Model) InstalledCount() int {
+	return m.countPlugins(func(p plugin.Plugin) bool {
+		return p.Installed
+	})
 }
 
 // TotalPlugins returns total plugin count
@@ -465,11 +467,10 @@ func (m Model) TotalPlugins() int {
 	return len(m.allPlugins)
 }
 
-// InstalledCount returns count of installed plugins
-func (m Model) InstalledCount() int {
+func (m Model) countPlugins(predicate func(plugin.Plugin) bool) int {
 	count := 0
 	for _, p := range m.allPlugins {
-		if p.Installed {
+		if predicate(p) {
 			count++
 		}
 	}
@@ -574,15 +575,7 @@ func (m *Model) LoadMarketplaceItems() error {
 	if installed != nil {
 		for fullName := range installed.Plugins {
 			// fullName format: "plugin@marketplace"
-			parts := []string{fullName}
-			if idx := len(fullName) - 1; idx >= 0 {
-				for i := len(fullName) - 1; i >= 0; i-- {
-					if fullName[i] == '@' {
-						parts = []string{fullName[:i], fullName[i+1:]}
-						break
-					}
-				}
-			}
+			parts := strings.SplitN(fullName, "@", 2)
 			if len(parts) == 2 {
 				installedByMarketplace[parts[1]]++
 			}
@@ -732,12 +725,12 @@ func (m *Model) UpdateMarketplaceScroll() {
 		return
 	}
 
-	// Keep cursor visible with buffer
 	if m.marketplaceCursor < m.marketplaceScrollOffset+scrollBuffer {
 		m.marketplaceScrollOffset = m.marketplaceCursor - scrollBuffer
 		if m.marketplaceScrollOffset < 0 {
 			m.marketplaceScrollOffset = 0
 		}
+		return
 	}
 
 	if m.marketplaceCursor >= m.marketplaceScrollOffset+maxVisible-scrollBuffer {

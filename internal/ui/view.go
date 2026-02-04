@@ -206,7 +206,18 @@ func (m Model) listView() string {
 
 	// Filter tabs
 	b.WriteString(m.renderFilterTabs())
-	b.WriteString("\n\n")
+	b.WriteString("\n")
+
+	// Breadcrumb (context from previous view)
+	if m.breadcrumbShown && m.breadcrumbText != "" {
+		breadcrumbStyle := lipgloss.NewStyle().
+			Foreground(TextMuted).
+			Italic(true).
+			Padding(0, 1)
+		b.WriteString(breadcrumbStyle.Render(m.breadcrumbText))
+		b.WriteString("\n")
+	}
+	b.WriteString("\n")
 
 	// Results
 	if m.loading {
@@ -388,6 +399,16 @@ func (m Model) statusBar() string {
 		position = "0/0"
 	}
 
+	// Check if marketplace filter is active
+	query := m.textInput.Value()
+	var marketplaceFilter string
+	if strings.HasPrefix(query, "@") {
+		marketplaceName := strings.TrimPrefix(query, "@")
+		if marketplaceName != "" {
+			marketplaceFilter = fmt.Sprintf("@%s (%d results)", marketplaceName, len(m.results))
+		}
+	}
+
 	// Opposite view mode name for the toggle hint
 	var oppositeView string
 	if m.displayMode == DisplaySlim {
@@ -404,32 +425,48 @@ func (m Model) statusBar() string {
 	switch {
 	case useVerbose:
 		// Verbose: full descriptions (only in card/verbose mode)
-		parts = append(parts, position+" "+m.FilterModeName())
+		if marketplaceFilter != "" {
+			parts = append(parts, marketplaceFilter)
+		} else {
+			parts = append(parts, position+" "+m.FilterModeName())
+		}
 		parts = append(parts, KeyStyle.Render("↑↓/ctrl+jk")+" navigate")
-		parts = append(parts, KeyStyle.Render("tab")+" filter")
+		parts = append(parts, KeyStyle.Render("tab")+" next view")
 		parts = append(parts, KeyStyle.Render("Shift+V")+" "+oppositeView)
 		parts = append(parts, KeyStyle.Render("enter")+" details")
 		parts = append(parts, KeyStyle.Render("?"))
 
 	case width >= 70:
 		// Standard: concise but complete
-		parts = append(parts, position)
+		if marketplaceFilter != "" {
+			parts = append(parts, marketplaceFilter)
+		} else {
+			parts = append(parts, position)
+		}
 		parts = append(parts, KeyStyle.Render("↑↓")+" nav")
-		parts = append(parts, KeyStyle.Render("tab")+" filter")
+		parts = append(parts, KeyStyle.Render("tab")+" next view")
 		parts = append(parts, KeyStyle.Render("Shift+M")+" marketplaces")
 		parts = append(parts, KeyStyle.Render("Shift+V")+" "+oppositeView)
 		parts = append(parts, KeyStyle.Render("?")+" help")
 
 	case width >= 50:
 		// Compact: essentials only
-		parts = append(parts, position)
+		if marketplaceFilter != "" {
+			parts = append(parts, marketplaceFilter)
+		} else {
+			parts = append(parts, position)
+		}
 		parts = append(parts, KeyStyle.Render("↑↓")+" nav")
-		parts = append(parts, KeyStyle.Render("tab")+" filter")
+		parts = append(parts, KeyStyle.Render("tab")+" next view")
 		parts = append(parts, KeyStyle.Render("?")+" help")
 
 	default:
 		// Minimal: bare minimum
-		parts = append(parts, position)
+		if marketplaceFilter != "" {
+			parts = append(parts, marketplaceFilter)
+		} else {
+			parts = append(parts, position)
+		}
 		parts = append(parts, KeyStyle.Render("?")+"=help")
 	}
 
