@@ -321,6 +321,14 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	// Navigation: Ctrl + j/k/n/p or arrow keys
 	case "up", "ctrl+k", "ctrl+p":
+		// Handle marketplace autocomplete navigation
+		if m.marketplaceAutocompleteActive {
+			if m.marketplaceAutocompleteCursor > 0 {
+				m.marketplaceAutocompleteCursor--
+			}
+			return m, nil
+		}
+
 		if m.cursor > 0 {
 			m.cursor--
 		}
@@ -329,6 +337,14 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, animationTick()
 
 	case "down", "ctrl+j", "ctrl+n":
+		// Handle marketplace autocomplete navigation
+		if m.marketplaceAutocompleteActive {
+			if m.marketplaceAutocompleteCursor < len(m.marketplaceAutocompleteList)-1 {
+				m.marketplaceAutocompleteCursor++
+			}
+			return m, nil
+		}
+
 		if m.cursor < len(m.results)-1 {
 			m.cursor++
 		}
@@ -375,6 +391,13 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	// Actions
 	case "enter":
+		// Handle marketplace autocomplete selection
+		if m.marketplaceAutocompleteActive {
+			m.SelectMarketplaceAutocomplete()
+			m.results = m.filteredSearch(m.textInput.Value())
+			return m, nil
+		}
+
 		if len(m.results) > 0 {
 			// Set detail viewport content before transition (like help menu)
 			if m.detailViewport.Width > 0 {
@@ -498,13 +521,19 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	m.textInput, cmd = m.textInput.Update(msg)
 	newValue := m.textInput.Value()
 
+	// Update marketplace autocomplete state
+	m.UpdateMarketplaceAutocomplete(newValue)
+
 	// Re-run search on input change (with filter)
-	m.results = m.filteredSearch(newValue)
+	if !m.marketplaceAutocompleteActive {
+		m.results = m.filteredSearch(newValue)
+	}
 
 	// Reset cursor to top on any search input change
 	if newValue != oldValue {
 		m.cursor = 0
 		m.scrollOffset = 0
+		m.marketplaceAutocompleteCursor = 0
 		m.SnapCursorToTarget()
 	} else if m.cursor >= len(m.results) {
 		// Clamp cursor if somehow out of bounds

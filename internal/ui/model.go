@@ -115,6 +115,11 @@ type Model struct {
 	selectedMarketplace           *MarketplaceItem
 	previousViewBeforeMarketplace ViewState
 
+	// Marketplace autocomplete state (for @marketplace-name filtering)
+	marketplaceAutocompleteActive bool                // True when showing marketplace picker
+	marketplaceAutocompleteList   []MarketplaceItem   // Filtered marketplaces for autocomplete
+	marketplaceAutocompleteCursor int                 // Selected index in autocomplete list
+
 	// Animation state
 	cursorY         float64 // Animated cursor position
 	cursorYVelocity float64
@@ -136,7 +141,7 @@ type Model struct {
 // NewModel creates a new Model with initial state
 func NewModel() Model {
 	ti := textinput.New()
-	ti.Placeholder = "Search plugins (or @marketplace to filter)..."
+	ti.Placeholder = "Search plugins (or @marketplace-name to filter)..."
 	ti.Focus()
 	ti.CharLimit = 100
 	ti.Width = 40
@@ -384,15 +389,34 @@ func (m *Model) applyFilter() {
 func (m Model) filteredSearch(query string) []search.RankedPlugin {
 	// Check for marketplace filter (starts with @)
 	if strings.HasPrefix(query, "@") {
-		marketplaceName := strings.TrimPrefix(query, "@")
-		var filtered []search.RankedPlugin
+		// Parse: @marketplace-name [optional search terms]
+		parts := strings.SplitN(query[1:], " ", 2)
+		marketplaceName := parts[0]
+		searchTerms := ""
+		if len(parts) > 1 {
+			searchTerms = parts[1]
+		}
+
+		// Filter plugins by marketplace
+		var marketplacePlugins []plugin.Plugin
 		for _, p := range m.allPlugins {
 			if p.Marketplace == marketplaceName {
-				filtered = append(filtered, search.RankedPlugin{
-					Plugin: p,
-					Score:  1.0,
-				})
+				marketplacePlugins = append(marketplacePlugins, p)
 			}
+		}
+
+		// If there are search terms, fuzzy search within the marketplace
+		if searchTerms != "" {
+			return search.Search(searchTerms, marketplacePlugins)
+		}
+
+		// Otherwise return all plugins from this marketplace
+		var filtered []search.RankedPlugin
+		for _, p := range marketplacePlugins {
+			filtered = append(filtered, search.RankedPlugin{
+				Plugin: p,
+				Score:  1.0,
+			})
 		}
 		return filtered
 	}
@@ -753,4 +777,54 @@ func (m *Model) PrevMarketplaceSort() {
 	m.ApplyMarketplaceSort()
 	m.marketplaceCursor = 0
 	m.marketplaceScrollOffset = 0
+}
+
+// UpdateMarketplaceAutocomplete updates the marketplace autocomplete list based on query
+func (m *Model) UpdateMarketplaceAutocomplete(query string) {
+	// Extract marketplace filter part (everything after @ until first space)
+	if !strings.HasPrefix(query, "@") {
+		m.marketplaceAutocompleteActive = false
+		return
+	}
+
+	// Find first space to separate marketplace name from search terms
+	parts := strings.SplitN(query[1:], " ", 2)
+	marketplaceFilter := parts[0]
+
+	// If there's a space and search terms after, exit autocomplete mode
+	if len(parts) > 1 && parts[1] != "" {
+		m.marketplaceAutocompleteActive = false
+		return
+	}
+
+	// We're in autocomplete mode - filter marketplaces
+	m.marketplaceAutocompleteActive = true
+	m.marketplaceAutocompleteList = []MarketplaceItem{}
+
+	for _, item := range m.marketplaceItems {
+		// Match on marketplace name (case-insensitive)
+		if marketplaceFilter == "" || strings.Contains(strings.ToLower(item.Name), strings.ToLower(marketplaceFilter)) {
+			m.marketplaceAutocompleteList = append(m.marketplaceAutocompleteList, item)
+		}
+	}
+
+	// Reset cursor if out of bounds
+	if m.marketplaceAutocompleteCursor >= len(m.marketplaceAutocompleteList) {
+		m.marketplaceAutocompleteCursor = 0
+	}
+}
+
+// SelectMarketplaceAutocomplete completes the marketplace name in the search box
+func (m *Model) SelectMarketplaceAutocomplete() {
+	if !m.marketplaceAutocompleteActive || len(m.marketplaceAutocompleteList) == 0 {
+		return
+	}
+
+	selected := m.marketplaceAutocompleteList[m.marketplaceAutocompleteCursor]
+	m.textInput.SetValue("@" + selected.Name + " ")
+	m.marketplaceAutocompleteActive = false
+	m.marketplaceAutocompleteCursor = 0
+
+	// Move cursor to end
+	m.textInput.SetCursor(len(m.textInput.Value()))
 }

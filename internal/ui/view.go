@@ -200,8 +200,8 @@ func (m Model) listView() string {
 	b.WriteString(TitleStyle.Render(title))
 	b.WriteString("\n\n")
 
-	// Search input
-	b.WriteString(m.textInput.View())
+	// Search input with custom styling for @marketplace syntax
+	b.WriteString(m.renderSearchInput())
 	b.WriteString("\n")
 
 	// Filter tabs
@@ -228,6 +228,9 @@ func (m Model) listView() string {
 		}
 	} else if len(m.allPlugins) == 0 {
 		b.WriteString(DescriptionStyle.Render("No plugins found."))
+	} else if m.marketplaceAutocompleteActive {
+		// Show marketplace picker for autocomplete
+		b.WriteString(m.renderMarketplaceAutocomplete())
 	} else if len(m.results) == 0 {
 		b.WriteString(DescriptionStyle.Render("No plugins found matching your search."))
 	} else {
@@ -250,6 +253,61 @@ func (m Model) listView() string {
 }
 
 // renderPluginItem renders a single plugin item based on display mode
+// renderSearchInput renders the search input with custom styling for @marketplace syntax
+func (m Model) renderSearchInput() string {
+	// For now, use normal text input rendering
+	// TODO: Add custom @ syntax coloring (requires workaround for textinput cursor)
+	return m.textInput.View()
+}
+
+// renderMarketplaceAutocomplete renders the marketplace picker for autocomplete
+func (m Model) renderMarketplaceAutocomplete() string {
+	var b strings.Builder
+
+	// Header
+	headerStyle := lipgloss.NewStyle().Foreground(PeachSoft).Bold(true)
+	b.WriteString(headerStyle.Render("Select marketplace:"))
+	b.WriteString("\n\n")
+
+	// Render marketplace list
+	if len(m.marketplaceAutocompleteList) == 0 {
+		b.WriteString(DescriptionStyle.Render("No marketplaces found."))
+	} else {
+		for i, item := range m.marketplaceAutocompleteList {
+			isSelected := i == m.marketplaceAutocompleteCursor
+
+			// Selection prefix
+			var prefix string
+			if isSelected {
+				prefix = HighlightBarFull.String()
+			} else {
+				prefix = "  "
+			}
+
+			// Name style
+			var nameStyle lipgloss.Style
+			if isSelected {
+				nameStyle = PluginNameSelectedStyle
+			} else {
+				nameStyle = PluginNameStyle
+			}
+
+			name := nameStyle.Render(item.DisplayName)
+
+			// Plugin count
+			pluginCount := lipgloss.NewStyle().Foreground(TextTertiary).Render(
+				fmt.Sprintf("(%d plugins)", item.TotalPluginCount))
+
+			b.WriteString(fmt.Sprintf("%s%s  %s\n", prefix, name, pluginCount))
+		}
+	}
+
+	hint := HelpStyle.Render("\n↑↓ to navigate  •  Enter to select  •  Keep typing to filter")
+	b.WriteString(hint)
+
+	return b.String()
+}
+
 func (m Model) renderPluginItem(p plugin.Plugin, selected bool) string {
 	if m.displayMode == DisplaySlim {
 		return m.renderPluginItemSlim(p, selected)
