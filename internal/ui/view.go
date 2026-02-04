@@ -206,18 +206,7 @@ func (m Model) listView() string {
 
 	// Filter tabs
 	b.WriteString(m.renderFilterTabs())
-	b.WriteString("\n")
-
-	// Breadcrumb (context from previous view)
-	if m.breadcrumbShown && m.breadcrumbText != "" {
-		breadcrumbStyle := lipgloss.NewStyle().
-			Foreground(TextMuted).
-			Italic(true).
-			Padding(0, 1)
-		b.WriteString(breadcrumbStyle.Render(m.breadcrumbText))
-		b.WriteString("\n")
-	}
-	b.WriteString("\n")
+	b.WriteString("\n\n")
 
 	// Results
 	if m.loading {

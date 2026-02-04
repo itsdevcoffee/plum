@@ -55,9 +55,6 @@ type clearLocalOpenedFlashMsg struct{}
 // clearClipboardErrorMsg clears the "Clipboard error!" indicator
 type clearClipboardErrorMsg struct{}
 
-// clearBreadcrumbMsg clears the breadcrumb indicator
-type clearBreadcrumbMsg struct{}
-
 func clearCopiedFlash() tea.Cmd {
 	return clearFlashAfter(2*time.Second, clearCopiedFlashMsg{})
 }
@@ -80,10 +77,6 @@ func clearLocalOpenedFlash() tea.Cmd {
 
 func clearClipboardError() tea.Cmd {
 	return clearFlashAfter(3*time.Second, clearClipboardErrorMsg{})
-}
-
-func clearBreadcrumbAfter(d time.Duration) tea.Cmd {
-	return clearFlashAfter(d, clearBreadcrumbMsg{})
 }
 
 func clearFlashAfter(duration time.Duration, msg tea.Msg) tea.Cmd {
@@ -211,10 +204,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case clearLocalOpenedFlashMsg:
 		m.localOpenedFlash = false
-		return m, nil
-
-	case clearBreadcrumbMsg:
-		m.breadcrumbShown = false
 		return m, nil
 
 	case clearClipboardErrorMsg:
@@ -701,10 +690,8 @@ func (m Model) handleMarketplaceListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "esc", "ctrl+g":
 		// Return to plugin list view
-		m.breadcrumbText = "← from Marketplace Browser"
-		m.breadcrumbShown = true
 		m.StartViewTransition(ViewList, -1)
-		return m, tea.Batch(animationTick(), clearBreadcrumbAfter(2*time.Second))
+		return m, animationTick()
 
 	case "?":
 		m.StartViewTransition(ViewHelp, 1)

@@ -100,14 +100,12 @@ type Model struct {
 	filterMode          FilterMode
 	windowWidth         int
 	windowHeight        int
-	copiedFlash         bool   // Brief "Copied!" indicator (for 'c')
-	linkCopiedFlash     bool   // Brief "Link Copied!" indicator (for 'l')
-	pathCopiedFlash     bool   // Brief "Path Copied!" indicator (for 'p')
-	githubOpenedFlash   bool   // Brief "Opened!" indicator (for 'g')
-	localOpenedFlash    bool   // Brief "Opened!" indicator (for 'o')
-	clipboardErrorFlash bool   // Brief "Clipboard error!" indicator
-	breadcrumbText      string // Context breadcrumb (e.g., "← from Marketplace Browser")
-	breadcrumbShown     bool   // Whether to show breadcrumb
+	copiedFlash         bool // Brief "Copied!" indicator (for 'c')
+	linkCopiedFlash     bool // Brief "Link Copied!" indicator (for 'l')
+	pathCopiedFlash     bool // Brief "Path Copied!" indicator (for 'p')
+	githubOpenedFlash   bool // Brief "Opened!" indicator (for 'g')
+	localOpenedFlash    bool // Brief "Opened!" indicator (for 'o')
+	clipboardErrorFlash bool // Brief "Clipboard error!" indicator
 
 	// Marketplace view state
 	marketplaceItems              []MarketplaceItem
