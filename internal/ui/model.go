@@ -463,6 +463,22 @@ func (m Model) FilterModeName() string {
 	return FilterModeNames[m.filterMode]
 }
 
+// getDynamicFilterCounts calculates counts for each filter mode based on current search query
+func (m Model) getDynamicFilterCounts(query string) map[FilterMode]int {
+	counts := make(map[FilterMode]int)
+
+	// For each filter mode, calculate how many results we'd get
+	for _, mode := range []FilterMode{FilterAll, FilterDiscover, FilterReady, FilterInstalled} {
+		// Temporarily set filter mode and get results
+		tempModel := m
+		tempModel.filterMode = mode
+		results := tempModel.filteredSearch(query)
+		counts[mode] = len(results)
+	}
+
+	return counts
+}
+
 // ReadyCount returns count of ready-to-install plugins
 func (m Model) ReadyCount() int {
 	return m.countPlugins(func(p plugin.Plugin) bool {

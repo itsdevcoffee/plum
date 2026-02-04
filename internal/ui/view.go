@@ -152,21 +152,19 @@ func (m Model) renderFilterTabs() string {
 		Foreground(TextTertiary).
 		Padding(0, 1)
 
-	// Build tabs with counts
-	allCount := len(m.allPlugins)
-	discoverCount := m.DiscoverableCount()
-	readyCount := m.ReadyCount()
-	installCount := m.InstalledCount()
+	// Build tabs with dynamic counts based on current search
+	query := m.textInput.Value()
+	counts := m.getDynamicFilterCounts(query)
 
 	tabs := []struct {
 		name   string
 		count  int
 		active bool
 	}{
-		{"All", allCount, m.filterMode == FilterAll},
-		{"Discover", discoverCount, m.filterMode == FilterDiscover},
-		{"Ready", readyCount, m.filterMode == FilterReady},
-		{"Installed", installCount, m.filterMode == FilterInstalled},
+		{"All", counts[FilterAll], m.filterMode == FilterAll},
+		{"Discover", counts[FilterDiscover], m.filterMode == FilterDiscover},
+		{"Ready", counts[FilterReady], m.filterMode == FilterReady},
+		{"Installed", counts[FilterInstalled], m.filterMode == FilterInstalled},
 	}
 
 	var parts []string
