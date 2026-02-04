@@ -255,8 +255,43 @@ func (m Model) listView() string {
 // renderPluginItem renders a single plugin item based on display mode
 // renderSearchInput renders the search input with custom styling for @marketplace syntax
 func (m Model) renderSearchInput() string {
-	// For now, use normal text input rendering
-	// TODO: Add custom @ syntax coloring (requires workaround for textinput cursor)
+	value := m.textInput.Value()
+
+	// If query starts with @, style the @marketplace-name part with background
+	if strings.HasPrefix(value, "@") {
+		// Find first space to separate marketplace from search terms
+		spaceIdx := strings.Index(value, " ")
+
+		var marketplacePart, searchPart string
+		if spaceIdx == -1 {
+			marketplacePart = value
+			searchPart = ""
+		} else {
+			marketplacePart = value[:spaceIdx]
+			searchPart = value[spaceIdx:]
+		}
+
+		// Style marketplace part with contrasting background
+		marketplaceStyle := lipgloss.NewStyle().
+			Foreground(TextPrimary).
+			Background(PlumMedium).
+			Bold(true).
+			Padding(0, 1)
+
+		// Render with prompt
+		promptStyled := SearchPromptStyle.Render(m.textInput.Prompt)
+		marketplaceStyled := marketplaceStyle.Render(marketplacePart)
+
+		// Add cursor indicator at end if focused
+		cursorIndicator := ""
+		if m.textInput.Focused() {
+			cursorIndicator = lipgloss.NewStyle().Foreground(PlumBright).Render("│")
+		}
+
+		return promptStyled + marketplaceStyled + searchPart + cursorIndicator
+	}
+
+	// Normal rendering for non-@ queries
 	return m.textInput.View()
 }
 
