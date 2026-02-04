@@ -10,7 +10,7 @@
 
 **A better way to discover Claude Code marketplace plugins.**
 
-Plum is a fast, fuzzy-search TUI that lets you discover and install plugins from 12 popular marketplaces - even ones you haven't installed yet. Browse 680+ plugins instantly, no setup required.
+Plum is a fast, fuzzy-search TUI that lets you discover and install plugins from 11 popular marketplaces - even ones you haven't installed yet. Browse 600+ plugins instantly, no setup required.
 
 ![Plum Demo](assets/videos/plum-demo-hq.gif)
 
@@ -25,7 +25,7 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 </tr>
 <tr>
 <td><a href="https://github.com/jeremylongshore/claude-code-plugins-plus-skills">claude-code-plugins-plus</a></td>
-<td>The largest collection with <strong>282 plugins</strong> and 185 Agent Skills, focusing on production-ready automation tools across DevOps, security, testing, and AI/ML workflows.</td>
+<td>The largest collection with <strong>313 plugins</strong> and Agent Skills, focusing on production-ready automation tools across DevOps, security, testing, and AI/ML workflows.</td>
 </tr>
 <tr>
 <td><a href="https://github.com/ananddtyagi/cc-marketplace">claude-code-marketplace</a></td>
@@ -49,7 +49,7 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 </tr>
 <tr>
 <td><a href="https://github.com/anthropics/claude-plugins-official">claude-plugins-official</a></td>
-<td>Official Anthropic marketplace with <strong>48 plugins</strong> for Claude Code. High-quality, production-ready plugins maintained by the Anthropic team.</td>
+<td>Official Anthropic marketplace with <strong>51 plugins</strong> for Claude Code. High-quality, production-ready plugins maintained by the Anthropic team.</td>
 </tr>
 <tr>
 <td><a href="https://github.com/anthropics/skills">anthropic-agent-skills</a></td>
@@ -62,10 +62,6 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 <tr>
 <td><a href="https://github.com/docker/claude-plugins">docker-plugins</a></td>
 <td>Official Docker Inc. marketplace with <strong>1 plugin</strong> for Docker Desktop MCP Toolkit integration for containerized MCP servers. Requires Docker Desktop 4.28+.</td>
-</tr>
-<tr>
-<td><a href="https://github.com/ccplugins/marketplace">ccplugins-marketplace</a></td>
-<td>Curated collection with <strong>118 plugins</strong> organized across 13 categories including DevOps, Testing, Documentation, Marketing, Security, and more.</td>
 </tr>
 <tr>
 <td><a href="https://github.com/thedotmack/claude-mem">claude-mem</a></td>
@@ -119,7 +115,7 @@ export PATH="$PATH:$HOME/go/bin"  # Add to ~/.zshrc or ~/.bashrc
 
 ## Key Features
 
-- **Discover 680+ plugins** from 12 popular marketplaces - even ones you haven't installed yet
+- **Discover 600+ plugins** from 11 popular marketplaces - even ones you haven't installed yet
 - **Marketplace browser** - View all marketplaces with GitHub stats (stars, forks, last updated)
 - **Auto-updating registry** - notifies when new marketplaces are available
 - **Instant fuzzy search** across all plugins (installed + discoverable)

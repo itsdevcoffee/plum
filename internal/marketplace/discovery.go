@@ -29,17 +29,17 @@ type DiscoveredMarketplace struct {
 }
 
 // PopularMarketplaces is the hardcoded list from README.md with static GitHub stats
-// Stats snapshot: 2026-01-21 (updated with fresh data including timestamps)
+// Stats snapshot: 2026-02-04 (updated with fresh data including timestamps)
 var PopularMarketplaces = []PopularMarketplace{
 	{
 		Name:        "claude-code-plugins-plus",
 		DisplayName: "Claude Code Plugins Plus",
 		Repo:        "https://github.com/jeremylongshore/claude-code-plugins-plus-skills",
-		Description: "The largest collection with 282 plugins and 185 Agent Skills",
+		Description: "The largest collection with 313 plugins and Agent Skills",
 		StaticStats: &GitHubStats{
-			Stars:        1037,
-			Forks:        135,
-			LastPushedAt: mustParseTime("2026-01-20T15:08:33Z"),
+			Stars:        1242,
+			Forks:        154,
+			LastPushedAt: mustParseTime("2026-02-01T05:24:47Z"),
 			OpenIssues:   0,
 		},
 	},
@@ -49,7 +49,7 @@ var PopularMarketplaces = []PopularMarketplace{
 		Repo:        "https://github.com/ananddtyagi/cc-marketplace",
 		Description: "Community-driven marketplace with 119 plugins",
 		StaticStats: &GitHubStats{
-			Stars:        622,
+			Stars:        634,
 			Forks:        52,
 			LastPushedAt: mustParseTime("2026-01-18T17:50:15Z"),
 			OpenIssues:   6,
@@ -61,10 +61,10 @@ var PopularMarketplaces = []PopularMarketplace{
 		Repo:        "https://github.com/anthropics/claude-code",
 		Description: "Official Anthropic plugins with 13 plugins maintained by the Claude Code team",
 		StaticStats: &GitHubStats{
-			Stars:        59003,
-			Forks:        4361,
-			LastPushedAt: mustParseTime("2026-01-20T23:09:30Z"),
-			OpenIssues:   5152,
+			Stars:        63817,
+			Forks:        4823,
+			LastPushedAt: mustParseTime("2026-02-04T00:44:13Z"),
+			OpenIssues:   6056,
 		},
 	},
 	{
@@ -73,9 +73,9 @@ var PopularMarketplaces = []PopularMarketplace{
 		Repo:        "https://github.com/MadAppGang/claude-code",
 		Description: "Battle-tested workflows with 8 specialized plugins",
 		StaticStats: &GitHubStats{
-			Stars:        214,
-			Forks:        19,
-			LastPushedAt: mustParseTime("2026-01-20T16:11:06Z"),
+			Stars:        221,
+			Forks:        21,
+			LastPushedAt: mustParseTime("2026-02-03T07:52:27Z"),
 			OpenIssues:   2,
 		},
 	},
@@ -85,7 +85,7 @@ var PopularMarketplaces = []PopularMarketplace{
 		Repo:        "https://github.com/Dev-GOM/claude-code-marketplace",
 		Description: "Automation-focused collection with 14 plugins",
 		StaticStats: &GitHubStats{
-			Stars:        56,
+			Stars:        58,
 			Forks:        5,
 			LastPushedAt: mustParseTime("2026-01-17T16:54:15Z"),
 			OpenIssues:   0,
@@ -107,12 +107,12 @@ var PopularMarketplaces = []PopularMarketplace{
 		Name:        "claude-plugins-official",
 		DisplayName: "Claude Plugins Official",
 		Repo:        "https://github.com/anthropics/claude-plugins-official",
-		Description: "Official Anthropic marketplace with 48 plugins",
+		Description: "Official Anthropic marketplace with 51 plugins",
 		StaticStats: &GitHubStats{
-			Stars:        4542,
-			Forks:        494,
-			LastPushedAt: mustParseTime("2026-01-21T05:38:08Z"),
-			OpenIssues:   132,
+			Stars:        6397,
+			Forks:        616,
+			LastPushedAt: mustParseTime("2026-01-30T06:58:05Z"),
+			OpenIssues:   171,
 		},
 	},
 	{
@@ -121,10 +121,10 @@ var PopularMarketplaces = []PopularMarketplace{
 		Repo:        "https://github.com/anthropics/skills",
 		Description: "Official Anthropic Agent Skills reference repository with 2 skills",
 		StaticStats: &GitHubStats{
-			Stars:        47806,
-			Forks:        4521,
-			LastPushedAt: mustParseTime("2025-12-20T18:09:45Z"),
-			OpenIssues:   174,
+			Stars:        62390,
+			Forks:        6119,
+			LastPushedAt: mustParseTime("2026-02-04T02:20:55Z"),
+			OpenIssues:   229,
 		},
 	},
 	{
@@ -133,9 +133,9 @@ var PopularMarketplaces = []PopularMarketplace{
 		Repo:        "https://github.com/wshobson/agents",
 		Description: "Comprehensive production system with 71 plugins and multi-agent orchestration",
 		StaticStats: &GitHubStats{
-			Stars:        26228,
-			Forks:        2899,
-			LastPushedAt: mustParseTime("2026-01-19T22:08:28Z"),
+			Stars:        27707,
+			Forks:        3055,
+			LastPushedAt: mustParseTime("2026-02-02T02:06:12Z"),
 			OpenIssues:   12,
 		},
 	},
@@ -146,21 +146,9 @@ var PopularMarketplaces = []PopularMarketplace{
 		Description: "Official Docker Inc. marketplace with 1 plugin for Docker Desktop MCP",
 		StaticStats: &GitHubStats{
 			Stars:        13,
-			Forks:        4,
-			LastPushedAt: mustParseTime("2025-12-19T19:10:46Z"),
-			OpenIssues:   0,
-		},
-	},
-	{
-		Name:        "ccplugins-marketplace",
-		DisplayName: "CC Plugins Curated",
-		Repo:        "https://github.com/ccplugins/marketplace",
-		Description: "Curated collection with 118 plugins across 13 categories",
-		StaticStats: &GitHubStats{
-			Stars:        12,
-			Forks:        8,
-			LastPushedAt: mustParseTime("2025-10-14T03:38:20Z"),
-			OpenIssues:   4,
+			Forks:        6,
+			LastPushedAt: mustParseTime("2026-01-30T16:26:32Z"),
+			OpenIssues:   1,
 		},
 	},
 	{
@@ -169,10 +157,10 @@ var PopularMarketplaces = []PopularMarketplace{
 		Repo:        "https://github.com/thedotmack/claude-mem",
 		Description: "Persistent memory compression system for Claude Code with context preservation",
 		StaticStats: &GitHubStats{
-			Stars:        14748,
-			Forks:        1004,
-			LastPushedAt: mustParseTime("2026-01-18T22:17:11Z"),
-			OpenIssues:   118,
+			Stars:        20789,
+			Forks:        1404,
+			LastPushedAt: mustParseTime("2026-02-04T02:09:03Z"),
+			OpenIssues:   212,
 		},
 	},
 }
