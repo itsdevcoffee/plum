@@ -296,33 +296,32 @@ func formatRelativeTime(t time.Time) string {
 	duration := time.Since(t)
 	hours := duration.Hours()
 
-	if hours < 1 {
+	switch {
+	case hours < 1:
 		return fmt.Sprintf("%dm ago", int(duration.Minutes()))
-	}
-	if hours < 24 {
+	case hours < 24:
 		return fmt.Sprintf("%dh ago", int(hours))
-	}
-	if hours < 168 {
+	case hours < 168:
 		return fmt.Sprintf("%dd ago", int(hours/24))
-	}
-	if hours < 720 {
+	case hours < 720:
 		return fmt.Sprintf("%dw ago", int(hours/24/7))
-	}
-	if hours < 8760 {
+	case hours < 8760:
 		return fmt.Sprintf("%dmo ago", int(hours/24/30))
+	default:
+		return fmt.Sprintf("%dy ago", int(hours/24/365))
 	}
-	return fmt.Sprintf("%dy ago", int(hours/24/365))
 }
 
 // formatNumber formats large numbers with k/M suffix
 func formatNumber(n int) string {
-	if n < 1000 {
+	switch {
+	case n < 1000:
 		return fmt.Sprintf("%d", n)
-	}
-	if n < 1000000 {
+	case n < 1000000:
 		return fmt.Sprintf("%.1fk", float64(n)/1000)
+	default:
+		return fmt.Sprintf("%.1fM", float64(n)/1000000)
 	}
-	return fmt.Sprintf("%.1fM", float64(n)/1000000)
 }
 
 // extractMarketplaceSource extracts owner/repo from GitHub URL

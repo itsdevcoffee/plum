@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"net/url"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -80,9 +81,7 @@ func clearClipboardError() tea.Cmd {
 }
 
 func clearFlashAfter(duration time.Duration, msg tea.Msg) tea.Cmd {
-	return tea.Tick(duration, func(t time.Time) tea.Msg {
-		return msg
-	})
+	return tea.Tick(duration, func(time.Time) tea.Msg { return msg })
 }
 
 // animationTick returns a command that ticks the animation
@@ -219,13 +218,7 @@ func (m *Model) initOrUpdateHelpViewport(terminalHeight int) {
 	const overhead = 9
 
 	if m.helpViewport.Width == 0 {
-		viewportHeight := terminalHeight - overhead
-		if viewportHeight < 3 {
-			viewportHeight = 3
-		}
-		if viewportHeight > terminalHeight-4 {
-			viewportHeight = terminalHeight - 4
-		}
+		viewportHeight := clampHeight(terminalHeight-overhead, 3, terminalHeight-4)
 		m.helpViewport = viewport.New(viewportWidth, viewportHeight)
 		return
 	}
@@ -235,17 +228,8 @@ func (m *Model) initOrUpdateHelpViewport(terminalHeight int) {
 	if m.viewState == ViewHelp {
 		sectionsContent := m.generateHelpSections()
 		contentHeight := lipgloss.Height(sectionsContent)
-		maxHeight := terminalHeight - overhead
-		if maxHeight < 3 {
-			maxHeight = 3
-		}
-
-		if contentHeight < maxHeight {
-			m.helpViewport.Height = contentHeight
-		} else {
-			m.helpViewport.Height = maxHeight
-		}
-
+		maxHeight := maxInt(terminalHeight-overhead, 3)
+		m.helpViewport.Height = minInt(contentHeight, maxHeight)
 		m.helpViewport.SetContent(sectionsContent)
 	}
 }
@@ -254,16 +238,10 @@ func (m *Model) initOrUpdateDetailViewport(terminalHeight int) {
 	const overhead = 9
 	const minWidth = 40
 
-	detailViewportWidth := m.ContentWidth() - 10
-	if detailViewportWidth < minWidth {
-		detailViewportWidth = minWidth
-	}
+	detailViewportWidth := maxInt(m.ContentWidth()-10, minWidth)
 
 	if m.detailViewport.Width == 0 {
-		viewportHeight := terminalHeight - overhead
-		if viewportHeight < 5 {
-			viewportHeight = 5
-		}
+		viewportHeight := maxInt(terminalHeight-overhead, 5)
 		m.detailViewport = viewport.New(detailViewportWidth, viewportHeight)
 		return
 	}
@@ -274,20 +252,22 @@ func (m *Model) initOrUpdateDetailViewport(terminalHeight int) {
 		if p := m.SelectedPlugin(); p != nil {
 			detailContent := m.generateDetailContent(p, detailViewportWidth)
 			contentHeight := lipgloss.Height(detailContent)
-			maxHeight := terminalHeight - overhead
-			if maxHeight < 3 {
-				maxHeight = 3
-			}
-
-			if contentHeight < maxHeight {
-				m.detailViewport.Height = contentHeight
-			} else {
-				m.detailViewport.Height = maxHeight
-			}
-
+			maxHeight := maxInt(terminalHeight-overhead, 3)
+			m.detailViewport.Height = minInt(contentHeight, maxHeight)
 			m.detailViewport.SetContent(detailContent)
 		}
 	}
+}
+
+// clampHeight clamps a value between min and max
+func clampHeight(value, minVal, maxVal int) int {
+	if value < minVal {
+		return minVal
+	}
+	if value > maxVal {
+		return maxVal
+	}
+	return value
 }
 
 // handleKeyMsg handles keyboard input
@@ -513,25 +493,15 @@ func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	// Clear search, cancel refresh, or quit
 	case "esc", "ctrl+g":
-		// If refreshing, cancel the refresh
 		if m.refreshing {
-			m.refreshing = false
-			m.refreshProgress = 0
-			m.refreshTotal = 0
-			m.refreshCurrent = ""
+			m.cancelRefresh()
 			return m, nil
 		}
-		// Otherwise clear search or quit
 		if m.textInput.Value() != "" {
-			m.textInput.SetValue("")
-			m.results = m.filteredSearch("")
-			m.cursor = 0
-			m.scrollOffset = 0
-			m.SnapCursorToTarget()
-		} else {
-			return m, tea.Quit
+			m.clearSearch()
+			return m, nil
 		}
-		return m, nil
+		return m, tea.Quit
 	}
 
 	// All other keys go to text input (typing)
@@ -827,20 +797,26 @@ func (m Model) handleMarketplaceDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 	return m, nil
 }
 
-func openURL(url string) {
+func openURL(urlStr string) {
+	// Validate URL format to prevent command injection
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
+		return
+	}
+
 	var cmd string
 	var args []string
 
 	switch runtime.GOOS {
 	case "darwin":
 		cmd = "open"
-		args = []string{url}
+		args = []string{urlStr}
 	case "windows":
 		cmd = "cmd"
-		args = []string{"/c", "start", url}
+		args = []string{"/c", "start", urlStr}
 	default:
 		cmd = "xdg-open"
-		args = []string{url}
+		args = []string{urlStr}
 	}
 
 	// #nosec G204 -- cmd is determined by runtime.GOOS (trusted), args is validated URL

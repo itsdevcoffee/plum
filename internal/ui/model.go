@@ -375,22 +375,47 @@ func (m *Model) UpdateScroll() {
 	}
 
 	if m.cursor < m.scrollOffset+scrollBuffer {
-		m.scrollOffset = m.cursor - scrollBuffer
-		if m.scrollOffset < 0 {
-			m.scrollOffset = 0
-		}
+		m.scrollOffset = maxInt(m.cursor-scrollBuffer, 0)
 		return
 	}
 
 	if m.cursor >= m.scrollOffset+maxVisible-scrollBuffer {
-		m.scrollOffset = m.cursor - maxVisible + scrollBuffer + 1
-		if m.scrollOffset > len(m.results)-maxVisible {
-			m.scrollOffset = len(m.results) - maxVisible
-		}
-		if m.scrollOffset < 0 {
-			m.scrollOffset = 0
-		}
+		m.scrollOffset = minInt(m.cursor-maxVisible+scrollBuffer+1, len(m.results)-maxVisible)
+		m.scrollOffset = maxInt(m.scrollOffset, 0)
 	}
+}
+
+// minInt returns the smaller of two integers
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// maxInt returns the larger of two integers
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// clearSearch clears the search input and resets results
+func (m *Model) clearSearch() {
+	m.textInput.SetValue("")
+	m.results = m.filteredSearch("")
+	m.cursor = 0
+	m.scrollOffset = 0
+	m.SnapCursorToTarget()
+}
+
+// cancelRefresh cancels an ongoing refresh operation
+func (m *Model) cancelRefresh() {
+	m.refreshing = false
+	m.refreshProgress = 0
+	m.refreshTotal = 0
+	m.refreshCurrent = ""
 }
 
 // maxVisibleItems returns the maximum number of items that can be displayed
@@ -446,80 +471,56 @@ func (m *Model) PrevFilter() {
 
 // NextFacet cycles to the next facet (unified filter/sort)
 func (m *Model) NextFacet() {
-	facets := m.GetPluginFacets()
-
-	// Find current active facet index
-	currentIdx := -1
-	for i, f := range facets {
-		if f.IsActive {
-			// For sorts, check if it matches sort mode
-			if f.Type == FacetSort && f.SortMode == m.pluginSortMode {
-				currentIdx = i
-				break
-			}
-			// For filters, check if it matches filter mode
-			if f.Type == FacetFilter && f.FilterMode == m.filterMode {
-				currentIdx = i
-				break
-			}
-		}
-	}
-
-	// If no match found (shouldn't happen), start from beginning
-	if currentIdx == -1 {
-		currentIdx = 0
-	}
-
-	// Move to next facet
-	nextIdx := (currentIdx + 1) % len(facets)
-	nextFacet := facets[nextIdx]
-
-	// Apply the facet
-	if nextFacet.Type == FacetFilter {
-		m.filterMode = nextFacet.FilterMode
-		m.applyFilter()
-	} else {
-		m.pluginSortMode = nextFacet.SortMode
-		m.applySortAndFilter()
-	}
+	m.cycleFacet(1)
 }
 
 // PrevFacet cycles to the previous facet (unified filter/sort)
 func (m *Model) PrevFacet() {
-	facets := m.GetPluginFacets()
+	m.cycleFacet(-1)
+}
 
-	// Find current active facet index
-	currentIdx := -1
-	for i, f := range facets {
-		if f.IsActive {
-			// For sorts, check if it matches sort mode
-			if f.Type == FacetSort && f.SortMode == m.pluginSortMode {
-				currentIdx = i
-				break
-			}
-			// For filters, check if it matches filter mode
-			if f.Type == FacetFilter && f.FilterMode == m.filterMode {
-				currentIdx = i
-				break
-			}
+// cycleFacet handles facet navigation in either direction
+func (m *Model) cycleFacet(direction int) {
+	facets := m.GetPluginFacets()
+	if len(facets) == 0 {
+		return
+	}
+
+	currentIdx := m.findActiveFacetIndex(facets)
+	if currentIdx == -1 {
+		currentIdx = 0
+		if direction < 0 {
+			currentIdx = len(facets) - 1
 		}
 	}
 
-	// If no match found (shouldn't happen), start from end
-	if currentIdx == -1 {
-		currentIdx = len(facets) - 1
+	nextIdx := (currentIdx + direction + len(facets)) % len(facets)
+	m.applyFacet(facets[nextIdx])
+}
+
+// findActiveFacetIndex returns the index of the currently active facet
+func (m Model) findActiveFacetIndex(facets []Facet) int {
+	for i, f := range facets {
+		if !f.IsActive {
+			continue
+		}
+		if f.Type == FacetSort && f.SortMode == m.pluginSortMode {
+			return i
+		}
+		if f.Type == FacetFilter && f.FilterMode == m.filterMode {
+			return i
+		}
 	}
+	return -1
+}
 
-	// Move to previous facet
-	prevIdx := (currentIdx - 1 + len(facets)) % len(facets)
-	prevFacet := facets[prevIdx]
-
-	// Apply the facet
-	if prevFacet.Type == FacetFilter {
-		m.filterMode = prevFacet.FilterMode
+// applyFacet applies the given facet to the model
+func (m *Model) applyFacet(facet Facet) {
+	if facet.Type == FacetFilter {
+		m.filterMode = facet.FilterMode
 		m.applyFilter()
 	} else {
-		m.pluginSortMode = prevFacet.SortMode
+		m.pluginSortMode = facet.SortMode
 		m.applySortAndFilter()
 	}
 }
@@ -540,36 +541,13 @@ func (m *Model) applySortAndFilter() {
 
 // applyPluginSort sorts the current results based on pluginSortMode
 func (m *Model) applyPluginSort() {
-	// If relevance mode, keep search-based ranking
 	if m.pluginSortMode == PluginSortRelevance {
 		return
 	}
 
-	// Apply custom sorting
-	results := m.results
-	switch m.pluginSortMode {
-	case PluginSortName:
-		sort.Slice(results, func(i, j int) bool {
-			return results[i].Plugin.Name < results[j].Plugin.Name
-		})
-	case PluginSortUpdated:
-		// Sort by last updated (most recent first)
-		// Note: We'd need updated_at field in plugin.Plugin for this
-		// For now, maintain current order as fallback
-		sort.Slice(results, func(i, j int) bool {
-			// Fallback: sort by name if no updated timestamp available
-			return results[i].Plugin.Name < results[j].Plugin.Name
-		})
-	case PluginSortStars:
-		// Sort by GitHub stars (most first)
-		// Note: We'd need stars field in plugin.Plugin for this
-		// For now, maintain current order as fallback
-		sort.Slice(results, func(i, j int) bool {
-			// Fallback: sort by name if no stars available
-			return results[i].Plugin.Name < results[j].Plugin.Name
-		})
-	}
-	m.results = results
+	sort.Slice(m.results, func(i, j int) bool {
+		return m.results[i].Plugin.Name < m.results[j].Plugin.Name
+	})
 }
 
 // applyFilter re-runs search with current filter and resets cursor
@@ -582,74 +560,67 @@ func (m *Model) applyFilter() {
 
 // filteredSearch runs search and applies the current filter
 func (m Model) filteredSearch(query string) []search.RankedPlugin {
-	// Check for marketplace filter (starts with @)
 	if strings.HasPrefix(query, "@") {
-		// Parse: @marketplace-name [optional search terms]
-		parts := strings.SplitN(query[1:], " ", 2)
-		marketplaceName := parts[0]
-		searchTerms := ""
-		if len(parts) > 1 {
-			searchTerms = parts[1]
-		}
-
-		// Filter plugins by marketplace
-		var marketplacePlugins []plugin.Plugin
-		for _, p := range m.allPlugins {
-			if p.Marketplace == marketplaceName {
-				marketplacePlugins = append(marketplacePlugins, p)
-			}
-		}
-
-		// If there are search terms, fuzzy search within the marketplace
-		if searchTerms != "" {
-			return search.Search(searchTerms, marketplacePlugins)
-		}
-
-		// Otherwise return all plugins from this marketplace
-		var filtered []search.RankedPlugin
-		for _, p := range marketplacePlugins {
-			filtered = append(filtered, search.RankedPlugin{
-				Plugin: p,
-				Score:  1.0,
-			})
-		}
-		return filtered
+		return m.marketplaceFilteredSearch(query)
 	}
 
-	// First get all search results
 	allResults := search.Search(query, m.allPlugins)
+	return m.applyFilterMode(allResults)
+}
 
-	// Apply filter
+// marketplaceFilteredSearch handles @marketplace-name filtering
+func (m Model) marketplaceFilteredSearch(query string) []search.RankedPlugin {
+	parts := strings.SplitN(query[1:], " ", 2)
+	marketplaceName := parts[0]
+	searchTerms := ""
+	if len(parts) > 1 {
+		searchTerms = parts[1]
+	}
+
+	var marketplacePlugins []plugin.Plugin
+	for _, p := range m.allPlugins {
+		if p.Marketplace == marketplaceName {
+			marketplacePlugins = append(marketplacePlugins, p)
+		}
+	}
+
+	if searchTerms != "" {
+		return search.Search(searchTerms, marketplacePlugins)
+	}
+
+	filtered := make([]search.RankedPlugin, 0, len(marketplacePlugins))
+	for _, p := range marketplacePlugins {
+		filtered = append(filtered, search.RankedPlugin{Plugin: p, Score: 1.0})
+	}
+	return filtered
+}
+
+// applyFilterMode filters results based on the current filter mode
+func (m Model) applyFilterMode(results []search.RankedPlugin) []search.RankedPlugin {
+	if m.filterMode == FilterAll {
+		return results
+	}
+
+	filtered := make([]search.RankedPlugin, 0)
+	for _, r := range results {
+		if m.matchesFilterMode(r.Plugin) {
+			filtered = append(filtered, r)
+		}
+	}
+	return filtered
+}
+
+// matchesFilterMode checks if a plugin matches the current filter mode
+func (m Model) matchesFilterMode(p plugin.Plugin) bool {
 	switch m.filterMode {
 	case FilterDiscover:
-		// Show only discoverable (from uninstalled marketplaces)
-		filtered := make([]search.RankedPlugin, 0)
-		for _, r := range allResults {
-			if r.Plugin.IsDiscoverable {
-				filtered = append(filtered, r)
-			}
-		}
-		return filtered
-
+		return p.IsDiscoverable
 	case FilterReady:
-		// Show only ready to install (not installed, marketplace IS installed)
-		filtered := make([]search.RankedPlugin, 0)
-		for _, rp := range allResults {
-			if !rp.Plugin.Installed && !rp.Plugin.IsDiscoverable {
-				filtered = append(filtered, rp)
-			}
-		}
-		return filtered
+		return !p.Installed && !p.IsDiscoverable
 	case FilterInstalled:
-		filtered := make([]search.RankedPlugin, 0)
-		for _, rp := range allResults {
-			if rp.Plugin.Installed {
-				filtered = append(filtered, rp)
-			}
-		}
-		return filtered
+		return p.Installed
 	default:
-		return allResults
+		return true
 	}
 }
 
@@ -869,59 +840,40 @@ func (m *Model) ApplyMarketplaceSort() {
 
 	switch m.marketplaceSortMode {
 	case SortByPluginCount:
-		sortMarketplacesByPluginCount(items)
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].TotalPluginCount > items[j].TotalPluginCount
+		})
 	case SortByStars:
-		sortMarketplacesByStars(items)
+		sort.Slice(items, func(i, j int) bool {
+			return getStars(items[i]) > getStars(items[j])
+		})
 	case SortByName:
-		sortMarketplacesByName(items)
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].DisplayName < items[j].DisplayName
+		})
 	case SortByLastUpdated:
-		sortMarketplacesByLastUpdated(items)
+		sort.Slice(items, func(i, j int) bool {
+			return getLastPushed(items[i]).After(getLastPushed(items[j]))
+		})
 	}
 
 	m.marketplaceItems = items
 }
 
-// sortMarketplacesByPluginCount sorts by total plugin count (descending)
-func sortMarketplacesByPluginCount(items []MarketplaceItem) {
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].TotalPluginCount > items[j].TotalPluginCount
-	})
+// getStars safely extracts star count from marketplace item
+func getStars(item MarketplaceItem) int {
+	if item.GitHubStats != nil {
+		return item.GitHubStats.Stars
+	}
+	return 0
 }
 
-// sortMarketplacesByStars sorts by GitHub stars (descending)
-func sortMarketplacesByStars(items []MarketplaceItem) {
-	sort.Slice(items, func(i, j int) bool {
-		si := 0
-		sj := 0
-		if items[i].GitHubStats != nil {
-			si = items[i].GitHubStats.Stars
-		}
-		if items[j].GitHubStats != nil {
-			sj = items[j].GitHubStats.Stars
-		}
-		return si > sj
-	})
-}
-
-// sortMarketplacesByName sorts alphabetically by display name
-func sortMarketplacesByName(items []MarketplaceItem) {
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].DisplayName < items[j].DisplayName
-	})
-}
-
-// sortMarketplacesByLastUpdated sorts by last push date (most recent first)
-func sortMarketplacesByLastUpdated(items []MarketplaceItem) {
-	sort.Slice(items, func(i, j int) bool {
-		var ti, tj time.Time
-		if items[i].GitHubStats != nil {
-			ti = items[i].GitHubStats.LastPushedAt
-		}
-		if items[j].GitHubStats != nil {
-			tj = items[j].GitHubStats.LastPushedAt
-		}
-		return ti.After(tj)
-	})
+// getLastPushed safely extracts last pushed time from marketplace item
+func getLastPushed(item MarketplaceItem) time.Time {
+	if item.GitHubStats != nil {
+		return item.GitHubStats.LastPushedAt
+	}
+	return time.Time{}
 }
 
 // getStaticStatsByName looks up static stats from PopularMarketplaces by name
@@ -992,53 +944,46 @@ func (m *Model) PrevMarketplaceSort() {
 
 // NextMarketplaceFacet cycles to next facet in marketplace view
 func (m *Model) NextMarketplaceFacet() {
-	facets := m.GetMarketplaceFacets()
-
-	// Find current active facet
-	currentIdx := -1
-	for i, f := range facets {
-		if f.IsActive && f.MarketplaceSort == m.marketplaceSortMode {
-			currentIdx = i
-			break
-		}
-	}
-
-	// Move to next
-	if currentIdx == -1 {
-		currentIdx = 0
-	}
-	nextIdx := (currentIdx + 1) % len(facets)
-	nextFacet := facets[nextIdx]
-
-	// Apply facet
-	m.marketplaceSortMode = nextFacet.MarketplaceSort
-	m.ApplyMarketplaceSort()
-	m.marketplaceCursor = 0
-	m.marketplaceScrollOffset = 0
+	m.cycleMarketplaceFacet(1)
 }
 
 // PrevMarketplaceFacet cycles to previous facet in marketplace view
 func (m *Model) PrevMarketplaceFacet() {
-	facets := m.GetMarketplaceFacets()
+	m.cycleMarketplaceFacet(-1)
+}
 
-	// Find current active facet
-	currentIdx := -1
-	for i, f := range facets {
-		if f.IsActive && f.MarketplaceSort == m.marketplaceSortMode {
-			currentIdx = i
-			break
+// cycleMarketplaceFacet handles marketplace facet navigation
+func (m *Model) cycleMarketplaceFacet(direction int) {
+	facets := m.GetMarketplaceFacets()
+	if len(facets) == 0 {
+		return
+	}
+
+	currentIdx := m.findActiveMarketplaceFacetIndex(facets)
+	if currentIdx == -1 {
+		currentIdx = 0
+		if direction < 0 {
+			currentIdx = len(facets) - 1
 		}
 	}
 
-	// Move to previous
-	if currentIdx == -1 {
-		currentIdx = len(facets) - 1
-	}
-	prevIdx := (currentIdx - 1 + len(facets)) % len(facets)
-	prevFacet := facets[prevIdx]
+	nextIdx := (currentIdx + direction + len(facets)) % len(facets)
+	m.applyMarketplaceFacet(facets[nextIdx])
+}
 
-	// Apply facet
-	m.marketplaceSortMode = prevFacet.MarketplaceSort
+// findActiveMarketplaceFacetIndex returns the index of the active marketplace facet
+func (m Model) findActiveMarketplaceFacetIndex(facets []Facet) int {
+	for i, f := range facets {
+		if f.IsActive && f.MarketplaceSort == m.marketplaceSortMode {
+			return i
+		}
+	}
+	return -1
+}
+
+// applyMarketplaceFacet applies a marketplace facet and resets cursor
+func (m *Model) applyMarketplaceFacet(facet Facet) {
+	m.marketplaceSortMode = facet.MarketplaceSort
 	m.ApplyMarketplaceSort()
 	m.marketplaceCursor = 0
 	m.marketplaceScrollOffset = 0
