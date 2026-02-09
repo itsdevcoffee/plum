@@ -135,9 +135,10 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 
 	// Track which marketplaces we've processed to avoid duplicates
 	processedMarketplaces := make(map[string]bool)
-	// Track ALL seen plugin names (across all sources) for global deduplication
-	// Maps plugin name -> source marketplace (first one wins)
-	seenPluginNames := make(map[string]string)
+	// Track seen plugin@marketplace combinations to avoid duplicates
+	// Different plugins with the same name from different marketplaces should both be shown
+	// Maps "pluginName@marketplaceName" -> true
+	seenPluginFullNames := make(map[string]bool)
 
 	// 1. Process installed marketplaces first
 	for marketplaceName, entry := range marketplaces {
@@ -159,21 +160,14 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 			}
 		}
 
-		// Track duplicates within this marketplace
-		seenInThisMarketplace := make(map[string]bool)
-
 		for _, mp := range manifest.Plugins {
-			// Skip duplicates within this marketplace
-			if seenInThisMarketplace[mp.Name] {
-				continue
-			}
-			seenInThisMarketplace[mp.Name] = true
+			fullName := mp.Name + "@" + marketplaceName
 
-			// Skip if seen from a different marketplace
-			if existingMarket, exists := seenPluginNames[mp.Name]; exists && existingMarket != marketplaceName {
+			// Skip if we've already seen this exact plugin@marketplace combination
+			if seenPluginFullNames[fullName] {
 				continue
 			}
-			seenPluginNames[mp.Name] = marketplaceName
+			seenPluginFullNames[fullName] = true
 
 			p := convertMarketplacePlugin(mp, marketplaceName, marketplaceRepo, marketplaceSource, false, installedSet, entry.InstallLocation)
 			plugins = append(plugins, p)
@@ -188,21 +182,14 @@ func LoadAllPlugins() ([]plugin.Plugin, error) {
 			continue
 		}
 
-		// Track duplicates within this discovered marketplace
-		seenInThisMarketplace := make(map[string]bool)
-
 		for _, mp := range disc.Manifest.Plugins {
-			// Skip duplicates within this marketplace
-			if seenInThisMarketplace[mp.Name] {
-				continue
-			}
-			seenInThisMarketplace[mp.Name] = true
+			fullName := mp.Name + "@" + marketplaceName
 
-			// Skip if seen from any previous source
-			if _, exists := seenPluginNames[mp.Name]; exists {
+			// Skip if we've already seen this exact plugin@marketplace combination
+			if seenPluginFullNames[fullName] {
 				continue
 			}
-			seenPluginNames[mp.Name] = marketplaceName
+			seenPluginFullNames[fullName] = true
 
 			// Discovered marketplaces don't have local paths - pass empty string
 			p := convertMarketplacePlugin(mp, marketplaceName, disc.Repo, disc.Source, true, installedSet, "")
