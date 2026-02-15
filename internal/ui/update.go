@@ -300,239 +300,294 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // handleListKeys handles keys in the list view
 // Uses telescope/fzf pattern: Ctrl+key for navigation, typing goes to search
 func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	// Navigation: Ctrl + j/k/n/p or arrow keys
-	case "up", "ctrl+k", "ctrl+p":
-		// Handle marketplace autocomplete navigation
-		if m.marketplaceAutocompleteActive {
-			if m.marketplaceAutocompleteCursor > 0 {
-				m.marketplaceAutocompleteCursor--
-			}
-			return m, nil
-		}
+	key := msg.String()
 
-		if m.cursor > 0 {
-			m.cursor--
-		}
-		m.UpdateScroll()
-		m.SetCursorTarget()
-		return m, animationTick()
+	// Handle navigation keys
+	if cmd := (&m).handleListNavigation(key); cmd != nil {
+		return m, cmd
+	}
 
-	case "down", "ctrl+j", "ctrl+n":
-		// Handle marketplace autocomplete navigation
-		if m.marketplaceAutocompleteActive {
-			if m.marketplaceAutocompleteCursor < len(m.marketplaceAutocompleteList)-1 {
-				m.marketplaceAutocompleteCursor++
-			}
-			return m, nil
-		}
-
-		if m.cursor < len(m.results)-1 {
-			m.cursor++
-		}
-		m.UpdateScroll()
-		m.SetCursorTarget()
-		return m, animationTick()
-
-	// Page navigation
-	case "pgup", "ctrl+u":
-		m.cursor -= m.maxVisibleItems()
-		if m.cursor < 0 {
-			m.cursor = 0
-		}
-		m.UpdateScroll()
-		m.SetCursorTarget()
-		return m, animationTick()
-
-	case "pgdown", "ctrl+d":
-		m.cursor += m.maxVisibleItems()
-		if m.cursor >= len(m.results) {
-			m.cursor = len(m.results) - 1
-		}
-		if m.cursor < 0 {
-			m.cursor = 0
-		}
-		m.UpdateScroll()
-		m.SetCursorTarget()
-		return m, animationTick()
-
-	// Jump to start/end
-	case "home":
-		m.cursor = 0
-		m.scrollOffset = 0
-		m.SetCursorTarget()
-		return m, animationTick()
-
-	case "end":
-		if len(m.results) > 0 {
-			m.cursor = len(m.results) - 1
-		}
-		m.UpdateScroll()
-		m.SetCursorTarget()
-		return m, animationTick()
-
-	// Actions
-	case "enter":
-		// Handle marketplace autocomplete selection
-		if m.marketplaceAutocompleteActive {
-			m.SelectMarketplaceAutocomplete()
-			m.results = m.filteredSearch(m.textInput.Value())
-			return m, nil
-		}
-
-		if len(m.results) > 0 {
-			// Set detail viewport content before transition (like help menu)
-			if m.detailViewport.Width > 0 {
-				if p := m.SelectedPlugin(); p != nil {
-					contentWidth := m.ContentWidth() - 10
-					if contentWidth < 40 {
-						contentWidth = 40
-					}
-					detailContent := m.generateDetailContent(p, contentWidth)
-
-					// Calculate viewport height (match WindowSizeMsg overhead)
-					contentHeight := lipgloss.Height(detailContent)
-					maxHeight := m.windowHeight - 9
-					if maxHeight < 3 {
-						maxHeight = 3
-					}
-
-					if contentHeight < maxHeight {
-						m.detailViewport.Height = contentHeight
-					} else {
-						m.detailViewport.Height = maxHeight
-					}
-
-					m.detailViewport.SetContent(detailContent)
-					m.detailViewport.GotoTop() // Reset scroll position
-				}
-			}
-			m.StartViewTransition(ViewDetail, 1) // Forward transition
-			return m, animationTick()
-		}
-		return m, nil
-
-	case "?":
-		// Set help SECTIONS content in viewport (not header/footer)
-		if m.helpViewport.Width > 0 {
-			sectionsContent := m.generateHelpSections()
-
-			// Calculate fixed overhead heights
-			headerHeight := 3 // Title + divider
-			footerHeight := 2 // Divider + text
-			boxPadding := 4   // Box padding top/bottom (2) + borders (2)
-
-			// Available height for viewport = terminal - all overhead
-			maxHeight := m.windowHeight - headerHeight - footerHeight - boxPadding
-
-			if maxHeight < 3 {
-				maxHeight = 3 // Absolute minimum
-			}
-
-			// Calculate actual content height
-			contentHeight := lipgloss.Height(sectionsContent)
-
-			// Use smaller of content or available space
-			if contentHeight < maxHeight {
-				m.helpViewport.Height = contentHeight
-			} else {
-				m.helpViewport.Height = maxHeight
-			}
-
-			m.helpViewport.SetContent(sectionsContent)
-			m.helpViewport.GotoTop()
-		}
-		m.StartViewTransition(ViewHelp, 1)
-		return m, animationTick()
-
-	case "tab", "right":
-		m.NextFacet()
-		return m, nil
-
-	case "shift+tab", "left":
-		m.PrevFacet()
-		return m, nil
-
-	case "shift+v", "V":
-		m.ToggleDisplayMode()
-		return m, nil
-
-	case "ctrl+t":
-		m.CycleTransitionStyle()
-		return m, nil
-
-	case "shift+u", "U":
-		// Refresh cache - clear and re-fetch all marketplace data
-		return m, func() tea.Msg {
-			return refreshCacheMsg{}
-		}
-
-	case "shift+m", "M":
-		// Open marketplace browser
-		_ = m.LoadMarketplaceItems()
-		m.previousViewBeforeMarketplace = ViewList
-		m.StartViewTransition(ViewMarketplaceList, 1)
-		return m, animationTick()
-
-	case "shift+f", "F":
-		// Open marketplace picker for filtering
-		// Lazy-load marketplace items if not already loaded
-		if len(m.marketplaceItems) == 0 {
-			_ = m.LoadMarketplaceItems()
-		}
-		// Set to autocomplete mode with @ prefix
-		m.textInput.SetValue("@")
-		m.textInput.SetCursor(1)
-		m.UpdateMarketplaceAutocomplete("@")
-		return m, nil
-
-	case " ":
-		// Open quick action menu
-		m.OpenQuickMenu()
-		return m, nil
-
-	// Clear search, cancel refresh, or quit
-	case "esc", "ctrl+g":
-		if m.refreshing {
-			m.cancelRefresh()
-			return m, nil
-		}
-		if m.textInput.Value() != "" {
-			m.clearSearch()
-			return m, nil
-		}
-		return m, tea.Quit
+	// Handle action keys
+	if model, cmd, handled := (&m).handleListActions(key); handled {
+		return model, cmd
 	}
 
 	// All other keys go to text input (typing)
+	return (&m).handleListTextInput(msg)
+}
+
+// handleListNavigation handles navigation keys (up/down/pgup/pgdown/home/end)
+func (m *Model) handleListNavigation(key string) tea.Cmd {
+	switch key {
+	case "up", "ctrl+k", "ctrl+p":
+		return m.handleUpNavigation()
+	case "down", "ctrl+j", "ctrl+n":
+		return m.handleDownNavigation()
+	case "pgup", "ctrl+u":
+		return m.handlePageUp()
+	case "pgdown", "ctrl+d":
+		return m.handlePageDown()
+	case "home":
+		return m.handleHome()
+	case "end":
+		return m.handleEnd()
+	}
+	return nil
+}
+
+// handleUpNavigation handles up arrow and ctrl+k/ctrl+p keys
+func (m *Model) handleUpNavigation() tea.Cmd {
+	if m.marketplaceAutocompleteActive {
+		if m.marketplaceAutocompleteCursor > 0 {
+			m.marketplaceAutocompleteCursor--
+		}
+		return nil
+	}
+
+	if m.cursor > 0 {
+		m.cursor--
+	}
+	m.UpdateScroll()
+	m.SetCursorTarget()
+	return animationTick()
+}
+
+// handleDownNavigation handles down arrow and ctrl+j/ctrl+n keys
+func (m *Model) handleDownNavigation() tea.Cmd {
+	if m.marketplaceAutocompleteActive {
+		if m.marketplaceAutocompleteCursor < len(m.marketplaceAutocompleteList)-1 {
+			m.marketplaceAutocompleteCursor++
+		}
+		return nil
+	}
+
+	if m.cursor < len(m.results)-1 {
+		m.cursor++
+	}
+	m.UpdateScroll()
+	m.SetCursorTarget()
+	return animationTick()
+}
+
+// handlePageUp handles page up navigation
+func (m *Model) handlePageUp() tea.Cmd {
+	m.cursor -= m.maxVisibleItems()
+	if m.cursor < 0 {
+		m.cursor = 0
+	}
+	m.UpdateScroll()
+	m.SetCursorTarget()
+	return animationTick()
+}
+
+// handlePageDown handles page down navigation
+func (m *Model) handlePageDown() tea.Cmd {
+	m.cursor += m.maxVisibleItems()
+	if m.cursor >= len(m.results) {
+		m.cursor = len(m.results) - 1
+	}
+	if m.cursor < 0 {
+		m.cursor = 0
+	}
+	m.UpdateScroll()
+	m.SetCursorTarget()
+	return animationTick()
+}
+
+// handleHome handles home key (jump to start)
+func (m *Model) handleHome() tea.Cmd {
+	m.cursor = 0
+	m.scrollOffset = 0
+	m.SetCursorTarget()
+	return animationTick()
+}
+
+// handleEnd handles end key (jump to end)
+func (m *Model) handleEnd() tea.Cmd {
+	if len(m.results) > 0 {
+		m.cursor = len(m.results) - 1
+	}
+	m.UpdateScroll()
+	m.SetCursorTarget()
+	return animationTick()
+}
+
+// handleListActions handles action keys (enter, ?, tab, etc.)
+// Returns (model, cmd, handled) where handled indicates if the key was processed
+func (m *Model) handleListActions(key string) (tea.Model, tea.Cmd, bool) {
+	switch key {
+	case "enter":
+		return m.handleEnterKey()
+	case "?":
+		return m.handleHelpKey()
+	case "tab", "right":
+		m.NextFacet()
+		return *m, nil, true
+	case "shift+tab", "left":
+		m.PrevFacet()
+		return *m, nil, true
+	case "shift+v", "V":
+		m.ToggleDisplayMode()
+		return *m, nil, true
+	case "ctrl+t":
+		m.CycleTransitionStyle()
+		return *m, nil, true
+	case "shift+u", "U":
+		return *m, func() tea.Msg { return refreshCacheMsg{} }, true
+	case "shift+m", "M":
+		return m.handleMarketplaceBrowser()
+	case "shift+f", "F":
+		return m.handleMarketplaceFilter()
+	case " ":
+		m.OpenQuickMenu()
+		return *m, nil, true
+	case "esc", "ctrl+g":
+		return m.handleEscapeKey()
+	}
+	return *m, nil, false
+}
+
+// handleEnterKey handles the enter key in list view
+func (m *Model) handleEnterKey() (tea.Model, tea.Cmd, bool) {
+	if m.marketplaceAutocompleteActive {
+		m.SelectMarketplaceAutocomplete()
+		m.results = m.filteredSearch(m.textInput.Value())
+		return *m, nil, true
+	}
+
+	if len(m.results) > 0 {
+		m.prepareDetailViewport()
+		m.StartViewTransition(ViewDetail, 1)
+		return *m, animationTick(), true
+	}
+	return *m, nil, true
+}
+
+// prepareDetailViewport sets up the detail viewport before transitioning
+func (m *Model) prepareDetailViewport() {
+	if m.detailViewport.Width == 0 {
+		return
+	}
+
+	p := m.SelectedPlugin()
+	if p == nil {
+		return
+	}
+
+	contentWidth := m.ContentWidth() - 10
+	if contentWidth < 40 {
+		contentWidth = 40
+	}
+	detailContent := m.generateDetailContent(p, contentWidth)
+
+	contentHeight := lipgloss.Height(detailContent)
+	maxHeight := m.windowHeight - 9
+	if maxHeight < 3 {
+		maxHeight = 3
+	}
+
+	if contentHeight < maxHeight {
+		m.detailViewport.Height = contentHeight
+	} else {
+		m.detailViewport.Height = maxHeight
+	}
+
+	m.detailViewport.SetContent(detailContent)
+	m.detailViewport.GotoTop()
+}
+
+// handleHelpKey handles the ? key to show help
+func (m *Model) handleHelpKey() (tea.Model, tea.Cmd, bool) {
+	if m.helpViewport.Width > 0 {
+		m.prepareHelpViewport()
+	}
+	m.StartViewTransition(ViewHelp, 1)
+	return *m, animationTick(), true
+}
+
+// prepareHelpViewport sets up the help viewport content
+func (m *Model) prepareHelpViewport() {
+	sectionsContent := m.generateHelpSections()
+
+	headerHeight := 3
+	footerHeight := 2
+	boxPadding := 4
+	maxHeight := m.windowHeight - headerHeight - footerHeight - boxPadding
+
+	if maxHeight < 3 {
+		maxHeight = 3
+	}
+
+	contentHeight := lipgloss.Height(sectionsContent)
+
+	if contentHeight < maxHeight {
+		m.helpViewport.Height = contentHeight
+	} else {
+		m.helpViewport.Height = maxHeight
+	}
+
+	m.helpViewport.SetContent(sectionsContent)
+	m.helpViewport.GotoTop()
+}
+
+// handleMarketplaceBrowser opens the marketplace browser
+func (m *Model) handleMarketplaceBrowser() (tea.Model, tea.Cmd, bool) {
+	_ = m.LoadMarketplaceItems()
+	m.previousViewBeforeMarketplace = ViewList
+	m.StartViewTransition(ViewMarketplaceList, 1)
+	return *m, animationTick(), true
+}
+
+// handleMarketplaceFilter opens the marketplace filter picker
+func (m *Model) handleMarketplaceFilter() (tea.Model, tea.Cmd, bool) {
+	if len(m.marketplaceItems) == 0 {
+		_ = m.LoadMarketplaceItems()
+	}
+	m.textInput.SetValue("@")
+	m.textInput.SetCursor(1)
+	m.UpdateMarketplaceAutocomplete("@")
+	return *m, nil, true
+}
+
+// handleEscapeKey handles the esc and ctrl+g keys
+func (m *Model) handleEscapeKey() (tea.Model, tea.Cmd, bool) {
+	if m.refreshing {
+		m.cancelRefresh()
+		return *m, nil, true
+	}
+	if m.textInput.Value() != "" {
+		m.clearSearch()
+		return *m, nil, true
+	}
+	return *m, tea.Quit, true
+}
+
+// handleListTextInput handles text input for search
+func (m *Model) handleListTextInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	oldValue := m.textInput.Value()
 	m.textInput, cmd = m.textInput.Update(msg)
 	newValue := m.textInput.Value()
 
-	// Update marketplace autocomplete state
 	m.UpdateMarketplaceAutocomplete(newValue)
 
-	// Re-run search on input change (with filter)
 	if !m.marketplaceAutocompleteActive {
 		m.results = m.filteredSearch(newValue)
 	}
 
-	// Reset cursor to top on any search input change
 	if newValue != oldValue {
 		m.cursor = 0
 		m.scrollOffset = 0
 		m.marketplaceAutocompleteCursor = 0
 		m.SnapCursorToTarget()
 	} else if m.cursor >= len(m.results) {
-		// Clamp cursor if somehow out of bounds
 		m.cursor = len(m.results) - 1
 		if m.cursor < 0 {
 			m.cursor = 0
 		}
 	}
 
-	return m, cmd
+	return *m, cmd
 }
 
 // handleDetailKeys handles keys in the detail view
@@ -801,6 +856,11 @@ func openURL(urlStr string) {
 	// Validate URL format to prevent command injection
 	parsedURL, err := url.Parse(urlStr)
 	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
+		return
+	}
+
+	// Additional validation: reject localhost URLs to prevent local exploitation
+	if parsedURL.Hostname() == "localhost" || parsedURL.Hostname() == "127.0.0.1" || parsedURL.Hostname() == "[::1]" {
 		return
 	}
 

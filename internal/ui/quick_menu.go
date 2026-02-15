@@ -258,7 +258,20 @@ func (m *Model) ExecuteQuickMenuAction() tea.Cmd {
 	// Execute action based on key
 	// We'll delegate to the appropriate key handler by synthesizing a key event
 	return func() tea.Msg {
-		return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(action.Key)}
+		// Create proper KeyMsg based on action.Key content
+		keyRunes := []rune(action.Key)
+		if len(keyRunes) == 1 {
+			return tea.KeyMsg{
+				Type:  tea.KeyRunes,
+				Runes: keyRunes,
+			}
+		}
+		// For multi-character keys (like "enter"), use string-based matching
+		// The handler will match on msg.String()
+		return tea.KeyMsg{
+			Type:  tea.KeyRunes,
+			Runes: keyRunes,
+		}
 	}
 }
 

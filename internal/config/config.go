@@ -216,6 +216,8 @@ func convertMarketplacePlugin(
 
 	// Check if plugin is incomplete (missing .claude-plugin/plugin.json)
 	// Only check for locally installed marketplaces, not discovered ones
+	// Note: This has a minor TOCTOU race condition, but the risk is negligible
+	// as the file is only read from trusted local config directories
 	isIncomplete := mp.IsIncomplete
 	if !isIncomplete && marketplacePath != "" && !mp.HasLSPServers && !mp.IsExternalURL {
 		// Construct path to plugin.json based on source
@@ -226,6 +228,8 @@ func convertMarketplacePlugin(
 			sourcePath = sourcePath[2:]
 		}
 		pluginJSONPath := filepath.Join(marketplacePath, sourcePath, ".claude-plugin", "plugin.json")
+		// Single stat check - if the file doesn't exist at this moment, mark as incomplete
+		// TOCTOU risk is minimal: this is a read-only check in a trusted directory
 		if _, err := os.Stat(pluginJSONPath); os.IsNotExist(err) {
 			isIncomplete = true
 		}

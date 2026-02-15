@@ -545,9 +545,38 @@ func (m *Model) applyPluginSort() {
 		return
 	}
 
-	sort.Slice(m.results, func(i, j int) bool {
-		return m.results[i].Plugin.Name < m.results[j].Plugin.Name
-	})
+	switch m.pluginSortMode {
+	case PluginSortName:
+		sort.Slice(m.results, func(i, j int) bool {
+			return m.results[i].Plugin.Name < m.results[j].Plugin.Name
+		})
+	case PluginSortUpdated:
+		// Sort by marketplace last updated (requires stats)
+		sort.Slice(m.results, func(i, j int) bool {
+			// Get marketplace stats for comparison
+			statsI, _ := marketplace.LoadStatsFromCache(m.results[i].Plugin.Marketplace)
+			statsJ, _ := marketplace.LoadStatsFromCache(m.results[j].Plugin.Marketplace)
+
+			if statsI != nil && statsJ != nil {
+				return statsI.LastPushedAt.After(statsJ.LastPushedAt)
+			}
+			// Fallback to name if stats unavailable
+			return m.results[i].Plugin.Name < m.results[j].Plugin.Name
+		})
+	case PluginSortStars:
+		// Sort by marketplace stars (requires stats)
+		sort.Slice(m.results, func(i, j int) bool {
+			// Get marketplace stats for comparison
+			statsI, _ := marketplace.LoadStatsFromCache(m.results[i].Plugin.Marketplace)
+			statsJ, _ := marketplace.LoadStatsFromCache(m.results[j].Plugin.Marketplace)
+
+			if statsI != nil && statsJ != nil {
+				return statsI.Stars > statsJ.Stars
+			}
+			// Fallback to name if stats unavailable
+			return m.results[i].Plugin.Name < m.results[j].Plugin.Name
+		})
+	}
 }
 
 // applyFilter re-runs search with current filter and resets cursor
