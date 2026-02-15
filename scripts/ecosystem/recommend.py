@@ -228,12 +228,9 @@ def main():
     parser.add_argument("--exclude-no-install", action="store_true",
                         help="Filter out entries without an install command")
 
-    # Output format: --json (default) or --markdown (mutually exclusive)
-    fmt_group = parser.add_mutually_exclusive_group()
-    fmt_group.add_argument("--json", action="store_true", default=True,
-                           help="Output as JSON (default)")
-    fmt_group.add_argument("--markdown", action="store_true",
-                           help="Output as formatted markdown tables")
+    # Output format: JSON by default, --markdown for tables
+    parser.add_argument("--markdown", action="store_true",
+                        help="Output as formatted markdown tables (default: JSON)")
 
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output")
 

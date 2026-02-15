@@ -11,6 +11,7 @@ Zero external dependencies — stdlib only.
 """
 
 import math
+import re
 from datetime import datetime, timedelta
 
 # ---------------------------------------------------------------------------
@@ -28,104 +29,106 @@ RECENCY_BOOST = 0.10
 # Keyword → tag map  (description keywords → canonical tags)
 # ---------------------------------------------------------------------------
 
-KEYWORD_TAG_MAP: dict[str, str] = {
-    # Languages
-    "golang":           "go",
-    "go ":              "go",       # trailing space avoids false positives
-    " go ":             "go",
-    "python":           "python",
-    "typescript":       "typescript",
-    "javascript":       "javascript",
-    "nodejs":           "nodejs",
-    "node.js":          "nodejs",
-    "rust":             "rust",
-    "ruby":             "ruby",
-    "java ":            "java",
-    " java ":           "java",
-    "kotlin":           "kotlin",
-    "swift":            "swift",
-    "php":              "php",
-    "c++":              "cpp",
-    "cpp":              "cpp",
+# Each entry is (regex_pattern_string, canonical_tag).
+# Short/ambiguous words use \b word boundaries to prevent substring matches.
+KEYWORD_TAG_MAP: list[tuple[str, str]] = [
+    # Languages — short words need \b boundaries
+    (r"golang",              "go"),
+    (r"\bgo\b",              "go"),
+    (r"python",              "python"),
+    (r"typescript",          "typescript"),
+    (r"javascript",          "javascript"),
+    (r"nodejs",              "nodejs"),
+    (r"node\.js",            "nodejs"),
+    (r"\trust\b",            "rust"),
+    (r"\bruby\b",            "ruby"),
+    (r"\bjava\b",            "java"),
+    (r"kotlin",              "kotlin"),
+    (r"\bswift\b",           "swift"),
+    (r"\bphp\b",             "php"),
+    (r"c\+\+",              "cpp"),
+    (r"\bcpp\b",             "cpp"),
 
-    # Frameworks
-    "react native":     "react-native",
-    "react-native":     "react-native",
-    "react":            "react",
-    "next.js":          "nextjs",
-    "nextjs":           "nextjs",
-    "vue":              "vue",
-    "nuxt":             "nuxt",
-    "svelte":           "svelte",
-    "angular":          "angular",
-    "remotion":         "remotion",
+    # Frameworks — check multi-word patterns before shorter ones
+    (r"react[- ]native",     "react-native"),
+    (r"\breact\b",           "react"),
+    (r"next\.js",            "nextjs"),
+    (r"nextjs",              "nextjs"),
+    (r"\bvue\b",             "vue"),
+    (r"\bnuxt\b",            "nuxt"),
+    (r"svelte",              "svelte"),
+    (r"angular",             "angular"),
+    (r"remotion",            "remotion"),
 
     # Domains — terminal / CLI
-    "terminal":         "terminal",
-    "tui":              "tui",
-    "cli":              "cli",
+    (r"terminal",            "terminal"),
+    (r"\btui\b",             "tui"),
+    (r"\bcli\b",             "cli"),
 
     # Containers / infra
-    "docker":           "docker",
-    "kubernetes":       "kubernetes",
-    "k8s":              "kubernetes",
-    "terraform":        "terraform",
-    "github action":    "github-actions",
-    "github actions":   "github-actions",
-    "ci/cd":            "ci-cd",
-    "ci cd":            "ci-cd",
-    "cicd":             "ci-cd",
+    (r"docker",              "docker"),
+    (r"kubernetes",          "kubernetes"),
+    (r"\bk8s\b",             "kubernetes"),
+    (r"terraform",           "terraform"),
+    (r"github[- ]actions?",  "github-actions"),
+    (r"ci/?cd",              "ci-cd"),
+    (r"\bci\b.*\bcd\b",      "ci-cd"),
 
     # Databases
-    "database":         "database",
-    "postgresql":       "postgresql",
-    "postgres":         "postgresql",
-    "mongodb":          "mongodb",
-    "mongo ":           "mongodb",
-    "redis":            "redis",
+    (r"database",            "database"),
+    (r"postgresql",          "postgresql"),
+    (r"postgres",            "postgresql"),
+    (r"mongodb",             "mongodb"),
+    (r"\bmongo\b",           "mongodb"),
+    (r"\bredis\b",           "redis"),
 
     # API
-    "api":              "api",
-    "graphql":          "graphql",
-    "grpc":             "grpc",
+    (r"\bapi\b",             "api"),
+    (r"graphql",             "graphql"),
+    (r"\bgrpc\b",            "grpc"),
 
     # Auth
-    "authentication":   "authentication",
-    "oauth":            "oauth",
-    "auth ":            "authentication",
+    (r"authentication",      "authentication"),
+    (r"\boauth\b",           "oauth"),
+    (r"\bauth\b",            "authentication"),
 
     # ML / AI
-    "machine learning": "machine-learning",
-    "llm":              "llm",
+    (r"machine[- ]learning", "machine-learning"),
+    (r"\bllm\b",             "llm"),
 
     # Testing
-    "testing":          "testing",
-    "e2e":              "e2e",
-    "end-to-end":       "e2e",
-    "browser automation": "browser-automation",
+    (r"testing",             "testing"),
+    (r"\be2e\b",             "e2e"),
+    (r"end[- ]to[- ]end",   "e2e"),
+    (r"browser[- ]automation", "browser-automation"),
 
     # Misc tooling / services
-    "slack":            "slack",
-    "git ":             "git",
-    " git ":            "git",
-    "markdown":         "markdown",
-    "pdf":              "pdf",
-    "document":         "document",
-    "design":           "design",
-    "ui/ux":            "ui-ux",
-    "accessibility":    "accessibility",
-    "seo":              "seo",
-    "marketing":        "marketing",
-    "deployment":       "deployment",
-    "serverless":       "serverless",
-    "aws":              "aws",
-    "azure":            "azure",
-    "gcp":              "gcp",
-    "cloudflare":       "cloudflare",
-    "vercel":           "vercel",
-    "supabase":         "supabase",
-    "firebase":         "firebase",
-}
+    (r"\bslack\b",           "slack"),
+    (r"\bgit\b",             "git"),
+    (r"markdown",            "markdown"),
+    (r"\bpdf\b",             "pdf"),
+    (r"document",            "document"),
+    (r"\bdesign\b",          "design"),
+    (r"ui/?ux",              "ui-ux"),
+    (r"accessibility",       "accessibility"),
+    (r"\bseo\b",             "seo"),
+    (r"marketing",           "marketing"),
+    (r"deployment",          "deployment"),
+    (r"serverless",          "serverless"),
+    (r"\baws\b",             "aws"),
+    (r"\bazure\b",           "azure"),
+    (r"\bgcp\b",             "gcp"),
+    (r"cloudflare",          "cloudflare"),
+    (r"\bvercel\b",          "vercel"),
+    (r"supabase",            "supabase"),
+    (r"firebase",            "firebase"),
+]
+
+# Pre-compile for performance
+_COMPILED_KEYWORDS: list[tuple[re.Pattern, str]] = [
+    (re.compile(pattern, re.IGNORECASE), tag)
+    for pattern, tag in KEYWORD_TAG_MAP
+]
 
 
 # ---------------------------------------------------------------------------
@@ -136,15 +139,15 @@ def infer_tags(item: dict) -> set[str]:
     """Return inferred tags from item description/name that are NOT already
     in the item's explicit tags."""
     explicit = {t.lower() for t in item.get("tags", [])}
-    text = " " + (
+    text = (
         (item.get("description", "") or "")
         + " "
         + (item.get("name", "") or "")
-    ).lower() + " "
+    )
 
     inferred: set[str] = set()
-    for keyword, tag in KEYWORD_TAG_MAP.items():
-        if keyword in text and tag not in explicit:
+    for pattern, tag in _COMPILED_KEYWORDS:
+        if tag not in explicit and pattern.search(text):
             inferred.add(tag)
 
     # Avoid overly broad inference: if "react" is inferred but text contains
