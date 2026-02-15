@@ -38,3 +38,6 @@ docs/tmp
 
 # Local MCP server config (may contain secrets)
 .mcp.json
+
+# Python cache
+__pycache__/
