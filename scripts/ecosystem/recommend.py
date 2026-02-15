@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 """Recommend ecosystem skills, plugins, agents, and MCP servers for a project.
 
-Analyzes the project's tech stack and scores entries from ecosystem JSON files.
+Analyzes the project's tech stack and scores entries from ecosystem JSON files
+using the multi-stage scorer engine (scorer.py).
+
 Zero external dependencies - stdlib only.
 
 Usage:
     python3 scripts/ecosystem/recommend.py [TARGET_DIR] [--top N] [--min-score N] [--pretty]
+    python3 scripts/ecosystem/recommend.py [TARGET_DIR] --markdown [--exclude-no-install]
 """
 
 import json
-import math
-import os
-import sys
 from pathlib import Path
+
+from scorer import score_item, normalize_popularity, deduplicate
 
 # Resolve ecosystem dir relative to this script: ../../ecosystem/
 SCRIPT_DIR = Path(__file__).resolve().parent
 ECOSYSTEM_DIR = SCRIPT_DIR.parent.parent / "ecosystem"
 
-# Source file config: (filename, items_key, popularity_field)
+# Source file config: (filename, items_key, popularity_field, output_key)
 SOURCES = [
     ("skills-leaderboard.json", "skills",       "installs",  "skills_leaderboard"),
     ("plugins.json",            "repositories",  "stars",     "plugins"),
@@ -27,13 +29,17 @@ SOURCES = [
     ("mcp-servers.json",        "collections",   "stars",     "mcp_servers"),
 ]
 
-# Weights
-RELEVANCE_WEIGHT = 0.7
-POPULARITY_WEIGHT = 0.3
-TAG_OVERLAP_WEIGHT = 0.8
-KEYWORD_HIT_WEIGHT = 0.2
 DEFAULT_TOP = 5
-DEFAULT_MIN_SCORE = 15
+DEFAULT_MIN_SCORE = 20
+
+# Category label mapping for markdown output
+CATEGORY_LABELS = {
+    "skills_leaderboard": "Top Skills (skills.sh)",
+    "plugins":            "Plugins",
+    "agents":             "Agents",
+    "skills":             "Skill Repositories",
+    "mcp_servers":        "MCP Servers",
+}
 
 
 def _load_json(filepath):
@@ -44,66 +50,7 @@ def _load_json(filepath):
         return {}
 
 
-def _normalize_popularity(items, pop_field):
-    """Add normalized popularity (0-100, log-scale) to each item."""
-    values = [item.get(pop_field, 0) for item in items]
-    max_val = max(values) if values else 0
-
-    for item in items:
-        raw = item.get(pop_field, 0)
-        if max_val > 0:
-            item["_pop_norm"] = math.log1p(raw) / math.log1p(max_val) * 100
-        else:
-            item["_pop_norm"] = 0
-    return items
-
-
-def _compute_relevance(item, stack_tags, stack_keywords):
-    """Compute relevance score (0-100) for an item against the stack profile.
-
-    - Tag overlap ratio (weighted 80%)
-    - Description keyword hits (weighted 20%)
-    """
-    item_tags = set(t.lower() for t in item.get("tags", []))
-    stack_tag_set = set(t.lower() for t in stack_tags)
-
-    # Tag overlap: what fraction of the item's tags match the stack
-    if item_tags:
-        overlap = item_tags & stack_tag_set
-        tag_score = len(overlap) / len(item_tags) * 100
-        matching_tags = sorted(overlap)
-    else:
-        tag_score = 0
-        matching_tags = []
-
-    # Description keyword hits
-    desc = (item.get("description", "") + " " + item.get("name", "")).lower()
-    if stack_keywords:
-        hits = sum(1 for kw in stack_keywords if kw in desc)
-        keyword_score = min(hits / max(len(stack_keywords) * 0.3, 1) * 100, 100)
-    else:
-        keyword_score = 0
-
-    relevance = (tag_score * TAG_OVERLAP_WEIGHT) + (keyword_score * KEYWORD_HIT_WEIGHT)
-    return relevance, matching_tags
-
-
-def _build_keywords(stack_profile):
-    """Build keyword set from the stack profile for description matching."""
-    keywords = set()
-    for lang in stack_profile.get("languages", []):
-        keywords.add(lang.lower())
-    for tag in stack_profile.get("tags", []):
-        keywords.add(tag.lower())
-    for fw in stack_profile.get("frameworks", []):
-        keywords.add(fw.lower())
-    # Remove very generic terms
-    keywords.discard("backend")
-    keywords.discard("make")
-    return keywords
-
-
-def _format_entry(item, score, matching_tags, pop_field, source_label):
+def _format_entry(item, score, matching_tags, inferred_tags, pop_field, source_label):
     """Format a scored item into the output structure."""
     entry = {
         "name": item.get("name", ""),
@@ -111,6 +58,7 @@ def _format_entry(item, score, matching_tags, pop_field, source_label):
         "description": item.get("description", ""),
         "score": round(score, 1),
         "matching_tags": matching_tags,
+        "inferred_tags": inferred_tags,
         "popularity_metric": {pop_field: item.get(pop_field, 0)},
         "source": source_label,
     }
@@ -123,7 +71,67 @@ def _format_entry(item, score, matching_tags, pop_field, source_label):
     return entry
 
 
-def recommend(target_dir, top_n=DEFAULT_TOP, min_score=DEFAULT_MIN_SCORE):
+def _format_markdown(result):
+    """Render the recommendation result as markdown tables."""
+    lines = []
+
+    # Stack profile header
+    profile = result.get("stack_profile", {})
+    lines.append("## Stack Profile")
+    lines.append("")
+    lines.append(f"**Languages:** {', '.join(profile.get('languages', [])) or 'none'}")
+    lines.append(f"**Frameworks:** {', '.join(profile.get('frameworks', [])) or 'none'}")
+    lines.append(f"**Tags:** {', '.join(profile.get('tags', [])) or 'none'}")
+    lines.append("")
+
+    recommendations = result.get("recommendations", {})
+
+    # Iterate sources in order to maintain consistent output
+    for _filename, _items_key, pop_field, output_key in SOURCES:
+        entries = recommendations.get(output_key)
+        if not entries:
+            continue
+
+        label = CATEGORY_LABELS.get(output_key, output_key)
+        pop_col = pop_field.capitalize()
+
+        lines.append(f"## {label}")
+        lines.append("")
+        lines.append(f"| Name | Score | {pop_col} | Tags | Install |")
+        lines.append("|------|-------|" + "-" * (len(pop_col) + 2) + "|------|---------|")
+
+        for entry in entries:
+            name = entry.get("name", "")
+            score = entry.get("score", 0)
+
+            # Get popularity value
+            pop_metric = entry.get("popularity_metric", {})
+            pop_val = pop_metric.get(pop_field, 0)
+            pop_str = f"{pop_val:,}"
+
+            # Build tags column: matching + inferred (prefixed with ~)
+            tag_parts = list(entry.get("matching_tags", []))
+            for t in entry.get("inferred_tags", []):
+                tag_parts.append(f"~{t}")
+            tags_str = ", ".join(tag_parts) if tag_parts else "-"
+
+            # Install column
+            install_cmd = entry.get("install_cmd")
+            install_str = f"`{install_cmd}`" if install_cmd else "-"
+
+            lines.append(f"| {name} | {score} | {pop_str} | {tags_str} | {install_str} |")
+
+        lines.append("")
+
+    if not recommendations:
+        lines.append("*No recommendations found above the score threshold.*")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def recommend(target_dir, top_n=DEFAULT_TOP, min_score=DEFAULT_MIN_SCORE,
+              exclude_no_install=False):
     """Run recommendation engine on the target directory.
 
     Returns structured JSON-serializable dict.
@@ -135,11 +143,17 @@ def recommend(target_dir, top_n=DEFAULT_TOP, min_score=DEFAULT_MIN_SCORE):
     if "error" in stack_profile:
         return {"error": stack_profile["error"]}
 
-    stack_tags = stack_profile["tags"] + stack_profile["languages"] + stack_profile["frameworks"]
-    stack_keywords = _build_keywords(stack_profile)
+    # Build stack_tags set: languages + tags + frameworks, all lowercased
+    stack_tags = set()
+    for val in stack_profile.get("languages", []):
+        stack_tags.add(val.lower())
+    for val in stack_profile.get("tags", []):
+        stack_tags.add(val.lower())
+    for val in stack_profile.get("frameworks", []):
+        stack_tags.add(val.lower())
 
-    recommendations = {}
-    total_matches = 0
+    # Collect all scored entries across all sources
+    all_scored = []
 
     for filename, items_key, pop_field, output_key in SOURCES:
         filepath = ECOSYSTEM_DIR / filename
@@ -149,30 +163,46 @@ def recommend(target_dir, top_n=DEFAULT_TOP, min_score=DEFAULT_MIN_SCORE):
         if not items:
             continue
 
-        items = _normalize_popularity(items, pop_field)
+        # Get last_updated from the source data for recency boost
+        last_updated = data.get("last_updated")
 
-        scored = []
+        # Stage 3: normalize popularity with recency
+        normalize_popularity(items, pop_field, last_updated)
+
+        # Stage 1+2+combined: score each item
         for item in items:
-            relevance, matching_tags = _compute_relevance(item, stack_tags, stack_keywords)
-
-            if relevance < 1:
+            result = score_item(item, stack_tags, pop_field)
+            if result is None:
                 continue
 
-            pop_score = item.get("_pop_norm", 0)
-            final_score = (relevance * RELEVANCE_WEIGHT) + (pop_score * POPULARITY_WEIGHT)
+            final_score, matching_tags, inferred_tags = result
 
             if final_score >= min_score:
-                scored.append((final_score, matching_tags, item))
+                entry = _format_entry(
+                    item, final_score, matching_tags, inferred_tags,
+                    pop_field, output_key,
+                )
+                all_scored.append(entry)
 
-        scored.sort(key=lambda x: x[0], reverse=True)
-        top_items = scored[:top_n]
+    # Stage 4: deduplicate across all sources
+    deduplicated = deduplicate(all_scored)
 
-        if top_items:
-            recommendations[output_key] = [
-                _format_entry(item, score, mtags, pop_field, output_key)
-                for score, mtags, item in top_items
-            ]
-            total_matches += len(top_items)
+    # Apply --exclude-no-install filter AFTER dedup but BEFORE grouping
+    if exclude_no_install:
+        deduplicated = [e for e in deduplicated if e.get("install_cmd")]
+
+    # Re-group by source, sort by score, apply top_n per category
+    recommendations = {}
+    total_matches = 0
+
+    for entry in deduplicated:
+        source = entry.get("source", "")
+        recommendations.setdefault(source, []).append(entry)
+
+    for source in recommendations:
+        recommendations[source].sort(key=lambda e: e.get("score", 0), reverse=True)
+        recommendations[source] = recommendations[source][:top_n]
+        total_matches += len(recommendations[source])
 
     return {
         "target_dir": str(Path(target_dir).resolve()),
@@ -191,15 +221,36 @@ def main():
 
     parser = argparse.ArgumentParser(description="Recommend ecosystem tools for a project")
     parser.add_argument("target_dir", nargs="?", default=".", help="Project directory to analyze")
-    parser.add_argument("--top", type=int, default=DEFAULT_TOP, help=f"Top N per category (default: {DEFAULT_TOP})")
-    parser.add_argument("--min-score", type=int, default=DEFAULT_MIN_SCORE, help=f"Minimum score threshold (default: {DEFAULT_MIN_SCORE})")
+    parser.add_argument("--top", type=int, default=DEFAULT_TOP,
+                        help=f"Top N per category (default: {DEFAULT_TOP})")
+    parser.add_argument("--min-score", type=int, default=DEFAULT_MIN_SCORE,
+                        help=f"Minimum score threshold (default: {DEFAULT_MIN_SCORE})")
+    parser.add_argument("--exclude-no-install", action="store_true",
+                        help="Filter out entries without an install command")
+
+    # Output format: --json (default) or --markdown (mutually exclusive)
+    fmt_group = parser.add_mutually_exclusive_group()
+    fmt_group.add_argument("--json", action="store_true", default=True,
+                           help="Output as JSON (default)")
+    fmt_group.add_argument("--markdown", action="store_true",
+                           help="Output as formatted markdown tables")
+
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output")
 
     args = parser.parse_args()
-    result = recommend(args.target_dir, top_n=args.top, min_score=args.min_score)
 
-    indent = 2 if args.pretty else None
-    print(json.dumps(result, indent=indent))
+    result = recommend(
+        args.target_dir,
+        top_n=args.top,
+        min_score=args.min_score,
+        exclude_no_install=args.exclude_no_install,
+    )
+
+    if args.markdown:
+        print(_format_markdown(result))
+    else:
+        indent = 2 if args.pretty else None
+        print(json.dumps(result, indent=indent))
 
 
 if __name__ == "__main__":
