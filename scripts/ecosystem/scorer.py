@@ -20,7 +20,6 @@ from datetime import datetime, timedelta
 
 RELEVANCE_WEIGHT = 0.7
 POPULARITY_WEIGHT = 0.3
-TAG_MATCH_WEIGHT = 0.8          # explicit tag share of relevance
 INFERRED_TAG_DISCOUNT = 0.5     # inferred tags count at half weight
 RECENCY_MONTHS = 3
 RECENCY_BOOST = 0.10

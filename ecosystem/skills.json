@@ -235,39 +235,6 @@
       "tags": ["local", "personal", "git-tools", "terminal", "cli", "development"],
       "description": "Local marketplace for personal skills - git tools, terminal automation, browser automation",
       "install_cmd": "/plugin marketplace add dashed/claude-marketplace"
-    },
-    {
-      "name": "BehiSecc/awesome-claude-skills",
-      "owner": "BehiSecc",
-      "url": "https://github.com/BehiSecc/awesome-claude-skills",
-      "stars": 5800,
-      "category": "community",
-      "type": "curated-list",
-      "tags": ["curated", "comprehensive", "development"],
-      "description": "Curated list of Claude Skills",
-      "install_cmd": null
-    },
-    {
-      "name": "ComposioHQ/awesome-claude-skills",
-      "owner": "ComposioHQ",
-      "url": "https://github.com/ComposioHQ/awesome-claude-skills",
-      "stars": 34900,
-      "category": "community",
-      "type": "awesome-list",
-      "tags": ["curated", "resources", "tools", "development"],
-      "description": "Curated list of awesome Claude Skills, resources, and tools",
-      "install_cmd": null
-    },
-    {
-      "name": "travisvn/awesome-claude-skills",
-      "owner": "travisvn",
-      "url": "https://github.com/travisvn/awesome-claude-skills",
-      "stars": 7100,
-      "category": "community",
-      "type": "awesome-list",
-      "tags": ["curated", "claude-code", "workflows", "development"],
-      "description": "Curated list focusing on Claude Code workflows",
-      "install_cmd": null
     }
   ]
 }

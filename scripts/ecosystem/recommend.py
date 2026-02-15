@@ -30,7 +30,7 @@ SOURCES = [
 ]
 
 DEFAULT_TOP = 5
-DEFAULT_MIN_SCORE = 20
+DEFAULT_MIN_SCORE = 35
 
 # Category label mapping for markdown output
 CATEGORY_LABELS = {

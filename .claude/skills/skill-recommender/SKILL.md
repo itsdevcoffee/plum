@@ -29,7 +29,7 @@ Analyze the current project's tech stack and recommend relevant ecosystem tools.
    - `--markdown` — Pre-formatted markdown tables (default for this skill)
    - `--top N` — Show more results per category (default: 5). Use `--top 10` if the user asks for more.
    - `--exclude-no-install` — Only show entries with install commands. Use when the user asks "what should I install" or wants actionable results.
-   - `--min-score N` — Adjust score threshold (default: 20). Lower to 10 for broader results.
+   - `--min-score N` — Adjust score threshold (default: 35). Lower to 20 for broader results.
    - `--pretty` — Pretty-print JSON (use instead of `--markdown` if you need to parse the output programmatically)
 
 3. Present the markdown output directly to the user. The script handles formatting, grouping, and deduplication.
@@ -46,4 +46,4 @@ Analyze the current project's tech stack and recommend relevant ecosystem tools.
 - Scoring: 70% relevance (bidirectional tag match, geometric mean) + 30% popularity (log-scaled with recency boost)
 - Hard gate: entries with zero matching tags (explicit or inferred) are excluded
 - Deduplication: same repo across sources is shown once (highest score wins)
-- Default: top 5 per category, minimum score 20
+- Default: top 5 per category, minimum score 35
