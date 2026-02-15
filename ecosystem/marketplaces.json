@@ -1,0 +1,126 @@
+{
+  "last_updated": "2026-02-15",
+  "total_marketplaces": 12,
+  "web_directories": [
+    {
+      "name": "Claude Code Marketplaces",
+      "url": "https://claudemarketplaces.com/",
+      "category": "directory",
+      "tags": ["directory", "5-star-minimum"],
+      "description": "Directory of Claude Code plugin marketplaces - only 5+ star marketplaces included",
+      "quality_threshold": "5 GitHub stars minimum"
+    },
+    {
+      "name": "Build with Claude",
+      "url": "https://www.buildwithclaude.com/marketplaces",
+      "category": "directory",
+      "tags": ["directory", "marketplaces"],
+      "description": "Plugin Marketplaces directory"
+    },
+    {
+      "name": "Claude Code Marketplace",
+      "url": "https://claudecodemarketplace.com/",
+      "category": "directory",
+      "tags": ["directory", "plugins"],
+      "description": "Claude Code Plugins directory"
+    },
+    {
+      "name": "AI Templates",
+      "url": "https://www.aitmpl.com/",
+      "category": "templates",
+      "tags": ["templates", "development"],
+      "description": "Claude Code Templates - Supercharge AI-Powered Development"
+    },
+    {
+      "name": "Awesome Claude",
+      "url": "https://awesomeclaude.ai/awesome-claude-code",
+      "category": "directory",
+      "tags": ["visual", "resources"],
+      "description": "Visual directory of Awesome Claude Code resources"
+    },
+    {
+      "name": "ClaudeLog",
+      "url": "https://claudelog.com/claude-code-mcps/awesome-claude-code/",
+      "category": "directory",
+      "tags": ["mcps", "directory"],
+      "description": "Awesome Claude Code MCPs directory"
+    },
+    {
+      "name": "skills.sh",
+      "url": "https://skills.sh/",
+      "category": "skills",
+      "tags": ["skills", "leaderboard", "official", "59k-skills"],
+      "description": "Official skills leaderboard tracking 59,375+ skills - launched Jan 20, 2026"
+    },
+    {
+      "name": "SkillsMP",
+      "url": "https://skillsmp.com/",
+      "category": "skills",
+      "tags": ["skills", "marketplace", "87k-skills", "cross-platform"],
+      "description": "Agent Skills Marketplace with 87,000+ skills - Claude, Codex, ChatGPT compatible"
+    }
+  ],
+  "github_marketplaces": [
+    {
+      "name": "claude-plugins-official",
+      "owner": "anthropics",
+      "url": "https://github.com/anthropics/claude-plugins-official",
+      "stars": 7500,
+      "category": "official",
+      "tags": ["official", "anthropic", "verified"],
+      "description": "Official Anthropic-managed directory - automatically available in Claude Code",
+      "install_cmd": null,
+      "auto_available": true
+    },
+    {
+      "name": "gmickel-claude-marketplace",
+      "owner": "gmickel",
+      "url": "https://github.com/gmickel/gmickel-claude-marketplace",
+      "stars": 482,
+      "category": "community",
+      "tags": ["flow-next", "ralph", "autonomous"],
+      "description": "Flow-Next, Ralph autonomous mode, multi-model review gates",
+      "install_cmd": "/plugin marketplace add gmickel/gmickel-claude-marketplace"
+    },
+    {
+      "name": "superpowers-marketplace",
+      "owner": "obra",
+      "url": "https://github.com/obra/superpowers-marketplace",
+      "stars": 99,
+      "category": "community",
+      "tags": ["curated", "skills-framework"],
+      "description": "Curated marketplace - agentic skills framework",
+      "install_cmd": "/plugin marketplace add obra/superpowers-marketplace"
+    },
+    {
+      "name": "claude-code-marketplace",
+      "owner": "netresearch",
+      "url": "https://github.com/netresearch/claude-code-marketplace",
+      "stars": 0,
+      "category": "community",
+      "tags": ["catalog", "indexing"],
+      "description": "Curated catalog indexing individual repositories",
+      "install_cmd": "/plugin marketplace add netresearch/claude-code-marketplace"
+    },
+    {
+      "name": "claude-code-marketplace",
+      "owner": "ivan-magda",
+      "url": "https://github.com/ivan-magda/claude-code-marketplace",
+      "stars": 0,
+      "category": "personal",
+      "tags": ["personal", "curated"],
+      "description": "Personal curated plugin collection",
+      "install_cmd": "/plugin marketplace add ivan-magda/claude-code-marketplace"
+    },
+    {
+      "name": "cc-marketplace",
+      "owner": "ananddtyagi",
+      "url": "https://github.com/ananddtyagi/cc-marketplace",
+      "stars": 0,
+      "category": "community",
+      "tags": ["marketplace"],
+      "description": "Marketplace repo for Claude Code plugins",
+      "install_cmd": "/plugin marketplace add ananddtyagi/cc-marketplace"
+    }
+  ]
+}

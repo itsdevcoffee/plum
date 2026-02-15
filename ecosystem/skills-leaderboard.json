@@ -1,0 +1,283 @@
+{
+  "last_updated": "2026-02-15",
+  "source": "skills.sh",
+  "source_url": "https://skills.sh/",
+  "total_skills_ecosystem": 59375,
+  "skills": [
+    {
+      "rank": 1,
+      "name": "find-skills",
+      "installs": 231100,
+      "owner": "vercel-labs",
+      "repo": "vercel-labs/skills",
+      "category": "meta",
+      "tags": ["discovery", "essential", "skill-management"],
+      "description": "Locates and discovers available skills within the ecosystem",
+      "install_cmd": "npx skillsadd vercel-labs/skills/find-skills"
+    },
+    {
+      "rank": 2,
+      "name": "vercel-react-best-practices",
+      "installs": 133600,
+      "owner": "vercel-labs",
+      "repo": "vercel-labs/agent-skills",
+      "category": "framework",
+      "tags": ["react", "frontend", "vercel", "best-practices"],
+      "description": "React patterns and conventions from Vercel engineering team",
+      "install_cmd": "npx skillsadd vercel-labs/agent-skills/vercel-react-best-practices"
+    },
+    {
+      "rank": 3,
+      "name": "web-design-guidelines",
+      "installs": 100600,
+      "owner": "vercel-labs",
+      "repo": "vercel-labs/agent-skills",
+      "category": "design",
+      "tags": ["design", "web", "ui", "accessibility"],
+      "description": "Web design standards covering layout, typography, color theory, accessibility",
+      "install_cmd": "npx skillsadd vercel-labs/agent-skills/web-design-guidelines"
+    },
+    {
+      "rank": 4,
+      "name": "remotion-best-practices",
+      "installs": 91400,
+      "owner": "remotion-dev",
+      "repo": "remotion-dev/skills",
+      "category": "creative",
+      "tags": ["video", "remotion", "creative", "programmatic"],
+      "description": "Video creation with Remotion framework, programmatic video generation",
+      "install_cmd": "npx skillsadd remotion-dev/skills/remotion-best-practices"
+    },
+    {
+      "rank": 5,
+      "name": "frontend-design",
+      "installs": 70000,
+      "owner": "anthropics",
+      "repo": "anthropics/skills",
+      "category": "design",
+      "tags": ["design", "frontend", "official", "anthropic"],
+      "description": "Official Anthropic skill for bold, intentional design decisions",
+      "install_cmd": "npx skillsadd anthropics/skills/frontend-design"
+    },
+    {
+      "rank": 6,
+      "name": "vercel-composition-patterns",
+      "installs": 40900,
+      "owner": "vercel-labs",
+      "repo": "vercel-labs/agent-skills",
+      "category": "framework",
+      "tags": ["react", "nextjs", "composition", "patterns"],
+      "description": "Component composition methodologies for React and Next.js",
+      "install_cmd": "npx skillsadd vercel-labs/agent-skills/vercel-composition-patterns"
+    },
+    {
+      "rank": 7,
+      "name": "agent-browser",
+      "installs": 36600,
+      "owner": "vercel-labs",
+      "repo": "vercel-labs/agent-browser",
+      "category": "automation",
+      "tags": ["browser", "automation", "testing", "scraping"],
+      "description": "Browser automation and interaction for web scraping and testing",
+      "install_cmd": "npx skillsadd vercel-labs/agent-browser"
+    },
+    {
+      "rank": 8,
+      "name": "skill-creator",
+      "installs": 34500,
+      "owner": "anthropics",
+      "repo": "anthropics/skills",
+      "category": "meta",
+      "tags": ["skill-creation", "builder", "official", "interactive"],
+      "description": "Official Anthropic interactive tool for building new skills",
+      "install_cmd": "npx skillsadd anthropics/skills/skill-creator"
+    },
+    {
+      "rank": 9,
+      "name": "browser-use",
+      "installs": 30100,
+      "owner": "browser-use",
+      "repo": "browser-use/browser-use",
+      "category": "automation",
+      "tags": ["browser", "automation", "framework"],
+      "description": "Browser functionality framework for web automation tasks",
+      "install_cmd": "npx skillsadd browser-use/browser-use"
+    },
+    {
+      "rank": 10,
+      "name": "vercel-react-native-skills",
+      "installs": 29500,
+      "owner": "vercel-labs",
+      "repo": "vercel-labs/agent-skills",
+      "category": "mobile",
+      "tags": ["react-native", "mobile", "vercel"],
+      "description": "React Native development guidance for mobile-specific patterns",
+      "install_cmd": "npx skillsadd vercel-labs/agent-skills/vercel-react-native-skills"
+    },
+    {
+      "rank": 11,
+      "name": "ui-ux-pro-max",
+      "installs": 26000,
+      "owner": "nextlevelbuilder",
+      "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "category": "design",
+      "tags": ["ui", "ux", "design-systems", "advanced"],
+      "description": "Advanced UI/UX design methodologies with modern design systems",
+      "install_cmd": "npx skillsadd nextlevelbuilder/ui-ux-pro-max-skill"
+    },
+    {
+      "rank": 12,
+      "name": "audit-website",
+      "installs": 20200,
+      "owner": "squirrelscan",
+      "repo": "squirrelscan/skills",
+      "category": "analysis",
+      "tags": ["audit", "performance", "accessibility", "seo"],
+      "description": "Website analysis for performance, accessibility, and SEO",
+      "install_cmd": "npx skillsadd squirrelscan/skills/audit-website"
+    },
+    {
+      "rank": 13,
+      "name": "brainstorming",
+      "installs": 19900,
+      "owner": "obra",
+      "repo": "obra/superpowers",
+      "category": "productivity",
+      "tags": ["ideation", "creative", "problem-solving"],
+      "description": "Ideation and creative problem-solving support",
+      "install_cmd": "npx skillsadd obra/superpowers/brainstorming"
+    },
+    {
+      "rank": 14,
+      "name": "seo-audit",
+      "installs": 19000,
+      "owner": "coreyhaines31",
+      "repo": "coreyhaines31/marketingskills",
+      "category": "marketing",
+      "tags": ["seo", "optimization", "marketing"],
+      "description": "Search engine optimization analysis and recommendations",
+      "install_cmd": "npx skillsadd coreyhaines31/marketingskills/seo-audit"
+    },
+    {
+      "rank": 15,
+      "name": "supabase-postgres-best-practices",
+      "installs": 17800,
+      "owner": "supabase",
+      "repo": "supabase/agent-skills",
+      "category": "database",
+      "tags": ["supabase", "postgresql", "database", "backend"],
+      "description": "PostgreSQL and Supabase optimization from Supabase team",
+      "install_cmd": "npx skillsadd supabase/agent-skills/supabase-postgres-best-practices"
+    },
+    {
+      "rank": 16,
+      "name": "pdf",
+      "installs": 14900,
+      "owner": "anthropics",
+      "repo": "anthropics/skills",
+      "category": "document",
+      "tags": ["pdf", "document", "official", "processing"],
+      "description": "Official PDF processing - extract, merge, split, forms",
+      "install_cmd": "npx skillsadd anthropics/skills/pdf"
+    },
+    {
+      "rank": 17,
+      "name": "copywriting",
+      "installs": 13900,
+      "owner": "coreyhaines31",
+      "repo": "coreyhaines31/marketingskills",
+      "category": "marketing",
+      "tags": ["copywriting", "content", "marketing"],
+      "description": "Marketing copy and content creation with proven frameworks",
+      "install_cmd": "npx skillsadd coreyhaines31/marketingskills/copywriting"
+    },
+    {
+      "rank": 18,
+      "name": "pptx",
+      "installs": 12300,
+      "owner": "anthropics",
+      "repo": "anthropics/skills",
+      "category": "document",
+      "tags": ["powerpoint", "presentation", "official", "document"],
+      "description": "Official PowerPoint creation with layouts, templates, charts",
+      "install_cmd": "npx skillsadd anthropics/skills/pptx"
+    },
+    {
+      "rank": 19,
+      "name": "next-best-practices",
+      "installs": 12200,
+      "owner": "vercel-labs",
+      "repo": "vercel-labs/next-skills",
+      "category": "framework",
+      "tags": ["nextjs", "vercel", "framework", "best-practices"],
+      "description": "Next.js framework optimization patterns from Vercel",
+      "install_cmd": "npx skillsadd vercel-labs/next-skills/next-best-practices"
+    },
+    {
+      "rank": 20,
+      "name": "better-auth-best-practices",
+      "installs": 11600,
+      "owner": "better-auth",
+      "repo": "better-auth/skills",
+      "category": "security",
+      "tags": ["authentication", "security", "oauth", "jwt"],
+      "description": "Authentication implementation - OAuth, JWT, session management",
+      "install_cmd": "npx skillsadd better-auth/skills/better-auth-best-practices"
+    },
+    {
+      "rank": 21,
+      "name": "docx",
+      "installs": 11400,
+      "owner": "anthropics",
+      "repo": "anthropics/skills",
+      "category": "document",
+      "tags": ["word", "document", "official", "processing"],
+      "description": "Official Word document creation with tracked changes and formatting",
+      "install_cmd": "npx skillsadd anthropics/skills/docx"
+    },
+    {
+      "rank": 22,
+      "name": "agent-tools",
+      "installs": 11300,
+      "owner": "inference-sh-0",
+      "repo": "inference-sh-0/skills",
+      "category": "utility",
+      "tags": ["tools", "automation", "workflow"],
+      "description": "Utility tools for agent functionality and workflow automation",
+      "install_cmd": "npx skillsadd inference-sh-0/skills/agent-tools"
+    },
+    {
+      "rank": 23,
+      "name": "xlsx",
+      "installs": 11300,
+      "owner": "anthropics",
+      "repo": "anthropics/skills",
+      "category": "document",
+      "tags": ["excel", "spreadsheet", "official", "data"],
+      "description": "Official spreadsheet creation with formulas and data analysis",
+      "install_cmd": "npx skillsadd anthropics/skills/xlsx"
+    },
+    {
+      "rank": 24,
+      "name": "systematic-debugging",
+      "installs": 11000,
+      "owner": "obra",
+      "repo": "obra/superpowers",
+      "category": "development",
+      "tags": ["debugging", "tdd", "problem-solving"],
+      "description": "Methodical problem diagnosis with TDD approaches",
+      "install_cmd": "npx skillsadd obra/superpowers/systematic-debugging"
+    },
+    {
+      "rank": 25,
+      "name": "marketing-psychology",
+      "installs": 10600,
+      "owner": "coreyhaines31",
+      "repo": "coreyhaines31/marketingskills",
+      "category": "marketing",
+      "tags": ["marketing", "psychology", "persuasion"],
+      "description": "Psychological principles in marketing and user behavior",
+      "install_cmd": "npx skillsadd coreyhaines31/marketingskills/marketing-psychology"
+    }
+  ]
+}
