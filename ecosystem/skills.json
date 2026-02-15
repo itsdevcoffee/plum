@@ -10,7 +10,7 @@
       "forks": 7100,
       "category": "official",
       "type": "production",
-      "tags": ["official", "anthropic", "production-ready", "document-processing"],
+      "tags": ["official", "anthropic", "production-ready", "document-processing", "python", "development"],
       "description": "Official Anthropic skills - production-ready document skills (PDF, DOCX, PPTX, XLSX), creative tools, development utilities",
       "install_cmd": "/plugin marketplace add anthropics/skills"
     },
@@ -21,7 +21,7 @@
       "stars": 46200,
       "category": "community",
       "type": "comprehensive",
-      "tags": ["hackathon-winner", "37-skills", "comprehensive", "battle-tested"],
+      "tags": ["hackathon-winner", "37-skills", "comprehensive", "battle-tested", "development", "testing"],
       "description": "Complete config collection with 37 skills - hackathon winner, 98% test coverage",
       "install_cmd": "/plugin install affaan-m/everything-claude-code"
     },
@@ -32,7 +32,7 @@
       "stars": 34900,
       "category": "community",
       "type": "integrations",
-      "tags": ["integrations", "automation", "comprehensive"],
+      "tags": ["integrations", "automation", "comprehensive", "development"],
       "description": "Comprehensive integrations collection covering hundreds of services",
       "install_cmd": null
     },
@@ -43,7 +43,7 @@
       "stars": 28600,
       "category": "community",
       "type": "framework",
-      "tags": ["146-skills", "progressive-disclosure", "granular"],
+      "tags": ["146-skills", "progressive-disclosure", "granular", "development"],
       "description": "146 agent skills with progressive knowledge disclosure",
       "install_cmd": "/plugin install wshobson/agents"
     },
@@ -55,7 +55,7 @@
       "forks": 495,
       "category": "community",
       "type": "curated-list",
-      "tags": ["curated", "best-practices", "comprehensive-guide"],
+      "tags": ["curated", "best-practices", "comprehensive-guide", "development"],
       "description": "Curated list with best practices, getting started guides, security considerations",
       "install_cmd": null
     },
@@ -67,7 +67,7 @@
       "forks": 545,
       "category": "community",
       "type": "cross-platform",
-      "tags": ["380-skills", "cross-platform", "official-teams"],
+      "tags": ["380-skills", "cross-platform", "official-teams", "development", "multi-platform"],
       "description": "380+ skills from official teams (Vercel, Cloudflare, Microsoft, Hugging Face)",
       "install_cmd": null
     },
@@ -78,7 +78,7 @@
       "stars": 5800,
       "category": "community",
       "type": "curated-list",
-      "tags": ["12-categories", "curated", "organized"],
+      "tags": ["12-categories", "curated", "organized", "development"],
       "description": "Curated list across 12+ categories including document handling, security, automation",
       "install_cmd": null
     },
@@ -89,7 +89,7 @@
       "stars": 1800,
       "category": "community",
       "type": "business",
-      "tags": ["53-skills", "business", "roi-focused", "production-ready"],
+      "tags": ["53-skills", "business", "roi-focused", "production-ready", "development"],
       "description": "53 business-focused skills with 40% time savings, 30% quality improvements",
       "install_cmd": null
     },
@@ -100,7 +100,7 @@
       "stars": 580,
       "category": "community",
       "type": "marketplace",
-      "tags": ["37-skills", "professional", "specialized"],
+      "tags": ["37-skills", "professional", "specialized", "development"],
       "description": "Professional marketplace with 37 production-ready skills",
       "install_cmd": null
     },
@@ -111,7 +111,7 @@
       "stars": 499,
       "category": "development",
       "type": "toolkit",
-      "tags": ["builder", "toolkit", "cross-platform", "production"],
+      "tags": ["builder", "toolkit", "cross-platform", "production", "development"],
       "description": "Toolkit for building production-ready skills at scale - 5 guide agents, 10 commands",
       "install_cmd": "/plugin install alirezarezvani/claude-code-skill-factory"
     },
@@ -232,7 +232,7 @@
       "stars": 7,
       "category": "personal",
       "type": "local",
-      "tags": ["local", "personal", "git-tools", "terminal"],
+      "tags": ["local", "personal", "git-tools", "terminal", "cli", "development"],
       "description": "Local marketplace for personal skills - git tools, terminal automation, browser automation",
       "install_cmd": "/plugin marketplace add dashed/claude-marketplace"
     },
@@ -243,7 +243,7 @@
       "stars": 5800,
       "category": "community",
       "type": "curated-list",
-      "tags": ["curated", "comprehensive"],
+      "tags": ["curated", "comprehensive", "development"],
       "description": "Curated list of Claude Skills",
       "install_cmd": null
     },
@@ -254,7 +254,7 @@
       "stars": 34900,
       "category": "community",
       "type": "awesome-list",
-      "tags": ["curated", "resources", "tools"],
+      "tags": ["curated", "resources", "tools", "development"],
       "description": "Curated list of awesome Claude Skills, resources, and tools",
       "install_cmd": null
     },
@@ -265,7 +265,7 @@
       "stars": 7100,
       "category": "community",
       "type": "awesome-list",
-      "tags": ["curated", "claude-code", "workflows"],
+      "tags": ["curated", "claude-code", "workflows", "development"],
       "description": "Curated list focusing on Claude Code workflows",
       "install_cmd": null
     }

@@ -9,7 +9,7 @@
       "stars": 32900,
       "category": "official",
       "type": "examples",
-      "tags": ["official", "cookbook", "patterns", "reference"],
+      "tags": ["official", "cookbook", "patterns", "reference", "python", "development"],
       "description": "Reference implementations for building effective agents",
       "install_cmd": null
     },
@@ -20,7 +20,7 @@
       "stars": 28600,
       "category": "community",
       "type": "framework",
-      "tags": ["multi-agent", "orchestration", "comprehensive", "112-agents"],
+      "tags": ["multi-agent", "orchestration", "comprehensive", "112-agents", "development"],
       "description": "112 specialized agents, 73 plugins, 146 skills, granular architecture",
       "install_cmd": "/plugin install wshobson/agents"
     },
@@ -31,7 +31,7 @@
       "stars": 20800,
       "category": "community",
       "type": "framework",
-      "tags": ["meta-programming", "30-commands", "16-agents", "modes"],
+      "tags": ["meta-programming", "30-commands", "16-agents", "modes", "development"],
       "description": "Meta-programming config - 30 commands, 16 agents, 7 modes, 2-3x faster",
       "install_cmd": "/plugin install SuperClaude-Org/SuperClaude_Framework"
     },
@@ -42,7 +42,7 @@
       "stars": 14000,
       "category": "official",
       "type": "templates",
-      "tags": ["official", "production-ready", "quickstart"],
+      "tags": ["official", "production-ready", "quickstart", "development", "python"],
       "description": "Production-ready project templates for autonomous agents",
       "install_cmd": null
     },
@@ -53,7 +53,7 @@
       "stars": 14100,
       "category": "community",
       "type": "orchestration",
-      "tags": ["swarms", "60-agents", "vector-memory", "coordination"],
+      "tags": ["swarms", "60-agents", "vector-memory", "coordination", "development"],
       "description": "60+ agents in coordinated swarms with persistent vector memory",
       "install_cmd": "/plugin install ruvnet/claude-flow"
     },
@@ -64,7 +64,7 @@
       "stars": 10500,
       "category": "community",
       "type": "collection",
-      "tags": ["100-subagents", "specialized", "curated"],
+      "tags": ["100-subagents", "specialized", "curated", "development"],
       "description": "100+ specialized subagents across 10 major categories",
       "install_cmd": null
     },
@@ -75,7 +75,7 @@
       "stars": 6000,
       "category": "community",
       "type": "terminal",
-      "tags": ["multi-agent", "terminal", "workspaces", "manager"],
+      "tags": ["multi-agent", "terminal", "workspaces", "manager", "go", "cli"],
       "description": "Terminal manager for multiple AI agents with isolated workspaces",
       "install_cmd": null
     },
@@ -97,7 +97,7 @@
       "stars": 3800,
       "category": "community",
       "type": "collection",
-      "tags": ["24-agents", "orchestration", "specialized"],
+      "tags": ["24-agents", "orchestration", "specialized", "development"],
       "description": "24 specialized agents with automatic stack detection",
       "install_cmd": null
     },

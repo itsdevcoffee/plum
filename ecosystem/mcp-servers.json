@@ -11,7 +11,7 @@
       "stars": 0,
       "category": "official",
       "type": "reference",
-      "tags": ["official", "mcp", "reference-implementations"],
+      "tags": ["official", "mcp", "reference-implementations", "git", "filesystem", "development"],
       "description": "Official MCP reference implementations - Everything, Fetch, Filesystem, Git, Memory, Sequential Thinking, Time",
       "install_cmd": null
     },
@@ -22,7 +22,7 @@
       "stars": 0,
       "category": "official",
       "type": "registry",
-      "tags": ["official", "registry", "community-driven"],
+      "tags": ["official", "registry", "community-driven", "development"],
       "description": "Community-driven registry service for MCP servers - like an app store",
       "install_cmd": null
     },
@@ -99,7 +99,7 @@
       "stars": 0,
       "category": "infrastructure",
       "type": "registry-gateway",
-      "tags": ["self-hosted", "enterprise", "registry", "proxy", "unified-gateway"],
+      "tags": ["self-hosted", "enterprise", "registry", "proxy", "unified-gateway", "development", "docker"],
       "description": "Self-hosted MCP registry and proxy for enterprise - unified gateway at /mcp endpoint",
       "install_cmd": null
     },
@@ -110,7 +110,7 @@
       "stars": 0,
       "category": "infrastructure",
       "type": "middleware",
-      "tags": ["middleware", "aggregator", "orchestrator", "docker", "gui"],
+      "tags": ["middleware", "aggregator", "orchestrator", "docker", "gui", "development"],
       "description": "All-in-one MCP middleware with GUI - groups servers, unified endpoints (SSE, HTTP, OpenAPI), auth, inspection",
       "install_cmd": null
     },

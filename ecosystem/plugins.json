@@ -9,7 +9,7 @@
       "stars": 66800,
       "category": "official",
       "type": "core",
-      "tags": ["cli", "main", "anthropic"],
+      "tags": ["cli", "main", "anthropic", "development"],
       "description": "Main Claude Code repository - agentic coding tool",
       "install_cmd": null
     },
@@ -20,7 +20,7 @@
       "stars": 39500,
       "category": "community",
       "type": "collection",
-      "tags": ["agents", "skills", "hooks", "comprehensive", "hackathon-winner"],
+      "tags": ["agents", "skills", "hooks", "comprehensive", "hackathon-winner", "development", "testing"],
       "description": "Complete config collection - 912 tests, 98% coverage, hackathon winner",
       "install_cmd": "/plugin install affaan-m/everything-claude-code"
     },
@@ -31,7 +31,7 @@
       "stars": 21600,
       "category": "community",
       "type": "awesome-list",
-      "tags": ["curated", "comprehensive", "resources"],
+      "tags": ["curated", "comprehensive", "resources", "development"],
       "description": "Comprehensive curated collection of slash commands, workflows, resources",
       "install_cmd": null
     },
@@ -42,7 +42,7 @@
       "stars": 7500,
       "category": "official",
       "type": "marketplace",
-      "tags": ["official", "anthropic", "marketplace"],
+      "tags": ["official", "anthropic", "marketplace", "development"],
       "description": "Official Anthropic-managed plugin directory",
       "install_cmd": null
     },
@@ -53,7 +53,7 @@
       "stars": 5700,
       "category": "official",
       "type": "ci-cd",
-      "tags": ["github-action", "ci-cd", "official"],
+      "tags": ["github-action", "ci-cd", "official", "github-actions"],
       "description": "Official GitHub Action for Claude Code CI/CD integration",
       "install_cmd": null
     },
@@ -64,7 +64,7 @@
       "stars": 482,
       "category": "community",
       "type": "marketplace",
-      "tags": ["flow-next", "ralph", "autonomous", "multi-model"],
+      "tags": ["flow-next", "ralph", "autonomous", "multi-model", "development"],
       "description": "Flow-Next workflows, Ralph autonomous mode, multi-model review gates",
       "install_cmd": "/plugin marketplace add gmickel/gmickel-claude-marketplace"
     },
@@ -75,7 +75,7 @@
       "stars": 434,
       "category": "community",
       "type": "awesome-list",
-      "tags": ["curated", "commands", "subagents", "mcp"],
+      "tags": ["curated", "commands", "subagents", "mcp", "development"],
       "description": "Curated list of slash commands, subagents, MCP servers, hooks",
       "install_cmd": null
     },
@@ -97,7 +97,7 @@
       "stars": 0,
       "category": "development",
       "type": "template",
-      "tags": ["template", "scaffolding", "ci-cd"],
+      "tags": ["template", "scaffolding", "ci-cd", "development"],
       "description": "GitHub template for creating plugins with CI/CD workflows",
       "install_cmd": null
     },
@@ -108,7 +108,7 @@
       "stars": 0,
       "category": "development",
       "type": "template",
-      "tags": ["boilerplate", "template", "starter"],
+      "tags": ["boilerplate", "template", "starter", "development"],
       "description": "Minimal boilerplate for creating and distributing plugins",
       "install_cmd": null
     },
@@ -119,7 +119,7 @@
       "stars": 0,
       "category": "development",
       "type": "starter",
-      "tags": ["mcp", "skills", "complete-setup"],
+      "tags": ["mcp", "skills", "complete-setup", "development"],
       "description": "Complete starter with MCP servers, skills, agents, commands",
       "install_cmd": null
     },
@@ -130,7 +130,7 @@
       "stars": 0,
       "category": "development",
       "type": "boilerplate",
-      "tags": ["typescript", "production-ready", "agents"],
+      "tags": ["typescript", "production-ready", "agents", "development"],
       "description": "Production-ready TypeScript boilerplate with specialized agents",
       "install_cmd": null
     },
@@ -141,7 +141,7 @@
       "stars": 0,
       "category": "autonomous",
       "type": "workflow",
-      "tags": ["ralph", "autonomous", "tdd", "loops"],
+      "tags": ["ralph", "autonomous", "tdd", "loops", "development", "testing"],
       "description": "Autonomous TDD workflows with multi-model review gates",
       "install_cmd": "/plugin install MarioGiancini/ralph-loop-setup"
     },
@@ -152,7 +152,7 @@
       "stars": 0,
       "category": "autonomous",
       "type": "workflow",
-      "tags": ["flow-next", "plan-first", "autonomous"],
+      "tags": ["flow-next", "plan-first", "autonomous", "development"],
       "description": "Plan-first workflows, overnight coding, context re-anchoring",
       "install_cmd": null
     },
