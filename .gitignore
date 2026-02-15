@@ -35,3 +35,6 @@ go.work
 Thumbs.db
 
 docs/tmp
+
+# Local MCP server config (may contain secrets)
+.mcp.json

@@ -25,6 +25,18 @@ func (m Model) View() string {
 		content = m.marketplaceListView()
 	case ViewMarketplaceDetail:
 		content = m.marketplaceDetailView()
+	case ViewQuickMenu:
+		// Render the previous view as base, then overlay quick menu
+		var baseView string
+		switch m.quickMenuPreviousView {
+		case ViewDetail:
+			baseView = m.detailView()
+		case ViewMarketplaceList:
+			baseView = m.marketplaceListView()
+		default:
+			baseView = m.listView()
+		}
+		content = m.renderQuickMenuOverlay(baseView)
 	default:
 		content = m.listView()
 	}
@@ -44,35 +56,18 @@ func (m Model) View() string {
 
 // applyZoomTransition creates a center-expand/contract effect
 func (m Model) applyZoomTransition(content string) string {
-	progress := m.transitionProgress
-	if progress >= 1.0 {
-		return content
-	}
-	if progress < 0 {
-		progress = 0
-	}
-
+	progress := clampProgress(m.transitionProgress)
 	lines := strings.Split(content, "\n")
 	totalLines := len(lines)
 	if totalLines == 0 {
 		return content
 	}
 
-	// Calculate how many lines to show based on progress
-	visibleLines := int(float64(totalLines) * progress)
-	if visibleLines < 1 {
-		visibleLines = 1
-	}
-	if visibleLines > totalLines {
-		visibleLines = totalLines
-	}
-
-	// Calculate start/end to center the visible portion
+	visibleLines := clampVisibleLines(int(float64(totalLines)*progress), 1, totalLines)
 	hiddenLines := totalLines - visibleLines
 	startLine := hiddenLines / 2
 	endLine := startLine + visibleLines
 
-	// Build result with blank lines for hidden portions
 	var result strings.Builder
 	for i := 0; i < totalLines; i++ {
 		if i > 0 {
@@ -84,6 +79,28 @@ func (m Model) applyZoomTransition(content string) string {
 	}
 
 	return result.String()
+}
+
+// clampProgress ensures progress is between 0.0 and 1.0
+func clampProgress(progress float64) float64 {
+	if progress >= 1.0 {
+		return 1.0
+	}
+	if progress < 0 {
+		return 0
+	}
+	return progress
+}
+
+// clampVisibleLines ensures visible lines is within valid range
+func clampVisibleLines(lines, minLines, maxLines int) int {
+	if lines < minLines {
+		return minLines
+	}
+	if lines > maxLines {
+		return maxLines
+	}
+	return lines
 }
 
 // applySlideVTransition creates a vertical slide (push) effect
@@ -140,7 +157,7 @@ func (m Model) applySlideVTransition(content string) string {
 	return result.String()
 }
 
-// renderFilterTabs renders the filter tab bar
+// renderFilterTabs renders the unified facet bar (filters + sorts)
 func (m Model) renderFilterTabs() string {
 	// Tab styles
 	activeTab := lipgloss.NewStyle().
@@ -152,32 +169,48 @@ func (m Model) renderFilterTabs() string {
 		Foreground(TextTertiary).
 		Padding(0, 1)
 
-	// Build tabs with dynamic counts based on current search
+	// Get unified facets
+	facets := m.GetPluginFacets()
+
+	// Build tabs with dynamic counts for filters only
 	query := m.textInput.Value()
 	counts := m.getDynamicFilterCounts(query)
 
-	tabs := []struct {
-		name   string
-		count  int
-		active bool
-	}{
-		{"All", counts[FilterAll], m.filterMode == FilterAll},
-		{"Discover", counts[FilterDiscover], m.filterMode == FilterDiscover},
-		{"Ready", counts[FilterReady], m.filterMode == FilterReady},
-		{"Installed", counts[FilterInstalled], m.filterMode == FilterInstalled},
-	}
+	var filterParts []string
+	var sortParts []string
 
-	var parts []string
-	for _, tab := range tabs {
-		label := fmt.Sprintf("%s (%d)", tab.name, tab.count)
-		if tab.active {
-			parts = append(parts, activeTab.Render(label))
+	for _, facet := range facets {
+		var label string
+		if facet.Type == FacetFilter {
+			// Filters show counts
+			label = fmt.Sprintf("%s (%d)", facet.DisplayName, counts[facet.FilterMode])
 		} else {
-			parts = append(parts, inactiveTab.Render(label))
+			// Sorts show just the name with arrow
+			label = facet.DisplayName
+		}
+
+		var renderedTab string
+		if facet.IsActive {
+			renderedTab = activeTab.Render(label)
+		} else {
+			renderedTab = inactiveTab.Render(label)
+		}
+
+		// Separate filters from sorts
+		if facet.Type == FacetFilter {
+			filterParts = append(filterParts, renderedTab)
+		} else {
+			sortParts = append(sortParts, renderedTab)
 		}
 	}
 
-	return strings.Join(parts, DimSeparator.Render("│"))
+	// Join filters and sorts with visual separator
+	filters := strings.Join(filterParts, DimSeparator.Render("│"))
+	sorts := strings.Join(sortParts, DimSeparator.Render("│"))
+
+	// Use double separator to distinguish filter section from sort section
+	separator := DimSeparator.Render(" ║ ")
+	return filters + separator + sorts
 }
 
 // listView renders the main list view
@@ -469,88 +502,83 @@ func (m Model) renderPluginItemCard(p plugin.Plugin, selected bool) string {
 
 // statusBar renders the status bar (responsive to terminal width)
 func (m Model) statusBar() string {
-	var parts []string
-
-	// Position in current filtered results
-	var position string
-	if len(m.results) > 0 {
-		position = fmt.Sprintf("%d/%d", m.cursor+1, len(m.results))
-	} else {
-		position = "0/0"
-	}
-
-	// Check if marketplace filter is active
-	query := m.textInput.Value()
-	var marketplaceFilter string
-	if strings.HasPrefix(query, "@") {
-		marketplaceName := strings.TrimPrefix(query, "@")
-		if marketplaceName != "" {
-			marketplaceFilter = fmt.Sprintf("@%s (%d results)", marketplaceName, len(m.results))
-		}
-	}
-
-	// Opposite view mode name for the toggle hint
-	var oppositeView string
-	if m.displayMode == DisplaySlim {
-		oppositeView = "verbose"
-	} else {
-		oppositeView = "slim"
-	}
-
+	position := m.formatPosition()
+	marketplaceFilter := m.extractMarketplaceFilter()
+	oppositeView := m.oppositeViewModeName()
 	width := m.ContentWidth()
 
-	// In slim mode, skip the verbose breakpoint (use standard instead)
+	parts := m.buildStatusBarParts(position, marketplaceFilter, oppositeView, width)
+	return StatusBarStyle.Render(strings.Join(parts, "  │  "))
+}
+
+// formatPosition returns the cursor position string
+func (m Model) formatPosition() string {
+	if len(m.results) > 0 {
+		return fmt.Sprintf("%d/%d", m.cursor+1, len(m.results))
+	}
+	return "0/0"
+}
+
+// extractMarketplaceFilter checks if a marketplace filter is active
+func (m Model) extractMarketplaceFilter() string {
+	query := m.textInput.Value()
+	if !strings.HasPrefix(query, "@") {
+		return ""
+	}
+	marketplaceName := strings.TrimPrefix(query, "@")
+	if marketplaceName == "" {
+		return ""
+	}
+	return fmt.Sprintf("@%s (%d results)", marketplaceName, len(m.results))
+}
+
+// oppositeViewModeName returns the name of the opposite display mode
+func (m Model) oppositeViewModeName() string {
+	if m.displayMode == DisplaySlim {
+		return "verbose"
+	}
+	return "slim"
+}
+
+// buildStatusBarParts constructs status bar parts based on width
+func (m Model) buildStatusBarParts(position, marketplaceFilter, oppositeView string, width int) []string {
+	var parts []string
 	useVerbose := width >= 100 && m.displayMode == DisplayCard
+
+	displayInfo := position
+	if marketplaceFilter != "" {
+		displayInfo = marketplaceFilter
+	}
 
 	switch {
 	case useVerbose:
-		// Verbose: full descriptions (only in card/verbose mode)
-		if marketplaceFilter != "" {
-			parts = append(parts, marketplaceFilter)
-		} else {
-			parts = append(parts, position+" "+m.FilterModeName())
+		parts = append(parts, displayInfo)
+		if marketplaceFilter == "" {
+			parts[0] = position + " " + m.FilterModeName()
 		}
-		parts = append(parts, KeyStyle.Render("↑↓/ctrl+jk")+" navigate")
-		parts = append(parts, KeyStyle.Render("tab")+" next view")
-		parts = append(parts, KeyStyle.Render("Shift+V")+" "+oppositeView)
-		parts = append(parts, KeyStyle.Render("enter")+" details")
-		parts = append(parts, KeyStyle.Render("?"))
-
+		parts = append(parts,
+			KeyStyle.Render("↑↓/ctrl+jk")+" navigate",
+			KeyStyle.Render("tab")+" next view",
+			KeyStyle.Render("Shift+V")+" "+oppositeView,
+			KeyStyle.Render("enter")+" details",
+			KeyStyle.Render("?"))
 	case width >= 70:
-		// Standard: concise but complete
-		if marketplaceFilter != "" {
-			parts = append(parts, marketplaceFilter)
-		} else {
-			parts = append(parts, position)
-		}
-		parts = append(parts, KeyStyle.Render("↑↓")+" nav")
-		parts = append(parts, KeyStyle.Render("tab")+" next view")
-		parts = append(parts, KeyStyle.Render("Shift+M")+" marketplaces")
-		parts = append(parts, KeyStyle.Render("Shift+V")+" "+oppositeView)
-		parts = append(parts, KeyStyle.Render("?")+" help")
-
+		parts = append(parts, displayInfo,
+			KeyStyle.Render("↑↓")+" nav",
+			KeyStyle.Render("tab")+" next view",
+			KeyStyle.Render("Shift+M")+" marketplaces",
+			KeyStyle.Render("Shift+V")+" "+oppositeView,
+			KeyStyle.Render("?")+" help")
 	case width >= 50:
-		// Compact: essentials only
-		if marketplaceFilter != "" {
-			parts = append(parts, marketplaceFilter)
-		} else {
-			parts = append(parts, position)
-		}
-		parts = append(parts, KeyStyle.Render("↑↓")+" nav")
-		parts = append(parts, KeyStyle.Render("tab")+" next view")
-		parts = append(parts, KeyStyle.Render("?")+" help")
-
+		parts = append(parts, displayInfo,
+			KeyStyle.Render("↑↓")+" nav",
+			KeyStyle.Render("tab")+" next view",
+			KeyStyle.Render("?")+" help")
 	default:
-		// Minimal: bare minimum
-		if marketplaceFilter != "" {
-			parts = append(parts, marketplaceFilter)
-		} else {
-			parts = append(parts, position)
-		}
-		parts = append(parts, KeyStyle.Render("?")+"=help")
+		parts = append(parts, displayInfo, KeyStyle.Render("?")+"=help")
 	}
 
-	return StatusBarStyle.Render(strings.Join(parts, "  │  "))
+	return parts
 }
 
 // detailView renders the detail view for the selected plugin

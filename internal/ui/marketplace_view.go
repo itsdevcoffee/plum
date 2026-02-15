@@ -116,7 +116,7 @@ func formatGitHubStats(stats *marketplace.GitHubStats, loading bool, err error) 
 	return ""
 }
 
-// renderMarketplaceSortTabs renders sort mode tabs
+// renderMarketplaceSortTabs renders unified facets for marketplace view
 func (m Model) renderMarketplaceSortTabs() string {
 	// Tab styles (inline like renderFilterTabs)
 	activeTab := lipgloss.NewStyle().
@@ -128,32 +128,24 @@ func (m Model) renderMarketplaceSortTabs() string {
 		Foreground(TextTertiary).
 		Padding(0, 1)
 
-	var b strings.Builder
+	// Get unified facets for marketplace
+	facets := m.GetMarketplaceFacets()
 
-	tabs := []struct {
-		name   string
-		active bool
-	}{
-		{MarketplaceSortModeNames[SortByPluginCount], m.marketplaceSortMode == SortByPluginCount},
-		{MarketplaceSortModeNames[SortByStars], m.marketplaceSortMode == SortByStars},
-		{MarketplaceSortModeNames[SortByName], m.marketplaceSortMode == SortByName},
-		{MarketplaceSortModeNames[SortByLastUpdated], m.marketplaceSortMode == SortByLastUpdated},
-	}
-
-	for i, tab := range tabs {
-		if i > 0 {
-			b.WriteString("  ")
-		}
-
-		if tab.active {
-			b.WriteString(activeTab.Render(tab.name))
+	var parts []string
+	for _, facet := range facets {
+		var renderedTab string
+		if facet.IsActive {
+			renderedTab = activeTab.Render(facet.DisplayName)
 		} else {
-			b.WriteString(inactiveTab.Render(tab.name))
+			renderedTab = inactiveTab.Render(facet.DisplayName)
 		}
+		parts = append(parts, renderedTab)
 	}
 
+	// Join with separator
+	tabs := strings.Join(parts, DimSeparator.Render("│"))
 	hint := HelpStyle.Render("  (Tab/← → to change order)")
-	return b.String() + hint
+	return tabs + hint
 }
 
 // marketplaceStatusBar renders the status bar for marketplace view
@@ -304,33 +296,32 @@ func formatRelativeTime(t time.Time) string {
 	duration := time.Since(t)
 	hours := duration.Hours()
 
-	if hours < 1 {
+	switch {
+	case hours < 1:
 		return fmt.Sprintf("%dm ago", int(duration.Minutes()))
-	}
-	if hours < 24 {
+	case hours < 24:
 		return fmt.Sprintf("%dh ago", int(hours))
-	}
-	if hours < 168 {
+	case hours < 168:
 		return fmt.Sprintf("%dd ago", int(hours/24))
-	}
-	if hours < 720 {
+	case hours < 720:
 		return fmt.Sprintf("%dw ago", int(hours/24/7))
-	}
-	if hours < 8760 {
+	case hours < 8760:
 		return fmt.Sprintf("%dmo ago", int(hours/24/30))
+	default:
+		return fmt.Sprintf("%dy ago", int(hours/24/365))
 	}
-	return fmt.Sprintf("%dy ago", int(hours/24/365))
 }
 
 // formatNumber formats large numbers with k/M suffix
 func formatNumber(n int) string {
-	if n < 1000 {
+	switch {
+	case n < 1000:
 		return fmt.Sprintf("%d", n)
-	}
-	if n < 1000000 {
+	case n < 1000000:
 		return fmt.Sprintf("%.1fk", float64(n)/1000)
+	default:
+		return fmt.Sprintf("%.1fM", float64(n)/1000000)
 	}
-	return fmt.Sprintf("%.1fM", float64(n)/1000000)
 }
 
 // extractMarketplaceSource extracts owner/repo from GitHub URL

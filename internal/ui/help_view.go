@@ -100,6 +100,7 @@ func (m Model) generateHelpSections() string {
 	viewKeys := []struct{ key, desc, context string }{
 		{"Enter", "View details", "(plugin/marketplace list)"},
 		{"Shift+M", "Marketplace browser", "(any view)"},
+		{"Space", "Quick action menu", "(most views)"},
 		{"?", "Toggle help", "(any view)"},
 	}
 	for _, h := range viewKeys {
@@ -117,6 +118,7 @@ func (m Model) generateHelpSections() string {
 	b.WriteString("\n")
 	pluginKeys := []struct{ key, desc, suffix string }{
 		{"c", "Copy install command", ""},
+		{"i", "Copy 2-step install", " (discover only)"},
 		{"y", "Copy plugin install", " (discover only)"},
 		{"g", "Open on GitHub", ""},
 		{"o", "Open local directory", " 🟢"},
@@ -153,12 +155,13 @@ func (m Model) generateHelpSections() string {
 	b.WriteString("\n")
 
 	// Display & Filters section
-	b.WriteString(HelpSectionStyle.Render("  🎨 Display & Views ") + contextStyle.Render("(plugin list)"))
+	b.WriteString(HelpSectionStyle.Render("  🎨 Display & Facets ") + contextStyle.Render("(plugin list)"))
 	b.WriteString("\n")
 	displayKeys := []struct{ key, desc string }{
-		{"Tab →", "Next view (All/Discover/Ready/Installed)"},
-		{"Shift+Tab ←", "Previous view"},
+		{"Tab →", "Next facet (filters + sorts)"},
+		{"Shift+Tab ←", "Previous facet"},
 		{"Shift+V", "Toggle display mode (card/slim)"},
+		{"Shift+F", "Marketplace picker"},
 		{"@marketplace", "Filter by marketplace (in search)"},
 	}
 	for _, h := range displayKeys {
@@ -167,12 +170,12 @@ func (m Model) generateHelpSections() string {
 	b.WriteString(dividerStyle.Render("  " + strings.Repeat("─", 56)))
 	b.WriteString("\n")
 
-	// Marketplace Sorting section
-	b.WriteString(HelpSectionStyle.Render("  🔄 Marketplace Sorting ") + contextStyle.Render("(marketplace list)"))
+	// Marketplace Facets section
+	b.WriteString(HelpSectionStyle.Render("  🔄 Marketplace Facets ") + contextStyle.Render("(marketplace list)"))
 	b.WriteString("\n")
 	sortKeys := []struct{ key, desc string }{
-		{"Tab →", "Next sort order (Plugins/Stars/Name/Updated)"},
-		{"Shift+Tab ←", "Previous sort order"},
+		{"Tab →", "Next facet (sort orders)"},
+		{"Shift+Tab ←", "Previous facet"},
 	}
 	for _, h := range sortKeys {
 		b.WriteString(fmt.Sprintf("    %s  %s\n", KeyStyle.Width(16).Render(h.key), HelpTextStyle.Render(h.desc)))
