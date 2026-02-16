@@ -1,0 +1,240 @@
+{
+  "last_updated": "2026-02-15",
+  "total_repos": 24,
+  "repositories": [
+    {
+      "name": "skills",
+      "owner": "anthropics",
+      "url": "https://github.com/anthropics/skills",
+      "stars": 70000,
+      "forks": 7100,
+      "category": "official",
+      "type": "production",
+      "tags": ["official", "anthropic", "production-ready", "document-processing", "python", "development"],
+      "description": "Official Anthropic skills - production-ready document skills (PDF, DOCX, PPTX, XLSX), creative tools, development utilities",
+      "install_cmd": "/plugin marketplace add anthropics/skills"
+    },
+    {
+      "name": "everything-claude-code",
+      "owner": "affaan-m",
+      "url": "https://github.com/affaan-m/everything-claude-code",
+      "stars": 46200,
+      "category": "community",
+      "type": "comprehensive",
+      "tags": ["hackathon-winner", "37-skills", "comprehensive", "battle-tested", "development", "testing"],
+      "description": "Complete config collection with 37 skills - hackathon winner, 98% test coverage",
+      "install_cmd": "/plugin install affaan-m/everything-claude-code"
+    },
+    {
+      "name": "awesome-claude-skills",
+      "owner": "ComposioHQ",
+      "url": "https://github.com/ComposioHQ/awesome-claude-skills",
+      "stars": 34900,
+      "category": "community",
+      "type": "integrations",
+      "tags": ["integrations", "automation", "comprehensive", "development"],
+      "description": "Comprehensive integrations collection covering hundreds of services",
+      "install_cmd": null
+    },
+    {
+      "name": "agents",
+      "owner": "wshobson",
+      "url": "https://github.com/wshobson/agents",
+      "stars": 28600,
+      "category": "community",
+      "type": "framework",
+      "tags": ["146-skills", "progressive-disclosure", "granular", "development"],
+      "description": "146 agent skills with progressive knowledge disclosure",
+      "install_cmd": "/plugin install wshobson/agents"
+    },
+    {
+      "name": "awesome-claude-skills",
+      "owner": "travisvn",
+      "url": "https://github.com/travisvn/awesome-claude-skills",
+      "stars": 7100,
+      "forks": 495,
+      "category": "community",
+      "type": "curated-list",
+      "tags": ["curated", "best-practices", "comprehensive-guide", "development"],
+      "description": "Curated list with best practices, getting started guides, security considerations",
+      "install_cmd": null
+    },
+    {
+      "name": "awesome-agent-skills",
+      "owner": "VoltAgent",
+      "url": "https://github.com/VoltAgent/awesome-agent-skills",
+      "stars": 7100,
+      "forks": 545,
+      "category": "community",
+      "type": "cross-platform",
+      "tags": ["380-skills", "cross-platform", "official-teams", "development", "multi-platform"],
+      "description": "380+ skills from official teams (Vercel, Cloudflare, Microsoft, Hugging Face)",
+      "install_cmd": null
+    },
+    {
+      "name": "awesome-claude-skills",
+      "owner": "BehiSecc",
+      "url": "https://github.com/BehiSecc/awesome-claude-skills",
+      "stars": 5800,
+      "category": "community",
+      "type": "curated-list",
+      "tags": ["12-categories", "curated", "organized", "development"],
+      "description": "Curated list across 12+ categories including document handling, security, automation",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-skills",
+      "owner": "alirezarezvani",
+      "url": "https://github.com/alirezarezvani/claude-skills",
+      "stars": 1800,
+      "category": "community",
+      "type": "business",
+      "tags": ["53-skills", "business", "roi-focused", "production-ready", "development"],
+      "description": "53 business-focused skills with 40% time savings, 30% quality improvements",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-code-skills",
+      "owner": "daymade",
+      "url": "https://github.com/daymade/claude-code-skills",
+      "stars": 580,
+      "category": "community",
+      "type": "marketplace",
+      "tags": ["37-skills", "professional", "specialized", "development"],
+      "description": "Professional marketplace with 37 production-ready skills",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-code-skill-factory",
+      "owner": "alirezarezvani",
+      "url": "https://github.com/alirezarezvani/claude-code-skill-factory",
+      "stars": 499,
+      "category": "development",
+      "type": "toolkit",
+      "tags": ["builder", "toolkit", "cross-platform", "production", "development"],
+      "description": "Toolkit for building production-ready skills at scale - 5 guide agents, 10 commands",
+      "install_cmd": "/plugin install alirezarezvani/claude-code-skill-factory"
+    },
+    {
+      "name": "superpowers-marketplace",
+      "owner": "obra",
+      "url": "https://github.com/obra/superpowers-marketplace",
+      "stars": 486,
+      "category": "community",
+      "type": "marketplace",
+      "tags": ["20-skills", "curated", "planning"],
+      "description": "Curated marketplace with 20+ core skills and planning commands",
+      "install_cmd": "/plugin marketplace add obra/superpowers-marketplace"
+    },
+    {
+      "name": "claude-skills-collection",
+      "owner": "abubakarsiddik31",
+      "url": "https://github.com/abubakarsiddik31/claude-skills-collection",
+      "stars": 434,
+      "category": "community",
+      "type": "collection",
+      "tags": ["11-categories", "official-and-community", "modular"],
+      "description": "Official and community skills across 11 categories - productivity, creativity, coding",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-skills-marketplace",
+      "owner": "mhattingpete",
+      "url": "https://github.com/mhattingpete/claude-skills-marketplace",
+      "stars": 357,
+      "category": "community",
+      "type": "marketplace",
+      "tags": ["engineering-workflows", "execution-runtime", "90-99-percent-savings"],
+      "description": "Engineering workflows with execution runtime achieving 90-99% token savings",
+      "install_cmd": "/plugin marketplace add mhattingpete/claude-skills-marketplace"
+    },
+    {
+      "name": "claude-skills-mcp",
+      "owner": "K-Dense-AI",
+      "url": "https://github.com/K-Dense-AI/claude-skills-mcp",
+      "stars": 315,
+      "category": "infrastructure",
+      "type": "mcp",
+      "tags": ["vector-search", "mcp", "cross-platform", "discovery"],
+      "description": "MCP server for vector-based skill search across multiple AI platforms",
+      "install_cmd": null
+    },
+    {
+      "name": "agent-skill-creator",
+      "owner": "FrancyJGLisboa",
+      "url": "https://github.com/FrancyJGLisboa/agent-skill-creator",
+      "stars": 265,
+      "category": "development",
+      "type": "meta-skill",
+      "tags": ["meta-skill", "autonomous", "6-phase", "builder"],
+      "description": "Meta-skill for autonomous agent creation via 6-phase methodology",
+      "install_cmd": null
+    },
+    {
+      "name": "awesome-claude-skills",
+      "owner": "karanb192",
+      "url": "https://github.com/karanb192/awesome-claude-skills",
+      "stars": 107,
+      "category": "community",
+      "type": "verified",
+      "tags": ["50-skills", "verified", "tdd", "git-workflows"],
+      "description": "50+ verified skills for TDD, debugging, git workflows, document processing",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-code-skills",
+      "owner": "levnikolaevich",
+      "url": "https://github.com/levnikolaevich/claude-code-skills",
+      "stars": 89,
+      "category": "community",
+      "type": "workflow",
+      "tags": ["102-skills", "full-delivery", "orchestrator-worker"],
+      "description": "102 skills covering full delivery workflow with Orchestrator-Worker pattern",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-skills",
+      "owner": "secondsky",
+      "url": "https://github.com/secondsky/claude-skills",
+      "stars": 51,
+      "category": "community",
+      "type": "comprehensive",
+      "tags": ["167-skills", "18-categories", "auto-discovery", "production"],
+      "description": "167 production-ready skills across 18 categories with auto-discovery",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-code-marketplace",
+      "owner": "netresearch",
+      "url": "https://github.com/netresearch/claude-code-marketplace",
+      "stars": 20,
+      "category": "community",
+      "type": "domain-specific",
+      "tags": ["typo3", "php", "documentation", "catalog"],
+      "description": "TYPO3 development, PHP modernization, technical documentation workflows",
+      "install_cmd": "/plugin marketplace add netresearch/claude-code-marketplace"
+    },
+    {
+      "name": "claude-agent-skills",
+      "owner": "meetrais",
+      "url": "https://github.com/meetrais/claude-agent-skills",
+      "stars": 9,
+      "category": "community",
+      "type": "examples",
+      "tags": ["examples", "api", "custom-skills"],
+      "description": "Examples demonstrating Skills API with default and custom skills",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-marketplace",
+      "owner": "dashed",
+      "url": "https://github.com/dashed/claude-marketplace",
+      "stars": 7,
+      "category": "personal",
+      "type": "local",
+      "tags": ["local", "personal", "git-tools", "terminal", "cli", "development"],
+      "description": "Local marketplace for personal skills - git tools, terminal automation, browser automation",
+      "install_cmd": "/plugin marketplace add dashed/claude-marketplace"
+    }
+  ]
+}

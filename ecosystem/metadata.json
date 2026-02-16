@@ -1,0 +1,22 @@
+{
+  "last_updated": "2026-02-15T18:30:00Z",
+  "last_run_by": "manual research",
+  "stats": {
+    "total_plugin_repos": 50,
+    "total_agent_repos": 30,
+    "total_skill_repos": 24,
+    "total_skills_tracked": 59375,
+    "total_mcp_servers": 410,
+    "total_marketplaces": 10,
+    "combined_github_stars": 500000
+  },
+  "update_frequency": "weekly",
+  "next_scheduled_update": "2026-02-22",
+  "sources": [
+    "GitHub Search API",
+    "skills.sh leaderboard",
+    "Anthropic documentation",
+    "Community awesome lists"
+  ],
+  "version": "1.0.0"
+}

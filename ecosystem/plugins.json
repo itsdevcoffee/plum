@@ -1,0 +1,281 @@
+{
+  "last_updated": "2026-02-15",
+  "total_repos": 30,
+  "repositories": [
+    {
+      "name": "claude-code",
+      "owner": "anthropics",
+      "url": "https://github.com/anthropics/claude-code",
+      "stars": 66800,
+      "category": "official",
+      "type": "core",
+      "tags": ["cli", "main", "anthropic", "development"],
+      "description": "Main Claude Code repository - agentic coding tool",
+      "install_cmd": null
+    },
+    {
+      "name": "everything-claude-code",
+      "owner": "affaan-m",
+      "url": "https://github.com/affaan-m/everything-claude-code",
+      "stars": 39500,
+      "category": "community",
+      "type": "collection",
+      "tags": ["agents", "skills", "hooks", "comprehensive", "hackathon-winner", "development", "testing"],
+      "description": "Complete config collection - 912 tests, 98% coverage, hackathon winner",
+      "install_cmd": "/plugin install affaan-m/everything-claude-code"
+    },
+    {
+      "name": "awesome-claude-code",
+      "owner": "hesreallyhim",
+      "url": "https://github.com/hesreallyhim/awesome-claude-code",
+      "stars": 21600,
+      "category": "community",
+      "type": "awesome-list",
+      "tags": ["curated", "comprehensive", "resources", "development"],
+      "description": "Comprehensive curated collection of slash commands, workflows, resources",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-plugins-official",
+      "owner": "anthropics",
+      "url": "https://github.com/anthropics/claude-plugins-official",
+      "stars": 7500,
+      "category": "official",
+      "type": "marketplace",
+      "tags": ["official", "anthropic", "marketplace", "development"],
+      "description": "Official Anthropic-managed plugin directory",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-code-action",
+      "owner": "anthropics",
+      "url": "https://github.com/anthropics/claude-code-action",
+      "stars": 5700,
+      "category": "official",
+      "type": "ci-cd",
+      "tags": ["github-action", "ci-cd", "official", "github-actions"],
+      "description": "Official GitHub Action for Claude Code CI/CD integration",
+      "install_cmd": null
+    },
+    {
+      "name": "gmickel-claude-marketplace",
+      "owner": "gmickel",
+      "url": "https://github.com/gmickel/gmickel-claude-marketplace",
+      "stars": 482,
+      "category": "community",
+      "type": "marketplace",
+      "tags": ["flow-next", "ralph", "autonomous", "multi-model", "development"],
+      "description": "Flow-Next workflows, Ralph autonomous mode, multi-model review gates",
+      "install_cmd": "/plugin marketplace add gmickel/gmickel-claude-marketplace"
+    },
+    {
+      "name": "awesome-claude-code-plugins",
+      "owner": "ccplugins",
+      "url": "https://github.com/ccplugins/awesome-claude-code-plugins",
+      "stars": 434,
+      "category": "community",
+      "type": "awesome-list",
+      "tags": ["curated", "commands", "subagents", "mcp", "development"],
+      "description": "Curated list of slash commands, subagents, MCP servers, hooks",
+      "install_cmd": null
+    },
+    {
+      "name": "superpowers-marketplace",
+      "owner": "obra",
+      "url": "https://github.com/obra/superpowers-marketplace",
+      "stars": 99,
+      "category": "community",
+      "type": "marketplace",
+      "tags": ["curated", "skills", "framework"],
+      "description": "Curated plugin marketplace with 20+ skills",
+      "install_cmd": "/plugin marketplace add obra/superpowers-marketplace"
+    },
+    {
+      "name": "claude-code-plugin-template",
+      "owner": "ivan-magda",
+      "url": "https://github.com/ivan-magda/claude-code-plugin-template",
+      "stars": 0,
+      "category": "development",
+      "type": "template",
+      "tags": ["template", "scaffolding", "ci-cd", "development"],
+      "description": "GitHub template for creating plugins with CI/CD workflows",
+      "install_cmd": null
+    },
+    {
+      "name": "cc-marketplace-boilerplate",
+      "owner": "halans",
+      "url": "https://github.com/halans/cc-marketplace-boilerplate",
+      "stars": 0,
+      "category": "development",
+      "type": "template",
+      "tags": ["boilerplate", "template", "starter", "development"],
+      "description": "Minimal boilerplate for creating and distributing plugins",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-starter-kit",
+      "owner": "serpro69",
+      "url": "https://github.com/serpro69/claude-starter-kit",
+      "stars": 0,
+      "category": "development",
+      "type": "starter",
+      "tags": ["mcp", "skills", "complete-setup", "development"],
+      "description": "Complete starter with MCP servers, skills, agents, commands",
+      "install_cmd": null
+    },
+    {
+      "name": "ai-coding-project-boilerplate",
+      "owner": "shinpr",
+      "url": "https://github.com/shinpr/ai-coding-project-boilerplate",
+      "stars": 0,
+      "category": "development",
+      "type": "boilerplate",
+      "tags": ["typescript", "production-ready", "agents", "development"],
+      "description": "Production-ready TypeScript boilerplate with specialized agents",
+      "install_cmd": null
+    },
+    {
+      "name": "ralph-loop-setup",
+      "owner": "MarioGiancini",
+      "url": "https://github.com/MarioGiancini/ralph-loop-setup",
+      "stars": 0,
+      "category": "autonomous",
+      "type": "workflow",
+      "tags": ["ralph", "autonomous", "tdd", "loops", "development", "testing"],
+      "description": "Autonomous TDD workflows with multi-model review gates",
+      "install_cmd": "/plugin install MarioGiancini/ralph-loop-setup"
+    },
+    {
+      "name": "flow-next-opencode",
+      "owner": "gmickel",
+      "url": "https://github.com/gmickel/flow-next-opencode",
+      "stars": 0,
+      "category": "autonomous",
+      "type": "workflow",
+      "tags": ["flow-next", "plan-first", "autonomous", "development"],
+      "description": "Plan-first workflows, overnight coding, context re-anchoring",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-code-marketplace",
+      "owner": "netresearch",
+      "url": "https://github.com/netresearch/claude-code-marketplace",
+      "stars": 0,
+      "category": "community",
+      "type": "marketplace",
+      "tags": ["catalog", "skills", "indexing"],
+      "description": "Curated catalog indexing individual skill repositories",
+      "install_cmd": "/plugin marketplace add netresearch/claude-code-marketplace"
+    },
+    {
+      "name": "claude-code-marketplace",
+      "owner": "ivan-magda",
+      "url": "https://github.com/ivan-magda/claude-code-marketplace",
+      "stars": 0,
+      "category": "community",
+      "type": "marketplace",
+      "tags": ["personal", "curated"],
+      "description": "Personal curated plugin collection",
+      "install_cmd": "/plugin marketplace add ivan-magda/claude-code-marketplace"
+    },
+    {
+      "name": "cc-marketplace",
+      "owner": "ananddtyagi",
+      "url": "https://github.com/ananddtyagi/cc-marketplace",
+      "stars": 0,
+      "category": "community",
+      "type": "marketplace",
+      "tags": ["marketplace"],
+      "description": "Marketplace repo for Claude Code plugins",
+      "install_cmd": "/plugin marketplace add ananddtyagi/cc-marketplace"
+    },
+    {
+      "name": "awesome-claude-plugins",
+      "owner": "quemsah",
+      "url": "https://github.com/quemsah/awesome-claude-plugins",
+      "stars": 0,
+      "category": "community",
+      "type": "tracking",
+      "tags": ["automated", "metrics", "tracking"],
+      "description": "Automated tracking of 4,961 repositories with n8n workflows",
+      "install_cmd": null
+    },
+    {
+      "name": "awesome-claude-code",
+      "owner": "jqueryscript",
+      "url": "https://github.com/jqueryscript/awesome-claude-code",
+      "stars": 0,
+      "category": "community",
+      "type": "awesome-list",
+      "tags": ["curated", "tools", "ide-integrations"],
+      "description": "Curated list of tools, IDE integrations, frameworks",
+      "install_cmd": null
+    },
+    {
+      "name": "awesome-claude-code",
+      "owner": "LangGPT",
+      "url": "https://github.com/LangGPT/awesome-claude-code",
+      "stars": 0,
+      "category": "community",
+      "type": "awesome-list",
+      "tags": ["curated", "projects", "prompts"],
+      "description": "Resources, projects, prompts, agents, commands",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-plugins",
+      "owner": "sgaunet",
+      "url": "https://github.com/sgaunet/claude-plugins",
+      "stars": 0,
+      "category": "community",
+      "type": "collection",
+      "tags": ["agents", "skills", "commands"],
+      "description": "Specialized plugins for enhanced development workflow",
+      "install_cmd": null
+    },
+    {
+      "name": "cc-plugins",
+      "owner": "yanmxa",
+      "url": "https://github.com/yanmxa/cc-plugins",
+      "stars": 0,
+      "category": "community",
+      "type": "collection",
+      "tags": ["automation", "lazy-dev"],
+      "description": "Plugins for lazy developers - automate and capture workflows",
+      "install_cmd": null
+    },
+    {
+      "name": "CCPlugins",
+      "owner": "brennercruvinel",
+      "url": "https://github.com/brennercruvinel/CCPlugins",
+      "stars": 0,
+      "category": "community",
+      "type": "collection",
+      "tags": ["time-saving", "framework"],
+      "description": "Time-saving framework for development",
+      "install_cmd": null
+    },
+    {
+      "name": "awesome-claude-plugins",
+      "owner": "ComposioHQ",
+      "url": "https://github.com/ComposioHQ/awesome-claude-plugins",
+      "stars": 0,
+      "category": "community",
+      "type": "awesome-list",
+      "tags": ["commands", "agents", "hooks", "mcp"],
+      "description": "Curated list extending Claude Code with custom components",
+      "install_cmd": null
+    },
+    {
+      "name": "my-claude-code-setup",
+      "owner": "centminmod",
+      "url": "https://github.com/centminmod/my-claude-code-setup",
+      "stars": 0,
+      "category": "community",
+      "type": "starter",
+      "tags": ["template", "memory-bank", "configuration"],
+      "description": "Shared starter template and CLAUDE.md memory bank",
+      "install_cmd": null
+    }
+  ]
+}

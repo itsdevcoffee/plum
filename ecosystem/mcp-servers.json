@@ -1,0 +1,200 @@
+{
+  "last_updated": "2026-02-15",
+  "total_servers_tracked": 410,
+  "combined_stars": 500000,
+  "total_categories": 34,
+  "collections": [
+    {
+      "name": "servers",
+      "owner": "modelcontextprotocol",
+      "url": "https://github.com/modelcontextprotocol/servers",
+      "stars": 0,
+      "category": "official",
+      "type": "reference",
+      "tags": ["official", "mcp", "reference-implementations", "git", "filesystem", "development"],
+      "description": "Official MCP reference implementations - Everything, Fetch, Filesystem, Git, Memory, Sequential Thinking, Time",
+      "install_cmd": null
+    },
+    {
+      "name": "registry",
+      "owner": "modelcontextprotocol",
+      "url": "https://github.com/modelcontextprotocol/registry",
+      "stars": 0,
+      "category": "official",
+      "type": "registry",
+      "tags": ["official", "registry", "community-driven", "development"],
+      "description": "Community-driven registry service for MCP servers - like an app store",
+      "install_cmd": null
+    },
+    {
+      "name": "best-of-mcp-servers",
+      "owner": "tolkonepiu",
+      "url": "https://github.com/tolkonepiu/best-of-mcp-servers",
+      "stars": 0,
+      "category": "community",
+      "type": "ranked-list",
+      "tags": ["410-servers", "500k-stars", "34-categories", "ranked", "weekly-updates"],
+      "description": "Ranked list of 410 MCP servers with 500K total stars, updated weekly with quality scores",
+      "install_cmd": null
+    },
+    {
+      "name": "awesome-mcp-servers",
+      "owner": "wong2",
+      "url": "https://github.com/wong2/awesome-mcp-servers",
+      "stars": 3600,
+      "category": "community",
+      "type": "curated-list",
+      "tags": ["curated", "standardized"],
+      "description": "Curated list of MCP servers with standardized implementations",
+      "install_cmd": null
+    },
+    {
+      "name": "awesome-mcp-servers",
+      "owner": "punkpeye",
+      "url": "https://github.com/punkpeye/awesome-mcp-servers",
+      "stars": 0,
+      "category": "community",
+      "type": "collection",
+      "tags": ["collection"],
+      "description": "Collection of MCP servers",
+      "install_cmd": null
+    },
+    {
+      "name": "awesome-mcp-servers",
+      "owner": "habitoai",
+      "url": "https://github.com/habitoai/awesome-mcp-servers",
+      "stars": 0,
+      "category": "community",
+      "type": "curated-list",
+      "tags": ["curated", "external-data"],
+      "description": "Curated list enabling AI models to connect with external data sources",
+      "install_cmd": null
+    },
+    {
+      "name": "awesome-mcp-servers",
+      "owner": "appcypher",
+      "url": "https://github.com/appcypher/awesome-mcp-servers",
+      "stars": 0,
+      "category": "community",
+      "type": "awesome-list",
+      "tags": ["awesome", "curated"],
+      "description": "Awesome MCP Servers curated list",
+      "install_cmd": null
+    },
+    {
+      "name": "mcp-star",
+      "owner": "yzfly",
+      "url": "https://github.com/yzfly/mcp-star",
+      "stars": 0,
+      "category": "community",
+      "type": "curated",
+      "tags": ["high-quality", "curated"],
+      "description": "Curated collection of high-quality MCP servers",
+      "install_cmd": null
+    },
+    {
+      "name": "MCPJungle",
+      "owner": "mcpjungle",
+      "url": "https://github.com/mcpjungle/MCPJungle",
+      "stars": 0,
+      "category": "infrastructure",
+      "type": "registry-gateway",
+      "tags": ["self-hosted", "enterprise", "registry", "proxy", "unified-gateway", "development", "docker"],
+      "description": "Self-hosted MCP registry and proxy for enterprise - unified gateway at /mcp endpoint",
+      "install_cmd": null
+    },
+    {
+      "name": "metamcp",
+      "owner": "metatool-ai",
+      "url": "https://github.com/metatool-ai/metamcp",
+      "stars": 0,
+      "category": "infrastructure",
+      "type": "middleware",
+      "tags": ["middleware", "aggregator", "orchestrator", "docker", "gui", "development"],
+      "description": "All-in-one MCP middleware with GUI - groups servers, unified endpoints (SSE, HTTP, OpenAPI), auth, inspection",
+      "install_cmd": null
+    },
+    {
+      "name": "slack-mcp-server",
+      "owner": "korotovsky",
+      "url": "https://github.com/korotovsky/slack-mcp-server",
+      "stars": 0,
+      "category": "specialized",
+      "type": "integration",
+      "tags": ["slack", "no-permissions", "apps-support", "govslack"],
+      "description": "Most powerful Slack MCP server - no permission requirements, Apps support, GovSlack, smart history",
+      "install_cmd": null
+    },
+    {
+      "name": "slack-mcp-server",
+      "owner": "jtalk22",
+      "url": "https://github.com/jtalk22/slack-mcp-server",
+      "stars": 0,
+      "category": "specialized",
+      "type": "integration",
+      "tags": ["slack", "no-oauth", "no-admin", "dms", "channels"],
+      "description": "Full Slack access - DMs, channels, search. No OAuth, no admin approval",
+      "install_cmd": null
+    },
+    {
+      "name": "claude-code-slack-bot",
+      "owner": "mpociot",
+      "url": "https://github.com/mpociot/claude-code-slack-bot",
+      "stars": 0,
+      "category": "specialized",
+      "type": "integration",
+      "tags": ["slack", "local", "bot"],
+      "description": "Connect local Claude Code agent with Slack",
+      "install_cmd": null
+    },
+    {
+      "name": "ModelContextProtocol.Servers",
+      "owner": "AI-App",
+      "url": "https://github.com/AI-App/ModelContextProtocol.Servers",
+      "stars": 0,
+      "category": "alternative",
+      "type": "implementation",
+      "tags": ["alternative-implementation"],
+      "description": "Alternative MCP servers implementation",
+      "install_cmd": null
+    },
+    {
+      "name": "modelcontextprotocol-servers",
+      "owner": "riza-io",
+      "url": "https://github.com/riza-io/modelcontextprotocol-servers",
+      "stars": 0,
+      "category": "alternative",
+      "type": "implementation",
+      "tags": ["alternative-implementation"],
+      "description": "Alternative MCP servers implementation",
+      "install_cmd": null
+    }
+  ],
+  "web_directories": [
+    {
+      "name": "Awesome MCP Servers",
+      "url": "https://mcpservers.org/",
+      "description": "Web directory for discovering MCP servers"
+    },
+    {
+      "name": "MCP Server Finder",
+      "url": "https://www.mcpserverfinder.com/",
+      "description": "Search and discovery tool for MCP servers"
+    },
+    {
+      "name": "Claude FA.ST",
+      "url": "https://claudefa.st/blog/tools/mcp-extensions/best-addons",
+      "description": "50+ Best MCP Servers for Claude Code in 2026"
+    },
+    {
+      "name": "MCP Market",
+      "url": "https://mcpmarket.com/leaderboards",
+      "description": "Top 100 MCP Servers Leaderboard"
+    },
+    {
+      "name": "PulseMCP",
+      "url": "https://www.pulsemcp.com/",
+      "description": "Directory and discovery platform for MCP servers"
+    }
+  ]
+}
