@@ -67,6 +67,10 @@ Plum works with any Claude Code marketplace. Here are some popular ones to get s
 <td><a href="https://github.com/thedotmack/claude-mem">claude-mem</a></td>
 <td>Persistent memory compression system for Claude Code with context preservation across sessions. Enables Claude to maintain project knowledge continuity through automatic tool observation capture and semantic summaries.</td>
 </tr>
+<tr>
+<td><a href="https://github.com/ngqhuy-dev/claude-marketplace">ngqhuy-marketplace</a></td>
+<td>Curated mobile-focused collection with <strong>12 plugins</strong> for Flutter and React Native development (architecture, performance, testing, migration), plus general engineering skills. Every plugin is pinned to an upstream commit SHA and bumped via reviewed PRs.</td>
+</tr>
 </table>
 
 **Have a marketplace?** Submit a PR to add it to this list! We welcome all Claude Code plugin marketplaces.
